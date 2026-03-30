@@ -6,7 +6,8 @@ FishList is a full-stack fishing log and social app where users can:
 - upload catch photos,
 - browse a community feed,
 - like/comment on catches,
-- manage friends and filter posts.
+- manage friends and filter posts,
+- explore Ontario stocked-fish data via GeoHub on the map.
 
 This repository contains both frontend and backend apps.
 
@@ -78,6 +79,48 @@ cd FishList
 .\mvnw.cmd spring-boot:run
 ```
 
+### Docker Startup (Recommended for backend services)
+
+Use Docker Compose to bring up the backend API and MinIO object storage:
+
+```bash
+cd FishList
+docker compose up --build
+```
+
+Services started by compose:
+- API: `http://localhost:8080`
+- MinIO S3 API: `http://localhost:9000`
+- MinIO Console: `http://localhost:9001`
+
+Then run the frontend in a second terminal:
+
+```bash
+cd fishlist-frontend
+npm ci
+npm run dev
+```
+
+Frontend runs at:
+- `http://localhost:3000`
+
+---
+
+## GeoHub Stocked Fish Data
+
+The frontend map integrates Ontario GeoHub fish stocking data to display stocked waterbodies and trends.
+
+Implementation details:
+- Data source: ArcGIS GeoHub fish stocking feature service.
+- Client utility: `src/lib/geohub.ts`.
+- Map page integration: `src/app/map/page.tsx`.
+- Data handling:
+  - paginated fetch in chunks,
+  - grouped by waterbody/coordinates,
+  - filters for species, district, developmental stage, and recent-year windows.
+
+This gives users both personal catch history and province-wide stocking context in one map experience.
+
 ## CI/CD and Security Roadmap
 
 The sections below include what is already completed and what is next.
@@ -113,6 +156,21 @@ The sections below include what is already completed and what is next.
 - Add test jobs (unit/integration) as required checks.
 - Add deployment workflow (dev/staging/prod environments).
 - Add release tagging/versioning strategy.
+
+---
+
+## 2.1) Docker Progress
+
+### Completed
+- Docker Compose setup exists for backend + MinIO.
+- MinIO init container creates the required bucket automatically.
+- Backend container is wired to MinIO environment variables for image upload/presigned URLs.
+
+### In Progress / Next
+- Add frontend Docker service for full one-command local startup.
+- Add healthchecks and startup dependency hardening.
+- Add separate compose profiles for `dev` and `ci`.
+- Add image publishing workflow for backend/frontend containers.
 
 ---
 
