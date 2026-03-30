@@ -7,7 +7,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import { getDisplayErrorMessage } from "@/lib/api";
 
-type Mode = "login" | "register";
+type Mode = "login" | "register"; 
 
 export default function LoginPage() {
   const { user, login, register } = useAuth();
