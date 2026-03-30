@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("");   
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
     if (mode === "register" && password.length < 8) {
       setError(t("login.error.passwordMin"));
-      return;
+      return; 
     }
     setPending(true);
     try {
