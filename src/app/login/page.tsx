@@ -29,7 +29,7 @@ export default function LoginPage() {
     }
     if (mode === "register" && password.length < 8) {
       setError(t("login.error.passwordMin"));
-      return;
+      return; 
     }
     setPending(true);
     try {
