@@ -1,65 +1,649 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { useLocale } from "@/contexts/locale-context";
+import {
+  fetchMyFriends,
+  createCatchComment,
+  deleteCatchComment,
+  fetchCatchComments,
+  fetchCatchLike,
+  fetchLatestPosts,
+  getDisplayErrorMessage,
+  getImageUrl,
+  likeCatch,
+  unlikeCatch,
+  type CatchCommentResponse,
+  type FeedPost,
+} from "@/lib/api";
+
+const TOP_COMMENTS_LIMIT = 2;
+const COMMENTS_CHUNK_SIZE = 5;
+const FEED_PAGE_SIZE = 24;
+
+function formatDate(iso: string) {
+  const parsed = Date.parse(iso);
+  if (Number.isNaN(parsed)) return iso;
+  return new Date(parsed).toLocaleDateString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function isObjectKey(url: string) {
+  return !url.startsWith("http://") && !url.startsWith("https://");
+}
+
+function FeedCard({
+  post,
+  currentUserId,
+}: {
+  post: FeedPost;
+  currentUserId?: number;
+}) {
+  const cardRef = useRef<HTMLElement | null>(null);
+  const [isActive, setIsActive] = useState(false);
+  const isOwnPost = currentUserId != null && post.accountId === currentUserId;
+  const [mediaExpanded, setMediaExpanded] = useState(isOwnPost);
+  const imageCandidates = useMemo(
+    () =>
+      post.catch.imageUrls && post.catch.imageUrls.length > 0
+        ? post.catch.imageUrls.slice(0, 4)
+        : post.catch.imageUrl
+          ? [post.catch.imageUrl]
+          : [],
+    [post.catch.imageUrls, post.catch.imageUrl],
+  );
+  const [resolvedUrls, setResolvedUrls] = useState<string[]>(
+    imageCandidates.filter((u) => !isObjectKey(u)),
+  );
+  const [imgError, setImgError] = useState(false);
+  const [likesCount, setLikesCount] = useState(0);
+  const [likedByMe, setLikedByMe] = useState(false);
+  const [likesLoading, setLikesLoading] = useState(true);
+  const [likesBusy, setLikesBusy] = useState(false);
+  const [comments, setComments] = useState<CatchCommentResponse[]>([]);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [commentsTotal, setCommentsTotal] = useState(0);
+  const [commentsExpanded, setCommentsExpanded] = useState(false);
+  const [commentsChunkLoading, setCommentsChunkLoading] = useState(false);
+  const [commentMessage, setCommentMessage] = useState("");
+  const [commentBusy, setCommentBusy] = useState(false);
+
+  useEffect(() => {
+    setMediaExpanded(isOwnPost);
+  }, [isOwnPost, post.id]);
+
+  useEffect(() => {
+    if (!cardRef.current || isActive) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setIsActive(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "250px 0px" },
+    );
+    observer.observe(cardRef.current);
+    return () => observer.disconnect();
+  }, [isActive]);
+
+  useEffect(() => {
+    if (!mediaExpanded) return;
+    if (!isActive) return;
+    if (imageCandidates.length === 0) return;
+    let cancelled = false;
+    Promise.all(
+      imageCandidates.map(async (value) => {
+        if (!isObjectKey(value)) return value;
+        return getImageUrl(value);
+      }),
+    )
+      .then((urls) => {
+        if (!cancelled) setResolvedUrls(urls.filter(Boolean));
+      })
+      .catch(() => {
+        if (!cancelled) setImgError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mediaExpanded, isActive, imageCandidates]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    fetchCatchLike(post.locationId, post.catch.id)
+      .then((res) => {
+        if (cancelled) return;
+        setLikesCount(res.likesCount);
+        setLikedByMe(res.likedByMe);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setLikesCount(0);
+        setLikedByMe(false);
+      })
+      .finally(() => {
+        if (!cancelled) setLikesLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, post.locationId, post.catch.id]);
+
+  useEffect(() => {
+    if (!isActive) return;
+    let cancelled = false;
+    fetchCatchComments(post.locationId, post.catch.id, 0, TOP_COMMENTS_LIMIT)
+      .then((res) => {
+        if (cancelled) return;
+        setComments(res.comments);
+        setCommentsTotal(res.totalCount);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setComments([]);
+        setCommentsTotal(0);
+      })
+      .finally(() => {
+        if (!cancelled) setCommentsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isActive, post.locationId, post.catch.id]);
+
+  async function loadMoreComments() {
+    if (commentsChunkLoading || commentsLoading) return;
+    setCommentsExpanded(true);
+    setCommentsChunkLoading(true);
+    try {
+      const res = await fetchCatchComments(
+        post.locationId,
+        post.catch.id,
+        comments.length,
+        COMMENTS_CHUNK_SIZE,
+      );
+      setComments((prev) => [...prev, ...res.comments]);
+      setCommentsTotal(res.totalCount);
+    } catch {
+      // Keep existing loaded comments if this chunk fails.
+    } finally {
+      setCommentsChunkLoading(false);
+    }
+  }
+
+  async function toggleLike() {
+    if (likesBusy) return;
+    setLikesBusy(true);
+    const previousLiked = likedByMe;
+    const previousCount = likesCount;
+    const nextLiked = !previousLiked;
+    setLikedByMe(nextLiked);
+    setLikesCount((c) => Math.max(0, c + (nextLiked ? 1 : -1)));
+    try {
+      const res = nextLiked
+        ? await likeCatch(post.locationId, post.catch.id)
+        : await unlikeCatch(post.locationId, post.catch.id);
+      setLikedByMe(res.likedByMe);
+      setLikesCount(res.likesCount);
+    } catch {
+      setLikedByMe(previousLiked);
+      setLikesCount(previousCount);
+    } finally {
+      setLikesBusy(false);
+    }
+  }
+
+  async function submitComment() {
+    const trimmed = commentMessage.trim();
+    if (!trimmed || commentBusy) return;
+    setCommentBusy(true);
+    try {
+      const created = await createCatchComment(
+        post.locationId,
+        post.catch.id,
+        trimmed,
+      );
+      setCommentsTotal((t) => t + 1);
+      setComments((prev) => {
+        const next = [created, ...prev];
+        return commentsExpanded ? next : next.slice(0, TOP_COMMENTS_LIMIT);
+      });
+      setCommentMessage("");
+    } catch {
+      // Keep UX simple; user can retry.
+    } finally {
+      setCommentBusy(false);
+    }
+  }
+
+  async function removeComment(commentId: number) {
+    if (commentBusy) return;
+    setCommentBusy(true);
+    const previous = comments;
+    const previousTotal = commentsTotal;
+    setComments((prev) => prev.filter((c) => c.id !== commentId));
+    setCommentsTotal((t) => Math.max(0, t - 1));
+    try {
+      await deleteCatchComment(post.locationId, post.catch.id, commentId);
+    } catch {
+      setComments(previous);
+      setCommentsTotal(previousTotal);
+    } finally {
+      setCommentBusy(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <article
+      ref={cardRef}
+      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+    >
+      <div className="flex items-center justify-between px-4 py-3">
+        <div>
+          <Link
+            href={`/users/${post.accountId}`}
+            className="text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+          >
+            @{post.username}
+          </Link>
+          <p className="text-xs text-zinc-500">{formatDate(post.timeStamp)}</p>
+        </div>
+        <p className="text-xs text-zinc-500">{post.locationName}</p>
+      </div>
+
+      {imageCandidates.length > 0 ? (
+        mediaExpanded ? (
+          isActive && resolvedUrls.length > 0 && !imgError ? (
+            <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
+              {resolvedUrls.map((url) => (
+                <img
+                  key={url}
+                  src={url}
+                  alt={post.catch.species}
+                  className="aspect-square w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  onError={() => setImgError(true)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
+              <p className="text-sm text-zinc-400">Loading image…</p>
+            </div>
+          )
+        ) : (
+          <button
+            type="button"
+            onClick={() => setMediaExpanded(true)}
+            className="flex aspect-video w-full items-center justify-center bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
+          >
+            <span className="text-sm font-medium">
+              Open {imageCandidates.length} photo{imageCandidates.length === 1 ? "" : "s"}
+            </span>
+          </button>
+        )
+      ) : (
+        <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
+          <span className="text-5xl">🐟</span>
+        </div>
+      )}
+
+      <div className="space-y-1 px-4 py-3">
+        <p className="font-semibold text-zinc-900 dark:text-zinc-100">
+          {post.catch.species}
+        </p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          {[
+            post.catch.quantity && post.catch.quantity > 1
+              ? `×${post.catch.quantity}`
+              : null,
+            post.catch.lengthCm ? `${post.catch.lengthCm} cm` : null,
+            post.catch.weightKg ? `${post.catch.weightKg} kg` : null,
+          ]
+            .filter(Boolean)
+            .join(" · ") || "No measurements"}
+        </p>
+        {post.catch.notes && (
+          <p className="line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
+            {post.catch.notes}
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        )}
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => void toggleLike()}
+            disabled={likesBusy || likesLoading}
+            className={[
+              "inline-flex items-center gap-2 rounded-full border px-3 py-1 text-sm transition",
+              likedByMe
+                ? "border-rose-300 bg-rose-50 text-rose-600 dark:border-rose-700 dark:bg-rose-900/30 dark:text-rose-300"
+                : "border-zinc-300 text-zinc-600 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
+              likesBusy || likesLoading ? "opacity-70" : "",
+            ].join(" ")}
+            aria-label={likedByMe ? "Unlike this post" : "Like this post"}
+            title={likedByMe ? "Unlike" : "Like"}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+            <span>{likedByMe ? "❤️" : "🤍"}</span>
+            <span>
+              {likesLoading
+                ? "..."
+                : `${likesCount} ${likesCount === 1 ? "like" : "likes"}`}
+            </span>
+          </button>
+        </div>
+        <div className="pt-2">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            Comments
+          </p>
+          {commentsLoading ? (
+            <p className="mt-1 text-sm text-zinc-400">Loading comments…</p>
+          ) : comments.length === 0 ? (
+            <p className="mt-1 text-sm text-zinc-500">No comments yet.</p>
+          ) : (
+            <div className="mt-2 space-y-1.5">
+              {comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="rounded-lg bg-zinc-100 px-2.5 py-2 text-sm dark:bg-zinc-800"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 flex-1">
+                      <Link
+                        href={`/users/${comment.accountId}`}
+                        className="font-semibold text-zinc-800 hover:underline dark:text-zinc-200"
+                      >
+                        @{comment.username}
+                      </Link>{" "}
+                      <span className="text-zinc-700 dark:text-zinc-300">
+                        {comment.message}
+                      </span>
+                    </p>
+                    {comment.ownedByMe && (
+                      <button
+                        type="button"
+                        onClick={() => void removeComment(comment.id)}
+                        disabled={commentBusy}
+                        className="shrink-0 text-xs text-zinc-500 hover:text-red-500 disabled:opacity-60"
+                        title="Delete comment"
+                        aria-label="Delete comment"
+                      >
+                        Delete
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {!commentsLoading && commentsTotal > comments.length && (
+            <button
+              type="button"
+              onClick={() => void loadMoreComments()}
+              disabled={commentsChunkLoading}
+              className="mt-2 text-xs font-medium text-sky-600 transition hover:underline disabled:opacity-60 dark:text-sky-400"
+            >
+              {commentsChunkLoading
+                ? "Loading more comments..."
+                : commentsExpanded
+                  ? `Load more comments (${commentsTotal - comments.length} left)`
+                  : `View more comments (${commentsTotal - comments.length})`}
+            </button>
+          )}
+
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={commentMessage}
+              onChange={(e) => setCommentMessage(e.target.value)}
+              placeholder="Add a comment..."
+              maxLength={500}
+              className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <button
+              type="button"
+              onClick={() => void submitComment()}
+              disabled={commentBusy || !commentMessage.trim()}
+              className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700 disabled:opacity-60"
+            >
+              Post
+            </button>
+          </div>
         </div>
-      </main>
+      </div>
+    </article>
+  );
+}
+
+export default function HomePage() {
+  const { user, isReady } = useAuth();
+  const { t } = useLocale();
+  const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
+  const [feedScope, setFeedScope] = useState<"all" | "friends" | "mine">("all");
+  const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadFeed = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    setError("");
+    try {
+      const nextPosts = await fetchLatestPosts(FEED_PAGE_SIZE, 0);
+      setPosts(nextPosts);
+      setHasMore(nextPosts.length === FEED_PAGE_SIZE);
+    } catch (e) {
+      setError(getDisplayErrorMessage(e, t("home.loadLatestError")));
+    } finally {
+      setLoading(false);
+    }
+  }, [user, t]);
+
+  const loadMore = useCallback(async () => {
+    if (!user || loadingMore || loading || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const next = await fetchLatestPosts(FEED_PAGE_SIZE, posts.length);
+      setPosts((prev) => [...prev, ...next]);
+      setHasMore(next.length === FEED_PAGE_SIZE);
+    } catch (e) {
+      setError(getDisplayErrorMessage(e, t("home.loadMoreError")));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [user, loadingMore, loading, hasMore, posts.length, t]);
+
+  useEffect(() => {
+    void loadFeed();
+  }, [loadFeed]);
+
+  useEffect(() => {
+    if (!user) {
+      setFriendIds(new Set());
+      return;
+    }
+    let cancelled = false;
+    fetchMyFriends()
+      .then((friends) => {
+        if (cancelled) return;
+        setFriendIds(new Set(friends.map((f) => f.id)));
+      })
+      .catch(() => {
+        if (!cancelled) setFriendIds(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const visiblePosts = useMemo(() => {
+    if (!user) return posts;
+    if (feedScope === "mine") {
+      return posts.filter((post) => post.accountId === user.id);
+    }
+    if (feedScope === "friends") {
+      return posts.filter((post) => friendIds.has(post.accountId));
+    }
+    return posts;
+  }, [posts, feedScope, friendIds, user]);
+
+  if (!isReady) {
+    return (
+      <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center px-6 py-16">
+        <p className="text-zinc-500">Loading…</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div
+        className="relative flex flex-1 items-center justify-center px-6 py-16"
+        style={{
+          backgroundImage:
+            "linear-gradient(rgba(15,23,42,0.6), rgba(15,23,42,0.6)), url('/Quetico_NorthernLights-scaled.jpg')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="w-full max-w-3xl rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+          <div className="space-y-3">
+            <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
+              {t("home.welcome")}
+            </p>
+            <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              {t("home.heroTitle")}
+            </h1>
+            <p className="max-w-xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+              {t("home.heroBody")}
+            </p>
+          </div>
+
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link
+              href="/map"
+              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            >
+              {t("home.openMap")}
+            </Link>
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-900"
+            >
+              {t("home.login")}
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
+            {t("home.kicker")}
+          </p>
+          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+            {t("home.title")}
+          </h1>
+        </div>
+        <div className="flex gap-2">
+          <div className="inline-flex rounded-xl border border-zinc-300 bg-white p-1 dark:border-zinc-600 dark:bg-zinc-900">
+            <button
+              type="button"
+              onClick={() => setFeedScope("all")}
+              className={[
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                feedScope === "all"
+                  ? "bg-sky-600 text-white"
+                  : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+              ].join(" ")}
+            >
+              {t("home.scope.all")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedScope("friends")}
+              className={[
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                feedScope === "friends"
+                  ? "bg-sky-600 text-white"
+                  : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+              ].join(" ")}
+            >
+              {t("home.scope.friends")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFeedScope("mine")}
+              className={[
+                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                feedScope === "mine"
+                  ? "bg-sky-600 text-white"
+                  : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+              ].join(" ")}
+            >
+              {t("home.scope.mine")}
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={() => void loadFeed()}
+            disabled={loading}
+            className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          >
+            {loading ? t("home.refreshing") : t("home.refresh")}
+          </button>
+          <Link
+            href="/map"
+            className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
+          >
+            {t("home.addCatch")}
+          </Link>
+        </div>
+      </div>
+
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+
+      {!loading && !error && visiblePosts.length === 0 && (
+        <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40">
+          {feedScope === "friends"
+            ? t("home.noPosts.friends")
+            : feedScope === "mine"
+              ? t("home.noPosts.mine")
+              : t("home.noPosts.all")}
+        </p>
+      )}
+
+      <div className="space-y-4">
+        {visiblePosts.map((post) => (
+          <FeedCard key={post.id} post={post} currentUserId={user.id} />
+        ))}
+      </div>
+
+      {hasMore && feedScope === "all" && (
+        <div className="pt-2">
+          <button
+            type="button"
+            onClick={() => void loadMore()}
+            disabled={loadingMore || loading}
+            className="w-full rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+          >
+            {loadingMore ? t("home.loadingMore") : t("home.loadMore")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
