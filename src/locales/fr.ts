@@ -103,6 +103,11 @@ const fr = {
   "home.scope.mine": "Mes publications",
   "home.loadMore": "Charger plus de publications",
   "home.loadingMore": "Chargement...",
+  "home.deletePost": "Supprimer la publication",
+  "home.deletingPost": "Suppression...",
+  "home.deletePostConfirm":
+    "Supprimer cette publication ? Cette action est definitive.",
+  "home.deletePostError": "Impossible de supprimer la publication.",
 
   "users.invalidId": "Identifiant utilisateur invalide.",
   "users.loadError": "Impossible de charger le profil utilisateur.",

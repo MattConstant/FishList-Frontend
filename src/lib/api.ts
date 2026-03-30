@@ -29,6 +29,23 @@ type ApiErrorPayload = {
   errors?: Record<string, string>;
 };
 
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".heic",
+]);
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
+
 export type AccountResponse = {
   id: number;
   username: string;
@@ -67,6 +84,17 @@ export function getApiBaseUrl(): string {
     process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
     "http://localhost:8080"
   );
+}
+
+export function validateImageFileForUpload(file: File): void {
+  const ext = getFileExtension(file.name);
+  if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+    throw new Error("Unsupported file extension. Allowed: jpg, jpeg, png, gif, webp, heic.");
+  }
+  const mime = file.type.trim().toLowerCase();
+  if (mime && !ALLOWED_IMAGE_MIME_TYPES.has(mime)) {
+    throw new Error("Unsupported file type. Allowed image formats: JPEG, PNG, GIF, WEBP, HEIC.");
+  }
 }
 
 /** RFC 7617–friendly Basic header for UTF-8 credentials. */
@@ -474,6 +502,17 @@ export async function deleteCatchComment(
   await throwIfNotOk(res);
 }
 
+export async function deleteCatch(
+  locationId: number,
+  catchId: number,
+): Promise<void> {
+  const res = await authenticatedFetch(
+    `/api/locations/${locationId}/catches/${catchId}`,
+    { method: "DELETE" },
+  );
+  await throwIfNotOk(res);
+}
+
 // ── Image upload ────────────────────────────────────────────────────
 
 export type ImageUploadResponse = {
@@ -485,6 +524,7 @@ export type ImageUploadResponse = {
 };
 
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {
+  validateImageFileForUpload(file);
   const formData = new FormData();
   formData.append("file", file);
   const res = await authenticatedFetch("/api/storage/images", {
@@ -529,6 +569,12 @@ async function throwIfNotOk(res: Response): Promise<void> {
     text || res.statusText || `HTTP ${res.status}`,
     res.status,
   );
+}
+
+function getFileExtension(filename: string): string {
+  const dot = filename.lastIndexOf(".");
+  if (dot < 0) return "";
+  return filename.slice(dot).toLowerCase();
 }
 
 function normalizeHeaders(h: HeadersInit | undefined): Record<string, string> {

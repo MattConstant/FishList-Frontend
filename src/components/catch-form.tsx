@@ -5,6 +5,7 @@ import {
   createLocationAndCatch,
   getDisplayErrorMessage,
   uploadImage,
+  validateImageFileForUpload,
   type AddCatchPayload,
 } from "@/lib/api";
 
@@ -41,12 +42,31 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
   const fileRef = useRef<HTMLInputElement>(null);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const incoming = Array.from(e.target.files ?? []).slice(0, MAX_FILES);
+    const allIncoming = Array.from(e.target.files ?? []);
+    const incoming = allIncoming.slice(0, MAX_FILES);
+    const ignoredByCount = allIncoming.length - incoming.length;
+    const valid: File[] = [];
+    let rejected = 0;
+    for (const file of incoming) {
+      try {
+        validateImageFileForUpload(file);
+        valid.push(file);
+      } catch {
+        rejected += 1;
+      }
+    }
     if (previews.length) {
       previews.forEach((url) => URL.revokeObjectURL(url));
     }
-    setSelectedFiles(incoming);
-    setPreviews(incoming.map((f) => URL.createObjectURL(f)));
+    setSelectedFiles(valid);
+    setPreviews(valid.map((f) => URL.createObjectURL(f)));
+    if (rejected > 0 || ignoredByCount > 0) {
+      setUploadWarning(
+        "Only JPG, JPEG, PNG, GIF, WEBP, and HEIC files are allowed (max 4 photos).",
+      );
+    } else {
+      setUploadWarning("");
+    }
   }
 
   function removeFile(index: number) {

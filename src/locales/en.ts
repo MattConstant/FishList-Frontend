@@ -101,6 +101,10 @@ const en = {
   "home.scope.mine": "My posts",
   "home.loadMore": "Load more posts",
   "home.loadingMore": "Loading more...",
+  "home.deletePost": "Delete post",
+  "home.deletingPost": "Deleting...",
+  "home.deletePostConfirm": "Delete this post? This cannot be undone.",
+  "home.deletePostError": "Could not delete post.",
 
   "users.invalidId": "Invalid user id.",
   "users.loadError": "Could not load user profile.",

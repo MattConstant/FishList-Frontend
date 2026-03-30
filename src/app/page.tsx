@@ -7,6 +7,7 @@ import { useLocale } from "@/contexts/locale-context";
 import {
   fetchMyFriends,
   createCatchComment,
+  deleteCatch,
   deleteCatchComment,
   fetchCatchComments,
   fetchCatchLike,
@@ -40,10 +41,15 @@ function isObjectKey(url: string) {
 function FeedCard({
   post,
   currentUserId,
+  onDeletePost,
+  onDeleteError,
 }: {
   post: FeedPost;
   currentUserId?: number;
+  onDeletePost: (postId: string) => void;
+  onDeleteError: (message: string) => void;
 }) {
+  const { t } = useLocale();
   const cardRef = useRef<HTMLElement | null>(null);
   const [isActive, setIsActive] = useState(false);
   const isOwnPost = currentUserId != null && post.accountId === currentUserId;
@@ -72,6 +78,7 @@ function FeedCard({
   const [commentsChunkLoading, setCommentsChunkLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+  const [deletingPost, setDeletingPost] = useState(false);
 
   useEffect(() => {
     setMediaExpanded(isOwnPost);
@@ -240,6 +247,21 @@ function FeedCard({
     }
   }
 
+  async function removePost() {
+    if (!isOwnPost || deletingPost) return;
+    const confirmed = window.confirm(t("home.deletePostConfirm"));
+    if (!confirmed) return;
+    setDeletingPost(true);
+    try {
+      await deleteCatch(post.locationId, post.catch.id);
+      onDeletePost(post.id);
+    } catch (e) {
+      onDeleteError(getDisplayErrorMessage(e, t("home.deletePostError")));
+    } finally {
+      setDeletingPost(false);
+    }
+  }
+
   return (
     <article
       ref={cardRef}
@@ -255,7 +277,19 @@ function FeedCard({
           </Link>
           <p className="text-xs text-zinc-500">{formatDate(post.timeStamp)}</p>
         </div>
-        <p className="text-xs text-zinc-500">{post.locationName}</p>
+        <div className="flex items-center gap-3">
+          <p className="text-xs text-zinc-500">{post.locationName}</p>
+          {isOwnPost && (
+            <button
+              type="button"
+              onClick={() => void removePost()}
+              disabled={deletingPost}
+              className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-900/20"
+            >
+              {deletingPost ? t("home.deletingPost") : t("home.deletePost")}
+            </button>
+          )}
+        </div>
       </div>
 
       {imageCandidates.length > 0 ? (
@@ -432,6 +466,14 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState("");
+
+  const handleDeletePost = useCallback((postId: string) => {
+    setPosts((prev) => prev.filter((p) => p.id !== postId));
+  }, []);
+
+  const handleDeleteError = useCallback((message: string) => {
+    setError(message);
+  }, []);
 
   const loadFeed = useCallback(async () => {
     if (!user) return;
@@ -628,7 +670,13 @@ export default function HomePage() {
 
       <div className="space-y-4">
         {visiblePosts.map((post) => (
-          <FeedCard key={post.id} post={post} currentUserId={user.id} />
+          <FeedCard
+            key={post.id}
+            post={post}
+            currentUserId={user.id}
+            onDeletePost={handleDeletePost}
+            onDeleteError={handleDeleteError}
+          />
         ))}
       </div>
 
