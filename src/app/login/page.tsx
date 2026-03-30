@@ -15,7 +15,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [password, setPassword] = useState("");   
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
