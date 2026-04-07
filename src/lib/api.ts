@@ -4,6 +4,12 @@
 
 const SESSION_KEY = "fishlist-session";
 
+/**
+ * Fallback if NEXT_PUBLIC_API_BASE_URL is missing (e.g. old build).
+ * Normal flow: .env.development / .env.production / Vercel env set this at build time.
+ */
+const DEFAULT_PRODUCTION_API_BASE = "https://fishlist-backend.onrender.com";
+
 export class ApiHttpError extends Error {
   readonly status: number;
   readonly code?: string;
@@ -98,10 +104,10 @@ export function getDisplayErrorMessage(
 }
 
 export function getApiBaseUrl(): string {
-  return (
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ||
-    "http://localhost:8080"
-  );
+  const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") return DEFAULT_PRODUCTION_API_BASE;
+  return "http://localhost:8080";
 }
 
 export function validateImageFileForUpload(file: File): void {
