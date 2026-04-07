@@ -139,6 +139,11 @@ export default function StockingMap({
       scrollWheelZoom: true,
     });
 
+    function onResize() {
+      map.invalidateSize();
+    }
+    window.addEventListener("resize", onResize);
+
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution:
@@ -148,6 +153,7 @@ export default function StockingMap({
     mapRef.current = map;
 
     return () => {
+      window.removeEventListener("resize", onResize);
       map.remove();
       mapRef.current = null;
       clusterRef.current = null;

@@ -604,23 +604,24 @@ export default function HomePage() {
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
+    <div className="mx-auto flex w-full max-w-3xl min-w-0 flex-1 flex-col gap-6 px-4 py-6 sm:px-6 sm:py-10">
+      <div className="flex min-w-0 flex-col gap-4">
+        <div className="min-w-0">
           <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
             {t("home.kicker")}
           </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+          <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
             {t("home.title")}
           </h1>
         </div>
-        <div className="flex gap-2">
-          <div className="inline-flex rounded-xl border border-zinc-300 bg-white p-1 dark:border-zinc-600 dark:bg-zinc-900">
+
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="inline-flex max-w-full min-w-0 flex-wrap rounded-xl border border-zinc-300 bg-white p-1 dark:border-zinc-600 dark:bg-zinc-900">
             <button
               type="button"
               onClick={() => setFeedScope("all")}
               className={[
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                "rounded-lg px-3 py-2 text-xs font-medium transition sm:py-1.5",
                 feedScope === "all"
                   ? "bg-sky-600 text-white"
                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
@@ -632,7 +633,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setFeedScope("friends")}
               className={[
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                "rounded-lg px-3 py-2 text-xs font-medium transition sm:py-1.5",
                 feedScope === "friends"
                   ? "bg-sky-600 text-white"
                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
@@ -644,7 +645,7 @@ export default function HomePage() {
               type="button"
               onClick={() => setFeedScope("mine")}
               className={[
-                "rounded-lg px-3 py-1.5 text-xs font-medium transition",
+                "rounded-lg px-3 py-2 text-xs font-medium transition sm:py-1.5",
                 feedScope === "mine"
                   ? "bg-sky-600 text-white"
                   : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
@@ -653,20 +654,23 @@ export default function HomePage() {
               {t("home.scope.mine")}
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => void loadFeed()}
-            disabled={loading}
-            className="rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            {loading ? t("home.refreshing") : t("home.refresh")}
-          </button>
-          <Link
-            href="/map"
-            className="rounded-xl bg-sky-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-sky-700"
-          >
-            {t("home.addCatch")}
-          </Link>
+
+          <div className="flex min-w-0 flex-wrap items-stretch gap-2 sm:justify-end">
+            <button
+              type="button"
+              onClick={() => void loadFeed()}
+              disabled={loading}
+              className="min-h-11 flex-1 rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 sm:min-h-0 sm:flex-initial dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            >
+              {loading ? t("home.refreshing") : t("home.refresh")}
+            </button>
+            <Link
+              href="/map"
+              className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-sky-700 sm:min-h-0 sm:flex-initial"
+            >
+              {t("home.addCatch")}
+            </Link>
+          </div>
         </div>
       </div>
 

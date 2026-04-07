@@ -4,6 +4,9 @@
   --background: #ffffff;
   --background-accent: #f2f7ff;
   --foreground: #171717;
+  /* iOS safe-area fallbacks when env() is 0 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 @theme inline {
@@ -21,13 +24,48 @@
   }
 }
 
+html {
+  height: 100%;
+  /* Prevent iOS Safari from inflating small text */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
 body {
+  /* Dynamic viewport — avoids 100vh bugs when the iOS URL bar shows/hides */
+  min-height: 100%;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 15% 20%, var(--background-accent) 0%, transparent 36%),
     radial-gradient(circle at 85% 0%, var(--background-accent) 0%, transparent 32%),
     linear-gradient(180deg, var(--background) 0%, var(--background) 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  /* Tone down tap flash on controls */
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+/*
+ * iOS Safari zooms focused inputs if font-size < 16px. Keep form controls readable.
+ */
+input,
+textarea,
+select {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /*

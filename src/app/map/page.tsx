@@ -28,6 +28,8 @@ const StockingMap = dynamic(() => import("@/components/stocking-map"), {
 
 type PendingCatch = { lat: number; lng: number };
 
+const MAP_FILTERS_EXPANDED_KEY = "fishlist-map-filters-expanded";
+
 export default function MapPage() {
   const { user } = useAuth();
   const [records, setRecords] = useState<StockingRecord[]>([]);
@@ -51,6 +53,25 @@ export default function MapPage() {
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("all");
+  const [filtersExpanded, setFiltersExpanded] = useState(true);
+
+  useEffect(() => {
+    try {
+      if (localStorage.getItem(MAP_FILTERS_EXPANDED_KEY) === "false") {
+        setFiltersExpanded(false);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(MAP_FILTERS_EXPANDED_KEY, String(filtersExpanded));
+    } catch {
+      /* ignore */
+    }
+  }, [filtersExpanded]);
 
   useEffect(() => {
     let cancelled = false;
@@ -218,6 +239,22 @@ export default function MapPage() {
     selectedDevelopmentalStage,
   ]);
 
+  const filterSummaryLine = useMemo(() => {
+    if (species.length === 0) return "";
+    const spLabel =
+      activeSpecies.size === species.length
+        ? "All species"
+        : `${activeSpecies.size} species`;
+    const q = waterbodyQuery.trim();
+    const tail = q ? ` · “${q}”` : "";
+    return `${filteredGroups.length} waterbodies · ${spLabel}${tail}`;
+  }, [
+    species.length,
+    filteredGroups.length,
+    activeSpecies.size,
+    waterbodyQuery,
+  ]);
+
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
       if (!placing) return;
@@ -233,9 +270,9 @@ export default function MapPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-3.5rem)] flex-col">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 border-b border-zinc-200 px-6 py-4 dark:border-zinc-800">
+      <div className="flex shrink-0 flex-col gap-3 border-b border-zinc-200 px-4 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-6 sm:py-4 dark:border-zinc-800">
         <div className="min-w-0">
           <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-50">
             Stocked Lakes Map
@@ -248,7 +285,7 @@ export default function MapPage() {
                 : `${records.length.toLocaleString()} stocking records across ${groups.length.toLocaleString()} waterbodies (last 5 years)`}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-2 pt-0.5">
+        <div className="flex shrink-0 flex-wrap items-center gap-2 pt-0.5">
           {user && (
             <div className="inline-flex rounded-xl border border-zinc-300 bg-white p-1 dark:border-zinc-600 dark:bg-zinc-900">
               <button
@@ -341,12 +378,56 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* Species filter */}
+      {/* Species filter (collapsible) */}
       {species.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-zinc-200 px-6 py-3 dark:border-zinc-800">
-          <span className="mr-1 text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Filter
-          </span>
+        <div className="shrink-0 border-b border-zinc-200 dark:border-zinc-800">
+          <div className="flex items-center gap-2 px-4 py-2 sm:px-6">
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((v) => !v)}
+              className="flex min-w-0 flex-1 items-center gap-2 rounded-lg py-1 text-left transition hover:bg-zinc-100 dark:hover:bg-zinc-800/80"
+              aria-expanded={filtersExpanded}
+              aria-controls="map-filters-panel"
+              id="map-filters-toggle"
+            >
+              <span className="shrink-0 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Filters
+              </span>
+              {!filtersExpanded && (
+                <span className="truncate text-sm text-zinc-600 dark:text-zinc-400">
+                  {filterSummaryLine}
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltersExpanded((v) => !v)}
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-300 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              aria-expanded={filtersExpanded}
+              aria-label={filtersExpanded ? "Collapse filters" : "Expand filters"}
+            >
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`h-5 w-5 transition-transform ${filtersExpanded ? "rotate-180" : ""}`}
+                aria-hidden
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+
+          {filtersExpanded ? (
+            <div
+              id="map-filters-panel"
+              role="region"
+              aria-labelledby="map-filters-toggle"
+              className="flex max-h-[min(50vh,28rem)] flex-wrap items-center gap-2 overflow-y-auto px-4 pb-3 pt-1 sm:px-6"
+            >
           <button
             type="button"
             onClick={toggleAll}
@@ -385,7 +466,7 @@ export default function MapPage() {
             value={waterbodyQuery}
             onChange={(e) => setWaterbodyQuery(e.target.value)}
             placeholder="Search lake or river name"
-            className="min-w-56 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="min-w-56 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           />
 
           <label className="ml-3 text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -394,7 +475,7 @@ export default function MapPage() {
           <select
             value={recentYearsWindow}
             onChange={(e) => setRecentYearsWindow(Number(e.target.value) as 1 | 2 | 5)}
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value={1}>Last 1 year</option>
             <option value={2}>Last 2 years</option>
@@ -409,7 +490,7 @@ export default function MapPage() {
             onChange={(e) =>
               setMinTotalFish(Number(e.target.value) as 0 | 500 | 1000 | 5000)
             }
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value={0}>Any</option>
             <option value={500}>500+</option>
@@ -423,7 +504,7 @@ export default function MapPage() {
           <select
             value={minSpeciesCount}
             onChange={(e) => setMinSpeciesCount(Number(e.target.value) as 1 | 2 | 3)}
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value={1}>1+</option>
             <option value={2}>2+</option>
@@ -436,7 +517,7 @@ export default function MapPage() {
           <select
             value={selectedDistrict}
             onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value="all">All districts</option>
             {districts.map((d) => (
@@ -452,7 +533,7 @@ export default function MapPage() {
           <select
             value={selectedDevelopmentalStage}
             onChange={(e) => setSelectedDevelopmentalStage(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="rounded-lg border border-zinc-300 bg-white px-2.5 py-2 text-base text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
           >
             <option value="all">All stages</option>
             {developmentalStages.map((s) => (
@@ -461,12 +542,14 @@ export default function MapPage() {
               </option>
             ))}
           </select>
+            </div>
+          ) : null}
         </div>
       )}
 
-      {/* Map */}
+      {/* Map — flex-1 + basis-0 so Leaflet gets a non-zero height inside the scrollable main */}
       <div
-        className="relative min-h-0 flex-1"
+        className="relative min-h-[12rem] flex-1 basis-0 overflow-hidden"
         style={placing ? { cursor: "crosshair" } : undefined}
       >
         {loading && (

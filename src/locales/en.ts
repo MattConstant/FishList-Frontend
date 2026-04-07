@@ -8,6 +8,7 @@ const en = {
   "nav.profile": "Profile",
   "nav.language": "Language",
   "nav.brand": "FishList",
+  "nav.ariaMainNav": "Main navigation",
 
   "login.title.login": "Log in",
   "login.title.register": "Create account",

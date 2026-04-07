@@ -8,17 +8,18 @@ export default function AboutPage() {
   const { t } = useLocale();
   return (
     <div
-      className="relative flex flex-1 items-center justify-center overflow-hidden px-6 py-16"
+      className="relative flex w-full min-h-full flex-col px-4 py-10 sm:px-6 sm:py-16"
       style={{
         backgroundImage:
           "linear-gradient(rgba(15,23,42,0.58), rgba(15,23,42,0.72)), url('/Quetico_NorthernLights-scaled.jpg')",
         backgroundSize: "cover",
         backgroundPosition: "center",
+        backgroundAttachment: "scroll",
       }}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.24),transparent_35%),radial-gradient(circle_at_80%_84%,rgba(34,197,94,0.16),transparent_35%)]" />
 
-      <article className="relative z-10 w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
+      <article className="relative z-10 mx-auto w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/70 dark:bg-sky-900/30 dark:text-sky-300">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
             <path d="M10 2a.75.75 0 01.706.497l1.23 3.445 3.664.13a.75.75 0 01.427 1.338l-2.88 2.203 1.008 3.524a.75.75 0 01-1.144.829L10 12.6l-3.011 1.366a.75.75 0 01-1.144-.829l1.008-3.524-2.88-2.203a.75.75 0 01.427-1.337l3.664-.131 1.23-3.445A.75.75 0 0110 2z" />
