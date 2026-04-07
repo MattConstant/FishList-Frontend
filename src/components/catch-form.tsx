@@ -1,9 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { FormEvent, useRef, useState } from "react";
+import { useLocale } from "@/contexts/locale-context";
 import {
+  ApiHttpError,
   createLocationAndCatch,
   getDisplayErrorMessage,
+  identifyFishFromImage,
   uploadImage,
   validateImageFileForUpload,
   type AddCatchPayload,
@@ -27,6 +31,7 @@ const ACCEPTED = ".jpg,.jpeg,.png,.gif,.webp,.heic";
 const MAX_FILES = 4;
 
 export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormProps) {
+  const { t } = useLocale();
   const [locationName, setLocationName] = useState("");
   const [species, setSpecies] = useState("");
   const [quantity, setQuantity] = useState("");
@@ -36,6 +41,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
+  const [identifying, setIdentifying] = useState(false);
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [uploadWarning, setUploadWarning] = useState("");
@@ -107,7 +113,11 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
           try {
             const uploadRes = await uploadImage(file);
             imageUrls.push(uploadRes.objectKey);
-          } catch {
+          } catch (err) {
+            if (err instanceof ApiHttpError && err.status === 429) {
+              window.alert(t("errors.uploadLimitReached"));
+              return;
+            }
             setUploadWarning(
               "One or more photos could not be uploaded. Your catch will still be saved with successful uploads.",
             );
@@ -147,10 +157,32 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
         imageUrls,
       });
     } catch (err) {
-      setError(getDisplayErrorMessage(err, "Failed to save catch."));
+      setError(getDisplayErrorMessage(err, t("errors.saveCatchFailed")));
     } finally {
       setPending(false);
       setStatus("");
+    }
+  }
+
+  async function onIdentifyFish() {
+    if (identifying || pending) return;
+    if (selectedFiles.length === 0) {
+      setError("Please select at least one photo first.");
+      return;
+    }
+    setError("");
+    setIdentifying(true);
+    try {
+      const result = await identifyFishFromImage(selectedFiles[0]);
+      if (result.suggestedSpecies && result.suggestedSpecies !== "Unknown") {
+        setSpecies(result.suggestedSpecies);
+      } else {
+        setUploadWarning(t("errors.aiIdentifyInconclusive"));
+      }
+    } catch (err) {
+      setError(getDisplayErrorMessage(err, t("errors.aiIdentifyFailed")));
+    } finally {
+      setIdentifying(false);
     }
   }
 
@@ -272,15 +304,32 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
             <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
               Photos (up to 4)
             </label>
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+              Since this is a new app and my budget is not amazing, we are limiting image uploads to 15 per user per day.
+              If you wish to support this app, feel free to donate.
+            </p>
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => void onIdentifyFish()}
+                disabled={identifying || pending || selectedFiles.length === 0}
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                {identifying ? "Identifying fish..." : "Identify fish with AI"}
+              </button>
+            </div>
             {previews.length > 0 ? (
               <div className="mt-1 space-y-2">
                 <div className="grid grid-cols-2 gap-2">
                   {previews.map((src, i) => (
                     <div key={src} className="relative">
-                      <img
+                      <Image
                         src={src}
                         alt={`Preview ${i + 1}`}
+                        width={320}
+                        height={112}
                         className="h-28 w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
+                        unoptimized
                       />
                       <button
                         type="button"

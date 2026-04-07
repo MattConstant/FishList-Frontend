@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -25,7 +26,7 @@ function ProfileIcon({ className }: { className?: string }) {
 
 export function NavBar() {
   const pathname = usePathname();
-  const { user, isReady } = useAuth();
+  const { user, isReady, isAdmin } = useAuth();
   const { locale, setLocale, t } = useLocale();
 
   const linkClass = (href: string) => {
@@ -43,8 +44,16 @@ export function NavBar() {
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-4 px-4">
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight text-sky-700 dark:text-sky-400"
+          className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight text-sky-700 dark:text-sky-400"
         >
+          <Image
+            src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
+            alt="FishList logo"
+            width={28}
+            height={28}
+            className="rounded-md"
+            priority
+          />
           {t("nav.brand")}
         </Link>
 
@@ -61,6 +70,11 @@ export function NavBar() {
           <Link href="/friends" className={linkClass("/friends")}>
             {t("nav.friends")}
           </Link>
+          {user && isAdmin && (
+            <Link href="/admin" className={linkClass("/admin")}>
+              {t("nav.admin")}
+            </Link>
+          )}
         </nav>
 
         <div className="flex items-center gap-2">

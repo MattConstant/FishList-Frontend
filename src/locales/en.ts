@@ -3,6 +3,7 @@ const en = {
   "nav.about": "About",
   "nav.map": "Map",
   "nav.friends": "Friends",
+  "nav.admin": "Admin",
   "nav.login": "Log in",
   "nav.profile": "Profile",
   "nav.language": "Language",
@@ -43,6 +44,15 @@ const en = {
   "about.card.feed.title": "Community feed",
   "about.card.feed.body":
     "See recent catches, leave comments, and learn from other anglers across the province.",
+  "about.community.title": "Community and support",
+  "about.community.geohub":
+    "Fish stocking map data is powered by Ontario GeoHub (Province of Ontario).",
+  "about.community.discord": "Join our Discord server",
+  "about.community.discord.placeholder":
+    "Replace this link with your real Discord invite URL.",
+  "about.community.donate": "Support FishList with a donation",
+  "about.community.donate.placeholder":
+    "Replace this link with your donation page (Ko-fi, Patreon, Stripe, etc.).",
   "about.cta.map": "Explore the map",
   "about.cta.home": "Back home",
 
@@ -113,6 +123,36 @@ const en = {
   "users.angler": "Angler",
   "users.catches": "Catches",
   "users.noCatches": "No catches posted yet.",
+
+  "admin.kicker": "Administration",
+  "admin.title": "Admin panel",
+  "admin.loading": "Loading admin data...",
+  "admin.loginRequired": "Log in to access admin tools.",
+  "admin.notAllowed": "You do not have admin access.",
+  "admin.error.load": "Could not load admin data.",
+  "admin.error.delete": "Could not delete account.",
+  "admin.searchPlaceholder": "Search username",
+  "admin.search": "Search",
+  "admin.deleteAccount": "Delete account",
+  "admin.deleting": "Deleting...",
+  "admin.confirm.delete": "Delete account {{username}}? This cannot be undone.",
+  "admin.stats.accounts": "Accounts",
+  "admin.stats.locations": "Locations",
+  "admin.stats.catches": "Catches",
+  "admin.stats.comments": "Comments",
+  "admin.stats.likes": "Likes",
+  "admin.stats.friendships": "Friendships",
+  "admin.table.username": "Username",
+  "admin.table.locations": "Locations",
+  "admin.table.catches": "Catches",
+  "admin.table.comments": "Comments",
+  "admin.table.likes": "Likes",
+  "admin.table.actions": "Actions",
+
+  "errors.uploadLimitReached": "Upload limit reached. Please try again tomorrow.",
+  "errors.aiIdentifyInconclusive": "Could not confidently identify the fish.",
+  "errors.aiIdentifyFailed": "Failed to identify fish from image.",
+  "errors.saveCatchFailed": "Failed to save catch.",
 } as const;
 
 export default en;

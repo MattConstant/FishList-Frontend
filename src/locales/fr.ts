@@ -3,6 +3,7 @@ const fr = {
   "nav.about": "A propos",
   "nav.map": "Carte",
   "nav.friends": "Amis",
+  "nav.admin": "Admin",
   "nav.login": "Connexion",
   "nav.profile": "Profil",
   "nav.language": "Langue",
@@ -43,6 +44,15 @@ const fr = {
   "about.card.feed.title": "Fil communautaire",
   "about.card.feed.body":
     "Voyez les prises recentes, laissez des commentaires et apprenez des autres pecheurs de la province.",
+  "about.community.title": "Communaute et soutien",
+  "about.community.geohub":
+    "Les donnees de la carte d'ensemencement proviennent de GeoHub Ontario (Province de l'Ontario).",
+  "about.community.discord": "Rejoindre notre serveur Discord",
+  "about.community.discord.placeholder":
+    "Remplacez ce lien par votre vraie URL d'invitation Discord.",
+  "about.community.donate": "Soutenir FishList avec un don",
+  "about.community.donate.placeholder":
+    "Remplacez ce lien par votre page de dons (Ko-fi, Patreon, Stripe, etc.).",
   "about.cta.map": "Explorer la carte",
   "about.cta.home": "Retour a l'accueil",
 
@@ -117,6 +127,40 @@ const fr = {
   "users.angler": "Pecheur",
   "users.catches": "Prises",
   "users.noCatches": "Aucune prise publiee pour le moment.",
+
+  "admin.kicker": "Administration",
+  "admin.title": "Panneau admin",
+  "admin.loading": "Chargement des donnees admin...",
+  "admin.loginRequired": "Connectez-vous pour acceder aux outils admin.",
+  "admin.notAllowed": "Vous n'avez pas l'acces admin.",
+  "admin.error.load": "Impossible de charger les donnees admin.",
+  "admin.error.delete": "Impossible de supprimer le compte.",
+  "admin.searchPlaceholder": "Rechercher un nom d'utilisateur",
+  "admin.search": "Rechercher",
+  "admin.deleteAccount": "Supprimer le compte",
+  "admin.deleting": "Suppression...",
+  "admin.confirm.delete":
+    "Supprimer le compte {{username}} ? Cette action est definitive.",
+  "admin.stats.accounts": "Comptes",
+  "admin.stats.locations": "Lieux",
+  "admin.stats.catches": "Prises",
+  "admin.stats.comments": "Commentaires",
+  "admin.stats.likes": "Likes",
+  "admin.stats.friendships": "Amities",
+  "admin.table.username": "Nom d'utilisateur",
+  "admin.table.locations": "Lieux",
+  "admin.table.catches": "Prises",
+  "admin.table.comments": "Commentaires",
+  "admin.table.likes": "Likes",
+  "admin.table.actions": "Actions",
+
+  "errors.uploadLimitReached":
+    "Limite d'envoi atteinte. Veuillez reessayer demain.",
+  "errors.aiIdentifyInconclusive":
+    "Impossible d'identifier le poisson avec confiance.",
+  "errors.aiIdentifyFailed":
+    "Impossible d'identifier le poisson a partir de l'image.",
+  "errors.saveCatchFailed": "Impossible d'enregistrer la prise.",
 } as const;
 
 export default fr;

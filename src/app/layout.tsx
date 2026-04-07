@@ -17,6 +17,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FishList",
   description: "Track and explore fishing spots",
+  icons: {
+    icon: "/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png",
+    shortcut: "/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png",
+    apple: "/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png",
+  },
 };
 
 export default function RootLayout({

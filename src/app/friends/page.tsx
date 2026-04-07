@@ -30,6 +30,7 @@ export default function FriendsPage() {
     setLoadingFriends(true);
     fetchMyFriends()
       .then((list) => setFriends(list))
+      .catch(() => setFriends([]))
       .finally(() => setLoadingFriends(false));
   }, [user]);
 

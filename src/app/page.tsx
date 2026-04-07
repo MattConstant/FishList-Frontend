@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -297,15 +298,18 @@ function FeedCard({
           isActive && resolvedUrls.length > 0 && !imgError ? (
             <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
               {resolvedUrls.map((url) => (
-                <img
-                  key={url}
-                  src={url}
-                  alt={post.catch.species}
-                  className="aspect-square w-full object-cover"
-                  loading="lazy"
-                  decoding="async"
-                  onError={() => setImgError(true)}
-                />
+                <div key={url} className="relative aspect-square w-full">
+                  <Image
+                    src={url}
+                    alt={post.catch.species}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
+                    unoptimized
+                    onError={() => setImgError(true)}
+                  />
+                </div>
               ))}
             </div>
           ) : (
@@ -557,17 +561,27 @@ export default function HomePage() {
           backgroundPosition: "center",
         }}
       >
-        <div className="w-full max-w-3xl rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
-          <div className="space-y-3">
-            <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
-              {t("home.welcome")}
-            </p>
-            <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-              {t("home.heroTitle")}
-            </h1>
-            <p className="max-w-xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
-              {t("home.heroBody")}
-            </p>
+        <div className="w-full max-w-4xl rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+          <div className="flex items-center justify-between gap-6">
+            <div className="min-w-0 space-y-3">
+              <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
+                {t("home.welcome")}
+              </p>
+              <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                {t("home.heroTitle")}
+              </h1>
+              <p className="max-w-xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {t("home.heroBody")}
+              </p>
+            </div>
+            <Image
+              src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
+              alt="FishList logo"
+              width={200}
+              height={200}
+              className="h-40 w-40 shrink-0 rounded-2xl object-contain md:h-52 md:w-52"
+              priority
+            />
           </div>
 
           <div className="mt-8 flex flex-wrap gap-3">

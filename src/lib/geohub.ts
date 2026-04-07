@@ -11,6 +11,7 @@ const FEATURE_SERVER =
   "FishStockingDataForRecreationalPurposes/FeatureServer/0/query";
 
 const PAGE_SIZE = 1000;
+const EXCLUDED_SPECIES = new Set(["bluegill", "aurora trout"]);
 
 const FIELDS = [
   "ObjectId",
@@ -81,6 +82,14 @@ function buildUrl(offset: number, minYear: number): string {
   return `${FEATURE_SERVER}?${params}`;
 }
 
+function isExcludedSpecies(species: string): boolean {
+  const normalized = species.trim().toLowerCase();
+  return (
+    EXCLUDED_SPECIES.has(normalized) ||
+    normalized.startsWith("aurora trout")
+  );
+}
+
 /**
  * Fetches all stocking records from the last `years` years.
  * Paginates automatically (1 000 records/page).
@@ -102,12 +111,14 @@ export async function fetchAllStockingRecords(
     for (const f of data.features) {
       const a = f.attributes;
       if (a.Latitude == null || a.Longitude == null) continue;
+      const species = (a.Species ?? "Unknown").trim();
+      if (isExcludedSpecies(species)) continue;
       all.push({
         objectId: a.ObjectId,
         waterbody: a.Official_Waterbody_Name ?? "Unknown",
         district: a.MNRF_District ?? "Unknown District",
         developmentalStage: a.Developmental_Stage ?? "Unknown Stage",
-        species: a.Species ?? "Unknown",
+        species,
         year: a.Stocking_Year,
         count: a.Number_of_Fish_Stocked ?? 0,
         lat: a.Latitude,
@@ -160,7 +171,9 @@ export function groupByWaterbody(records: StockingRecord[]): WaterbodyGroup[] {
  * Returns the distinct set of species across all records.
  */
 export function allSpecies(records: StockingRecord[]): string[] {
-  return [...new Set(records.map((r) => r.species))].sort();
+  return [...new Set(records.map((r) => r.species))]
+    .filter((species) => !isExcludedSpecies(species))
+    .sort();
 }
 
 /**

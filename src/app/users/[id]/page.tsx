@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -103,12 +104,14 @@ function CatchCard({ c }: { c: CatchResponse }) {
             resolvedUrls.length > 0 ? (
               <div className="grid grid-cols-2 gap-2">
                 {resolvedUrls.map((url) => (
-                  <img
+                  <Image
                     key={url}
                     src={url}
                     alt={c.species}
-                    className="w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
-                    style={{ maxHeight: 280 }}
+                    width={800}
+                    height={600}
+                    className="max-h-[280px] w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
+                    unoptimized
                     onError={() => setImgError(true)}
                   />
                 ))}

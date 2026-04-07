@@ -51,6 +51,29 @@ export type AccountResponse = {
   username: string;
 };
 
+export type AdminMeResponse = {
+  username: string;
+  admin: boolean;
+};
+
+export type AdminSummaryResponse = {
+  totalAccounts: number;
+  totalLocations: number;
+  totalCatches: number;
+  totalComments: number;
+  totalLikes: number;
+  totalFriendships: number;
+};
+
+export type AdminAccountRowResponse = {
+  id: number;
+  username: string;
+  locations: number;
+  catches: number;
+  comments: number;
+  likes: number;
+};
+
 export type StoredSession = {
   username: string;
   authorizationHeader: string;
@@ -61,21 +84,16 @@ export function getDisplayErrorMessage(
   fallback = "Something went wrong.",
 ): string {
   if (err instanceof ApiHttpError) {
-    if (
-      err.code === "VALIDATION_ERROR" &&
-      err.fieldErrors &&
-      Object.keys(err.fieldErrors).length > 0
-    ) {
-      return Object.values(err.fieldErrors).join(", ");
-    }
+    if (err.code === "VALIDATION_ERROR") return "Please check your input and try again.";
     if (err.status === 401) return "Invalid credentials.";
     if (err.status === 403) return "You are not allowed to do that.";
     if (err.status === 404) return "The requested item was not found.";
     if (err.status === 409) return "That value is already in use.";
+    if (err.status === 429) return "Too many requests. Please try again later.";
     if (err.status >= 500) return "Server error. Please try again.";
-    return err.message || fallback;
+    return fallback;
   }
-  if (err instanceof Error) return err.message || fallback;
+  if (err instanceof Error) return fallback;
   return fallback;
 }
 
@@ -133,6 +151,12 @@ export function saveSession(session: StoredSession): void {
 
 export function clearSession(): void {
   sessionStorage.removeItem(SESSION_KEY);
+}
+
+function redirectToLogin(): void {
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
 }
 
 export async function fetchCurrentAccount(
@@ -193,6 +217,38 @@ export async function removeFriend(accountId: number): Promise<void> {
   await throwIfNotOk(res);
 }
 
+export async function fetchAdminMe(): Promise<AdminMeResponse> {
+  const res = await authenticatedFetch("/api/admin/me");
+  await throwIfNotOk(res);
+  return res.json() as Promise<AdminMeResponse>;
+}
+
+export async function fetchAdminSummary(): Promise<AdminSummaryResponse> {
+  const res = await authenticatedFetch("/api/admin/summary");
+  await throwIfNotOk(res);
+  return res.json() as Promise<AdminSummaryResponse>;
+}
+
+export async function fetchAdminAccounts(
+  query = "",
+  limit = 50,
+): Promise<AdminAccountRowResponse[]> {
+  const params = new URLSearchParams({
+    query,
+    limit: String(limit),
+  });
+  const res = await authenticatedFetch(`/api/admin/accounts?${params.toString()}`);
+  await throwIfNotOk(res);
+  return res.json() as Promise<AdminAccountRowResponse[]>;
+}
+
+export async function adminDeleteAccount(accountId: number): Promise<void> {
+  const res = await authenticatedFetch(`/api/admin/accounts/${accountId}`, {
+    method: "DELETE",
+  });
+  await throwIfNotOk(res);
+}
+
 /**
  * Calls the API with the stored Basic credentials. Clears session on 401.
  */
@@ -201,7 +257,10 @@ export async function authenticatedFetch(
   init: RequestInit = {},
 ): Promise<Response> {
   const session = loadSession();
-  if (!session) throw new Error("Not authenticated");
+  if (!session) {
+    redirectToLogin();
+    throw new Error("Not authenticated");
+  }
 
   const base = getApiBaseUrl();
   const url = path.startsWith("http")
@@ -218,6 +277,7 @@ export async function authenticatedFetch(
 
   if (res.status === 401) {
     clearSession();
+    redirectToLogin();
   }
   return res;
 }
@@ -523,6 +583,12 @@ export type ImageUploadResponse = {
   getUrl: string;
 };
 
+export type FishIdentificationResponse = {
+  suggestedSpecies: string;
+  confidence: number | null;
+  message: string;
+};
+
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {
   validateImageFileForUpload(file);
   const formData = new FormData();
@@ -533,6 +599,20 @@ export async function uploadImage(file: File): Promise<ImageUploadResponse> {
   });
   await throwIfNotOk(res);
   return res.json() as Promise<ImageUploadResponse>;
+}
+
+export async function identifyFishFromImage(
+  file: File,
+): Promise<FishIdentificationResponse> {
+  validateImageFileForUpload(file);
+  const formData = new FormData();
+  formData.append("file", file);
+  const res = await authenticatedFetch("/api/ai/identify-fish", {
+    method: "POST",
+    body: formData,
+  });
+  await throwIfNotOk(res);
+  return res.json() as Promise<FishIdentificationResponse>;
 }
 
 export async function getImageUrl(objectKey: string): Promise<string> {
