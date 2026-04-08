@@ -10,13 +10,12 @@ import {
 } from "react";
 import {
   ApiHttpError,
-  buildBasicAuthorization,
   clearSession,
+  exchangeGoogleCredential,
   fetchAdminMe,
   fetchCurrentAccount,
   getDisplayErrorMessage,
   loadSession,
-  registerAccount,
   saveSession,
   type AccountResponse,
 } from "@/lib/api";
@@ -26,8 +25,7 @@ export type User = AccountResponse;
 type AuthContextValue = {
   user: User | null;
   isAdmin: boolean;
-  login: (username: string, password: string) => Promise<void>;
-  register: (username: string, password: string) => Promise<void>;
+  signInWithGoogle: (credential: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => void;
   isReady: boolean;
@@ -73,13 +71,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const trimmed = username.trim();
-    const authorizationHeader = buildBasicAuthorization(trimmed, password);
+  const signInWithGoogle = useCallback(async (credential: string) => {
     try {
-      const me = await fetchCurrentAccount(authorizationHeader);
-      saveSession({ username: me.username, authorizationHeader });
-      setUser(me);
+      const data = await exchangeGoogleCredential(credential);
+      const authorizationHeader = `${data.tokenType} ${data.accessToken}`;
+      saveSession({
+        username: data.account.username,
+        authorizationHeader,
+      });
+      setUser(data.account);
       try {
         const admin = await fetchAdminMe();
         setIsAdmin(admin.admin);
@@ -88,20 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (e) {
       throw new Error(getDisplayErrorMessage(e, "Could not sign in."));
-    }
-  }, []);
-
-  const register = useCallback(async (username: string, password: string) => {
-    const trimmed = username.trim();
-    const created = await registerAccount(trimmed, password);
-    const authorizationHeader = buildBasicAuthorization(trimmed, password);
-    saveSession({ username: created.username, authorizationHeader });
-    setUser(created);
-    try {
-      const admin = await fetchAdminMe();
-      setIsAdmin(admin.admin);
-    } catch {
-      setIsAdmin(false);
     }
   }, []);
 
@@ -134,8 +120,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAdmin, login, register, refreshUser, logout, isReady }),
-    [user, isAdmin, login, register, refreshUser, logout, isReady],
+    () => ({ user, isAdmin, signInWithGoogle, refreshUser, logout, isReady }),
+    [user, isAdmin, signInWithGoogle, refreshUser, logout, isReady],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

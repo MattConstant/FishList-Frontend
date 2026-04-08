@@ -12,10 +12,13 @@ const fr = {
 
   "login.title.login": "Connexion",
   "login.title.register": "Creer un compte",
-  "login.desc":
-    "Connectez-vous a votre compte ou creez un nouveau compte pour commencer.",
+  "login.desc": "Connectez-vous avec votre compte Google pour commencer.",
   "login.error.required": "Entrez un nom d'utilisateur et un mot de passe.",
   "login.error.passwordMin": "Le mot de passe doit contenir au moins 8 caracteres.",
+  "login.error.google": "La connexion Google a echoue. Reessayez.",
+  "login.error.noCredential": "Aucune information renvoyee par Google.",
+  "login.missingClientId":
+    "Definissez NEXT_PUBLIC_GOOGLE_CLIENT_ID (doit correspondre a GOOGLE_CLIENT_ID sur l'API).",
   "login.username": "Nom d'utilisateur",
   "login.password": "Mot de passe",
   "login.passwordHint": "Au moins 8 caracteres.",

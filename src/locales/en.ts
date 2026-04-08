@@ -12,10 +12,13 @@ const en = {
 
   "login.title.login": "Log in",
   "login.title.register": "Create account",
-  "login.desc":
-    "Sign in to your account or create a new one to get started.",
+  "login.desc": "Sign in with your Google account to get started.",
   "login.error.required": "Enter username and password.",
   "login.error.passwordMin": "Password must be at least 8 characters.",
+  "login.error.google": "Google sign-in failed. Try again.",
+  "login.error.noCredential": "No credential returned from Google.",
+  "login.missingClientId":
+    "Set NEXT_PUBLIC_GOOGLE_CLIENT_ID for this app (must match the API GOOGLE_CLIENT_ID).",
   "login.username": "Username",
   "login.password": "Password",
   "login.passwordHint": "At least 8 characters.",

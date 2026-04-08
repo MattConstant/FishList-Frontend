@@ -1,5 +1,5 @@
 /**
- * FishList Spring API — HTTP Basic auth (see FishList SecurityConfig).
+ * FishList Spring API — Bearer JWT after Google Sign-In (see POST /api/auth/google).
  */
 
 const SESSION_KEY = "fishlist-session";
@@ -91,7 +91,8 @@ export function getDisplayErrorMessage(
 ): string {
   if (err instanceof ApiHttpError) {
     if (err.code === "VALIDATION_ERROR") return "Please check your input and try again.";
-    if (err.status === 401) return "Invalid credentials.";
+    if (err.status === 401) return "Session expired or invalid. Please sign in again.";
+    if (err.status === 503) return "Sign-in is not configured on the server.";
     if (err.status === 403) return "You are not allowed to do that.";
     if (err.status === 404) return "The requested item was not found.";
     if (err.status === 409) return "That value is already in use.";
@@ -121,16 +122,23 @@ export function validateImageFileForUpload(file: File): void {
   }
 }
 
-/** RFC 7617–friendly Basic header for UTF-8 credentials. */
-export function buildBasicAuthorization(
-  username: string,
-  password: string,
-): string {
-  const raw = `${username}:${password}`;
-  const bytes = new TextEncoder().encode(raw);
-  let binary = "";
-  for (const b of bytes) binary += String.fromCharCode(b);
-  return `Basic ${btoa(binary)}`;
+export type GoogleAuthResponse = {
+  accessToken: string;
+  tokenType: string;
+  account: AccountResponse;
+};
+
+/** Exchanges a Google ID token (GIS credential) for a FishList JWT. */
+export async function exchangeGoogleCredential(
+  credential: string,
+): Promise<GoogleAuthResponse> {
+  const res = await fetch(`${getApiBaseUrl()}/api/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ credential }),
+  });
+  await throwIfNotOk(res);
+  return res.json() as Promise<GoogleAuthResponse>;
 }
 
 export function loadSession(): StoredSession | null {
@@ -177,19 +185,6 @@ export async function fetchCurrentAccount(
 
 export async function fetchAccountById(id: number): Promise<AccountResponse> {
   const res = await authenticatedFetch(`/api/accounts/${id}`);
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse>;
-}
-
-export async function registerAccount(
-  username: string,
-  password: string,
-): Promise<AccountResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/api/accounts`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
   await throwIfNotOk(res);
   return res.json() as Promise<AccountResponse>;
 }
@@ -256,7 +251,7 @@ export async function adminDeleteAccount(accountId: number): Promise<void> {
 }
 
 /**
- * Calls the API with the stored Basic credentials. Clears session on 401.
+ * Calls the API with the stored Bearer token. Clears session on 401.
  */
 export async function authenticatedFetch(
   path: string,
