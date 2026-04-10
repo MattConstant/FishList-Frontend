@@ -9,7 +9,11 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
-COPY . .
+# Explicit sources only (no COPY . .) — avoids shipping .env*, local secrets, or CI junk into the image.
+COPY package.json package-lock.json ./
+COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs next-env.d.ts ./
+COPY public ./public
+COPY src ./src
 
 RUN npm run build && npm prune --omit=dev
 
@@ -18,10 +22,16 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY --from=builder /app/package.json ./package.json
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next ./.next
+# Official node image includes user/group `node` (uid 1000). Run the app as non-root.
+COPY --chown=node:node --from=builder /app/package.json ./package.json
+COPY --chown=node:node --from=builder /app/node_modules ./node_modules
+COPY --chown=node:node --from=builder /app/public ./public
+COPY --chown=node:node --from=builder /app/.next ./.next
+
+# WORKDIR is created as root; ensure the runtime user owns the app directory for any writes (e.g. cache).
+RUN chown node:node /app
+
+USER node
 
 EXPOSE 3000
 
