@@ -42,11 +42,13 @@ function isObjectKey(url: string) {
 function FeedCard({
   post,
   currentUserId,
+  isAdmin,
   onDeletePost,
   onDeleteError,
 }: {
   post: FeedPost;
   currentUserId?: number;
+  isAdmin?: boolean;
   onDeletePost: (postId: string) => void;
   onDeleteError: (message: string) => void;
 }) {
@@ -249,7 +251,8 @@ function FeedCard({
   }
 
   async function removePost() {
-    if (!isOwnPost || deletingPost) return;
+    if (deletingPost) return;
+    if (!isOwnPost && !isAdmin) return;
     const confirmed = window.confirm(t("home.deletePostConfirm"));
     if (!confirmed) return;
     setDeletingPost(true);
@@ -280,7 +283,7 @@ function FeedCard({
         </div>
         <div className="flex items-center gap-3">
           <p className="text-xs text-zinc-500">{post.locationName}</p>
-          {isOwnPost && (
+          {(isOwnPost || isAdmin) && (
             <button
               type="button"
               onClick={() => void removePost()}
@@ -461,7 +464,7 @@ function FeedCard({
 }
 
 export default function HomePage() {
-  const { user, isReady } = useAuth();
+  const { user, isReady, isAdmin } = useAuth();
   const { t } = useLocale();
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
@@ -692,6 +695,7 @@ export default function HomePage() {
             key={post.id}
             post={post}
             currentUserId={user.id}
+            isAdmin={isAdmin}
             onDeletePost={handleDeletePost}
             onDeleteError={handleDeleteError}
           />

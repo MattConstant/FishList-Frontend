@@ -93,7 +93,8 @@ export function getDisplayErrorMessage(
     if (err.code === "VALIDATION_ERROR") return "Please check your input and try again.";
     if (err.status === 401) return "Session expired or invalid. Please sign in again.";
     if (err.status === 503) return "Sign-in is not configured on the server.";
-    if (err.status === 403) return "You are not allowed to do that.";
+    if (err.status === 403)
+      return "Access denied. New site URL? Add that origin to the API CORS list (app.cors.*), not only Google OAuth.";
     if (err.status === 404) return "The requested item was not found.";
     if (err.status === 409) return "That value is already in use.";
     if (err.status === 429) return "Too many requests. Please try again later.";
