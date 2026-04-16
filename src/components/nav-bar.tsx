@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 
@@ -175,13 +176,28 @@ export function NavBar() {
             className={[
               "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors",
               pathname === "/profile"
-                ? "border-sky-600 bg-sky-600 text-white"
-                : "border-zinc-300 text-zinc-600 hover:border-sky-500 hover:text-sky-700 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:text-sky-300",
+                ? user
+                  ? "overflow-hidden border-sky-500 p-0 ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:border-sky-400 dark:ring-sky-400 dark:ring-offset-zinc-950"
+                  : "border-sky-600 bg-sky-600 text-white"
+                : user
+                  ? "overflow-hidden border-zinc-300 p-0 hover:border-sky-500 dark:border-zinc-600 dark:hover:border-sky-500"
+                  : "border-zinc-300 text-zinc-600 hover:border-sky-500 hover:text-sky-700 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:text-sky-300",
             ].join(" ")}
             aria-label={t("nav.profile")}
             title={t("nav.profile")}
           >
-            <ProfileIcon className="h-5 w-5" />
+            {user ? (
+              <UserAvatar
+                accountId={user.id}
+                profileImageKey={user.profileImageKey}
+                size="md"
+                label={t("nav.profile")}
+                className="!ring-0"
+                loadWhenVisible={false}
+              />
+            ) : (
+              <ProfileIcon className="h-5 w-5" />
+            )}
           </Link>
         </div>
       </div>

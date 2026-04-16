@@ -1,164 +1,23 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { LocationCard } from "@/components/fishing-cards";
+import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import {
+  ApiHttpError,
   addFriend,
   fetchAccountById,
   fetchMyFriends,
   fetchUserLocations,
   getDisplayErrorMessage,
-  getImageUrl,
   removeFriend,
-  type CatchResponse,
-  type LocationWithCatches,
   type AccountResponse,
+  type LocationWithCatches,
 } from "@/lib/api";
-
-function formatDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
-function isObjectKey(url: string) {
-  return !url.startsWith("http://") && !url.startsWith("https://");
-}
-
-function CatchCard({ c }: { c: CatchResponse }) {
-  const [open, setOpen] = useState(false);
-  const imageCandidates = useMemo(
-    () =>
-      c.imageUrls && c.imageUrls.length > 0
-        ? c.imageUrls.slice(0, 4)
-        : c.imageUrl
-          ? [c.imageUrl]
-          : [],
-    [c.imageUrls, c.imageUrl],
-  );
-  const [resolvedUrls, setResolvedUrls] = useState<string[]>(
-    imageCandidates.filter((u) => !isObjectKey(u)),
-  );
-  const [imgError, setImgError] = useState(false);
-
-  useEffect(() => {
-    if (!open || imageCandidates.length === 0) return;
-    let cancelled = false;
-    Promise.all(
-      imageCandidates.map(async (value) => {
-        if (!isObjectKey(value)) return value;
-        return getImageUrl(value);
-      }),
-    )
-      .then((urls) => {
-        if (!cancelled) setResolvedUrls(urls.filter(Boolean));
-      })
-      .catch(() => {
-        if (!cancelled) setImgError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [open, imageCandidates]);
-
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900">
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
-      >
-        <span className="text-2xl">🐟</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
-            {c.species}
-          </p>
-          <p className="text-xs text-zinc-500">
-            {[
-              c.quantity && c.quantity > 1 ? `x${c.quantity}` : null,
-              c.lengthCm ? `${c.lengthCm} cm` : null,
-              c.weightKg ? `${c.weightKg} kg` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ") || "No measurements"}
-          </p>
-        </div>
-      </button>
-      {open && (
-        <div className="space-y-2 border-t border-zinc-100 px-4 py-3 text-sm dark:border-zinc-800">
-          {c.notes && <p className="text-zinc-700 dark:text-zinc-300">{c.notes}</p>}
-          {c.description && (
-            <p className="text-zinc-700 dark:text-zinc-300">{c.description}</p>
-          )}
-          {imageCandidates.length > 0 && !imgError && (
-            resolvedUrls.length > 0 ? (
-              <div className="grid grid-cols-2 gap-2">
-                {resolvedUrls.map((url) => (
-                  <Image
-                    key={url}
-                    src={url}
-                    alt={c.species}
-                    width={800}
-                    height={600}
-                    className="max-h-[280px] w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
-                    unoptimized
-                    onError={() => setImgError(true)}
-                  />
-                ))}
-              </div>
-            ) : (
-              <p className="text-xs text-zinc-400">Loading image...</p>
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function LocationCard({ loc }: { loc: LocationWithCatches }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50">
-      <button
-        type="button"
-        onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left"
-      >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg dark:bg-sky-900/40">
-          📍
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
-            {loc.locationName}
-          </p>
-          <p className="text-xs text-zinc-500">
-            {formatDate(loc.timeStamp)} · {loc.catches.length} catches
-          </p>
-        </div>
-      </button>
-      {expanded && (
-        <div className="space-y-2 border-t border-zinc-200 px-5 pb-5 pt-4 dark:border-zinc-800">
-          {loc.catches.length === 0 ? (
-            <p className="text-sm text-zinc-500">No catches recorded.</p>
-          ) : (
-            loc.catches.map((c) => <CatchCard key={c.id} c={c} />)
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 export default function UserProfilePage() {
   const params = useParams<{ id?: string | string[] }>();
@@ -166,6 +25,8 @@ export default function UserProfilePage() {
   const { user, isReady } = useAuth();
   const { t } = useLocale();
   const accountId = Number(rawId);
+  const invalidId = !Number.isFinite(accountId) || accountId <= 0;
+
   const [account, setAccount] = useState<AccountResponse | null>(null);
   const [locations, setLocations] = useState<LocationWithCatches[]>([]);
   const [loading, setLoading] = useState(true);
@@ -174,7 +35,7 @@ export default function UserProfilePage() {
   const [friendBusy, setFriendBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (!Number.isFinite(accountId)) {
+    if (invalidId) {
       setError(t("users.invalidId"));
       setLoading(false);
       return;
@@ -189,11 +50,17 @@ export default function UserProfilePage() {
       setAccount(profile);
       setLocations(locs);
     } catch (e) {
-      setError(getDisplayErrorMessage(e, t("users.loadError")));
+      if (e instanceof ApiHttpError && e.status === 401) {
+        setError(t("users.mustLogin"));
+      } else {
+        setError(getDisplayErrorMessage(e, t("users.loadError")));
+      }
+      setAccount(null);
+      setLocations([]);
     } finally {
       setLoading(false);
     }
-  }, [accountId, t]);
+  }, [accountId, invalidId, t]);
 
   useEffect(() => {
     void load();
@@ -225,7 +92,7 @@ export default function UserProfilePage() {
   );
 
   async function handleToggleFriend() {
-    if (!account || friendBusy || isSelf) return;
+    if (!user || !account || friendBusy || isSelf) return;
     setFriendBusy(true);
     try {
       if (isFriend) {
@@ -247,92 +114,137 @@ export default function UserProfilePage() {
   if (!isReady) {
     return (
       <div className="mx-auto flex max-w-2xl flex-1 items-center justify-center px-6 py-16">
-        <p className="text-zinc-500">Loading...</p>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-6 py-16">
-        <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
-          {t("nav.profile")}
-        </h1>
-        <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-          {t("users.mustLogin")}
-        </p>
-        <Link
-          href="/login"
-          className="mt-6 inline-flex w-fit items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-        >
-          {t("nav.login")}
-        </Link>
+        <p className="text-zinc-500">{t("profile.loading")}</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-6 py-12">
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {!error && loading && <p className="text-zinc-500">{t("users.loadingProfile")}</p>}
-      {!error && !loading && account && (
-        <>
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
-                {t("users.angler")}
-              </p>
-              <h1 className="text-3xl font-semibold text-zinc-900 dark:text-zinc-50">
-                @{account.username}
-              </h1>
-            </div>
-            {!isSelf && (
-              <button
-                type="button"
-                onClick={() => void handleToggleFriend()}
-                disabled={friendBusy}
-                className={[
-                  "rounded-xl px-4 py-2 text-sm font-semibold transition",
-                  isFriend
-                    ? "border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                    : "bg-sky-600 text-white hover:bg-sky-700",
-                ].join(" ")}
+    <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col gap-6 px-4 pb-20 pt-8 sm:px-6">
+      {invalidId && (
+        <p className="text-sm text-red-600 dark:text-red-400">{t("users.invalidId")}</p>
+      )}
+
+      {!invalidId && error && (
+        <div className="rounded-xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-300">
+          {error}
+          {error === t("users.mustLogin") && (
+            <div className="mt-3">
+              <Link
+                href="/login"
+                className="inline-flex rounded-lg bg-red-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-900 dark:bg-red-700 dark:hover:bg-red-600"
               >
-                {friendBusy ? "Working..." : isFriend ? "Unfriend" : "Add friend"}
-              </button>
-            )}
+                {t("nav.login")}
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
+
+      {!invalidId && !error && loading && (
+        <p className="text-zinc-500">{t("users.loadingProfile")}</p>
+      )}
+
+      {!invalidId && !error && !loading && account && (
+        <div className="overflow-hidden rounded-[28px] border border-zinc-200/90 bg-white/95 shadow-xl shadow-zinc-900/10 backdrop-blur dark:border-zinc-700/90 dark:bg-zinc-900/90">
+          <div className="bg-white/95 px-5 pb-8 pt-7 dark:bg-zinc-900/90 sm:px-8 sm:pt-9">
+            <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-6">
+              <div className="relative shrink-0">
+                <UserAvatar
+                  accountId={account.id}
+                  profileImageKey={account.profileImageKey}
+                  size="lg"
+                  label={t("home.avatarLabel", { username: account.username })}
+                  loadWhenVisible={false}
+                />
+              </div>
+
+              <div className="flex w-full min-w-0 flex-1 flex-col gap-3 text-center sm:text-left">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                    {t("users.angler")}
+                  </p>
+                  <h1 className="mt-1 text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-3xl">
+                    @{account.username}
+                  </h1>
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                  {isSelf ? (
+                    <Link
+                      href="/profile"
+                      className="inline-flex rounded-xl bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+                    >
+                      {t("users.editProfile")}
+                    </Link>
+                  ) : user ? (
+                    <button
+                      type="button"
+                      onClick={() => void handleToggleFriend()}
+                      disabled={friendBusy}
+                      className={[
+                        "rounded-xl px-4 py-2 text-sm font-semibold transition disabled:opacity-60",
+                        isFriend
+                          ? "border border-zinc-300 text-zinc-800 hover:bg-zinc-100 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                          : "bg-sky-600 text-white hover:bg-sky-700",
+                      ].join(" ")}
+                    >
+                      {friendBusy
+                        ? t("users.friendBusy")
+                        : isFriend
+                          ? t("users.removeFriend")
+                          : t("users.addFriend")}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+
+            <dl className="mt-8 grid grid-cols-3 gap-3 border-t border-zinc-200 pt-6 dark:border-zinc-700">
+              <div className="rounded-2xl bg-zinc-50/90 px-3 py-4 text-center dark:bg-zinc-800/60">
+                <dt className="text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+                  {t("users.locations")}
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                  {locations.length}
+                </dd>
+              </div>
+              <div className="rounded-2xl bg-zinc-50/90 px-3 py-4 text-center dark:bg-zinc-800/60">
+                <dt className="text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+                  {t("users.totalCatches")}
+                </dt>
+                <dd className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                  {totalCatches}
+                </dd>
+              </div>
+              <div className="rounded-2xl bg-gradient-to-br from-zinc-100 to-zinc-50 px-3 py-4 text-center dark:from-zinc-800/80 dark:to-zinc-900/60">
+                <dt className="text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500">
+                  {t("users.accountId")}
+                </dt>
+                <dd className="mt-1 font-mono text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                  #{account.id}
+                </dd>
+              </div>
+            </dl>
           </div>
+        </div>
+      )}
 
-          <dl className="mt-6 grid grid-cols-2 gap-4 rounded-2xl border border-zinc-200 bg-zinc-50/80 p-6 dark:border-zinc-800 dark:bg-zinc-900/50">
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Locations
-              </dt>
-              <dd className="mt-1 text-lg text-zinc-900 dark:text-zinc-50">
-                {locations.length}
-              </dd>
+      {!invalidId && !error && !loading && account && (
+        <section className="space-y-3">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            {t("users.sectionSpots")}
+          </h2>
+          {locations.length === 0 ? (
+            <p className="text-sm text-zinc-500">{t("users.noCatches")}</p>
+          ) : (
+            <div className="space-y-3">
+              {locations.map((loc) => (
+                <LocationCard key={loc.id} loc={loc} />
+              ))}
             </div>
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Total Catches
-              </dt>
-              <dd className="mt-1 text-lg text-zinc-900 dark:text-zinc-50">
-                {totalCatches}
-              </dd>
-            </div>
-          </dl>
-
-          <section className="mt-8 space-y-3">
-            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              {t("users.catches")}
-            </h2>
-            {locations.length === 0 ? (
-              <p className="text-sm text-zinc-500">{t("users.noCatches")}</p>
-            ) : (
-              locations.map((loc) => <LocationCard key={loc.id} loc={loc} />)
-            )}
-          </section>
-        </>
+          )}
+        </section>
       )}
     </div>
   );

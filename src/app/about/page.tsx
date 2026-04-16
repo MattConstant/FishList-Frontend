@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { SiteFooter } from "@/components/site-footer";
 import { useLocale } from "@/contexts/locale-context";
 
 export default function AboutPage() {
@@ -80,6 +81,15 @@ export default function AboutPage() {
         </section>
 
         <section className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            {t("about.legal.title")}
+          </h2>
+          <p className="mt-2 text-sm leading-7 text-zinc-600 dark:text-zinc-400">
+            {t("about.legal.lead")}
+          </p>
+        </section>
+
+        <section className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
           <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-violet-600 dark:text-violet-400">
               <path fillRule="evenodd" d="M18 10c0 3.866-3.582 7-8 7a8.84 8.84 0 01-3.796-.83L2 17l1.07-3.21A6.718 6.718 0 012 10c0-3.866 3.582-7 8-7s8 3.134 8 7zM7 9a1 1 0 100-2 1 1 0 000 2zm3 0a1 1 0 100-2 1 1 0 000 2zm4-1a1 1 0 11-2 0 1 1 0 012 0z" clipRule="evenodd" />
@@ -132,6 +142,10 @@ export default function AboutPage() {
           </Link>
         </div>
       </article>
+
+      <div className="relative z-10 mx-auto mt-12 w-full max-w-4xl px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6">
+        <SiteFooter className="border-white/25 text-zinc-300 [&_a]:text-sky-200 [&_a:hover]:text-white [&_p]:text-zinc-500" />
+      </div>
     </div>
   );
 }

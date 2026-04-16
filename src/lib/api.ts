@@ -55,6 +55,14 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
 export type AccountResponse = {
   id: number;
   username: string;
+  /** S3/MinIO object key; resolve with {@link getImageUrl} when present. */
+  profileImageKey?: string | null;
+};
+
+export type AccountUpdateResponse = {
+  account: AccountResponse;
+  accessToken: string;
+  tokenType: string;
 };
 
 export type AdminMeResponse = {
@@ -184,8 +192,42 @@ export async function fetchCurrentAccount(
   return res.json() as Promise<AccountResponse>;
 }
 
+/**
+ * GET JSON with optional Bearer when a session exists. Use for endpoints that may be
+ * public or accept optional auth (e.g. viewing another account's profile or locations).
+ */
+export async function apiGet(path: string): Promise<Response> {
+  const base = getApiBaseUrl();
+  const url =
+    path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+  const session = typeof window !== "undefined" ? loadSession() : null;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (session?.authorizationHeader) {
+    headers.Authorization = session.authorizationHeader;
+  }
+  return fetch(url, { headers });
+}
+
+/** Updates username and/or profile image (object key from {@link uploadImage}; empty string clears photo). Returns a new JWT. */
+export async function patchMyProfile(payload: {
+  username?: string;
+  profileImageKey?: string;
+}): Promise<AccountUpdateResponse> {
+  const res = await authenticatedFetch("/api/accounts/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  await throwIfNotOk(res);
+  return res.json() as Promise<AccountUpdateResponse>;
+}
+
+/**
+ * Public account lookup by id. Uses Bearer token when logged in; works without a session
+ * if the API allows anonymous GET (otherwise returns 401).
+ */
 export async function fetchAccountById(id: number): Promise<AccountResponse> {
-  const res = await authenticatedFetch(`/api/accounts/${id}`);
+  const res = await apiGet(`/api/accounts/${id}`);
   await throwIfNotOk(res);
   return res.json() as Promise<AccountResponse>;
 }
@@ -365,7 +407,7 @@ export type LocationWithCatches = {
 export async function fetchUserLocations(
   accountId: number,
 ): Promise<LocationWithCatches[]> {
-  const res = await authenticatedFetch(`/api/accounts/${accountId}/locations`);
+  const res = await apiGet(`/api/accounts/${accountId}/locations`);
   await throwIfNotOk(res);
   const locations = (await res.json()) as Array<{
     id: number;
@@ -379,7 +421,7 @@ export async function fetchUserLocations(
 
   const results: LocationWithCatches[] = [];
   for (const loc of locations) {
-    const catchRes = await authenticatedFetch(`/api/locations/${loc.id}/catches`);
+    const catchRes = await apiGet(`/api/locations/${loc.id}/catches`);
     const catches: CatchResponse[] = catchRes.ok ? await catchRes.json() : [];
     results.push({ ...loc, catches });
   }
@@ -395,6 +437,8 @@ export type FeedPost = {
   timeStamp: string;
   accountId: number;
   username: string;
+  /** Present when the feed API includes it; avoids extra profile fetches. */
+  profileImageKey?: string | null;
   catch: CatchResponse;
 };
 
@@ -406,6 +450,7 @@ type FeedPostResponse = {
   timeStamp: string;
   accountId: number;
   username: string;
+  profileImageKey?: string | null;
   catchId: number;
   species: string;
   quantity?: number;
@@ -428,6 +473,7 @@ export type CatchCommentResponse = {
   catchId: number;
   accountId: number;
   username: string;
+  profileImageKey?: string | null;
   message: string;
   createdAt: string;
   ownedByMe: boolean;
@@ -468,6 +514,7 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
     timeStamp: row.timeStamp,
     accountId: row.accountId,
     username: row.username,
+    profileImageKey: row.profileImageKey,
     catch: {
       id: row.catchId,
       locationId: row.locationId,
@@ -617,13 +664,45 @@ export async function identifyFishFromImage(
   return res.json() as Promise<FishIdentificationResponse>;
 }
 
+type CachedDownloadUrl = { url: string; expiresAt: number };
+const downloadUrlCache = new Map<string, CachedDownloadUrl>();
+const downloadUrlInflight = new Map<string, Promise<string>>();
+
+/**
+ * Resolves a presigned URL for a storage object key. Results are cached in-memory for a
+ * fraction of the server-reported TTL to avoid hammering the API when many avatars/images mount.
+ */
 export async function getImageUrl(objectKey: string): Promise<string> {
-  const res = await authenticatedFetch(
-    `/api/storage/images/download-url?key=${encodeURIComponent(objectKey)}`,
-  );
-  await throwIfNotOk(res);
-  const data = (await res.json()) as { url: string; expiresInSeconds: number };
-  return data.url;
+  const key = objectKey.trim();
+  const now = Date.now();
+  const cached = downloadUrlCache.get(key);
+  if (cached && cached.expiresAt > now) return cached.url;
+
+  let inflight = downloadUrlInflight.get(key);
+  if (!inflight) {
+    inflight = (async () => {
+      const res = await authenticatedFetch(
+        `/api/storage/images/download-url?key=${encodeURIComponent(key)}`,
+      );
+      await throwIfNotOk(res);
+      const data = (await res.json()) as {
+        url: string;
+        expiresInSeconds?: number;
+      };
+      const resolvedAt = Date.now();
+      const sec = data.expiresInSeconds ?? 3600;
+      const ttlMs = Math.min(Math.max(30_000, sec * 1000 * 0.85), 55 * 60 * 1000);
+      downloadUrlCache.set(key, {
+        url: data.url,
+        expiresAt: resolvedAt + ttlMs,
+      });
+      return data.url;
+    })().finally(() => {
+      downloadUrlInflight.delete(key);
+    });
+    downloadUrlInflight.set(key, inflight);
+  }
+  return inflight;
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { HomePreviewCarousel } from "@/components/home-preview-carousel";
+import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -39,7 +48,7 @@ function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
 }
 
-function FeedCard({
+const FeedCard = memo(function FeedCard({
   post,
   currentUserId,
   isAdmin,
@@ -96,7 +105,7 @@ function FeedCard({
           observer.disconnect();
         }
       },
-      { rootMargin: "250px 0px" },
+      { rootMargin: "100px 0px" },
     );
     observer.observe(cardRef.current);
     return () => observer.disconnect();
@@ -272,14 +281,28 @@ function FeedCard({
       className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
     >
       <div className="flex items-center justify-between px-4 py-3">
-        <div>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <Link
             href={`/users/${post.accountId}`}
-            className="text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+            className="shrink-0 self-start pt-0.5"
+            aria-label={`@${post.username}`}
           >
-            @{post.username}
+            <UserAvatar
+              accountId={post.accountId}
+              profileImageKey={post.profileImageKey}
+              size="md"
+              label={t("home.avatarLabel", { username: post.username })}
+            />
           </Link>
-          <p className="text-xs text-zinc-500">{formatDate(post.timeStamp)}</p>
+          <div className="min-w-0">
+            <Link
+              href={`/users/${post.accountId}`}
+              className="text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+            >
+              @{post.username}
+            </Link>
+            <p className="text-xs text-zinc-500">{formatDate(post.timeStamp)}</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <p className="text-xs text-zinc-500">{post.locationName}</p>
@@ -396,17 +419,33 @@ function FeedCard({
                   className="rounded-lg bg-zinc-100 px-2.5 py-2 text-sm dark:bg-zinc-800"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <p className="min-w-0 flex-1">
+                    <div className="flex min-w-0 flex-1 gap-2">
                       <Link
                         href={`/users/${comment.accountId}`}
-                        className="font-semibold text-zinc-800 hover:underline dark:text-zinc-200"
+                        className="shrink-0 pt-0.5"
+                        aria-label={`@${comment.username}`}
                       >
-                        @{comment.username}
-                      </Link>{" "}
-                      <span className="text-zinc-700 dark:text-zinc-300">
-                        {comment.message}
-                      </span>
-                    </p>
+                        <UserAvatar
+                          accountId={comment.accountId}
+                          profileImageKey={comment.profileImageKey}
+                          size="sm"
+                          label={t("home.avatarLabel", {
+                            username: comment.username,
+                          })}
+                        />
+                      </Link>
+                      <p className="min-w-0 flex-1">
+                        <Link
+                          href={`/users/${comment.accountId}`}
+                          className="font-semibold text-zinc-800 hover:underline dark:text-zinc-200"
+                        >
+                          @{comment.username}
+                        </Link>{" "}
+                        <span className="text-zinc-700 dark:text-zinc-300">
+                          {comment.message}
+                        </span>
+                      </p>
+                    </div>
                     {comment.ownedByMe && (
                       <button
                         type="button"
@@ -461,7 +500,7 @@ function FeedCard({
       </div>
     </article>
   );
-}
+});
 
 export default function HomePage() {
   const { user, isReady, isAdmin } = useAuth();
@@ -556,7 +595,7 @@ export default function HomePage() {
   if (!user) {
     return (
       <div
-        className="relative flex flex-1 items-center justify-center px-6 py-16"
+        className="relative flex flex-1 flex-col items-center justify-start px-4 py-10 sm:px-6 sm:py-16"
         style={{
           backgroundImage:
             "linear-gradient(rgba(15,23,42,0.6), rgba(15,23,42,0.6)), url('/Quetico_NorthernLights-scaled.jpg')",
@@ -564,16 +603,16 @@ export default function HomePage() {
           backgroundPosition: "center",
         }}
       >
-        <div className="w-full max-w-4xl rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
-          <div className="flex items-center justify-between gap-6">
-            <div className="min-w-0 space-y-3">
+        <div className="w-full max-w-4xl rounded-2xl border border-white/30 bg-white/90 p-6 shadow-xl backdrop-blur sm:p-8 dark:border-zinc-700 dark:bg-zinc-900/90">
+          <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0 flex-1 space-y-3 text-center md:text-left">
               <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
                 {t("home.welcome")}
               </p>
-              <h1 className="text-4xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl dark:text-zinc-50">
                 {t("home.heroTitle")}
               </h1>
-              <p className="max-w-xl text-lg leading-relaxed text-zinc-600 dark:text-zinc-400">
+              <p className="mx-auto max-w-xl text-lg leading-relaxed text-zinc-600 md:mx-0 dark:text-zinc-400">
                 {t("home.heroBody")}
               </p>
             </div>
@@ -582,23 +621,25 @@ export default function HomePage() {
               alt="FishList logo"
               width={200}
               height={200}
-              className="h-40 w-40 shrink-0 rounded-2xl object-contain md:h-52 md:w-52"
+              className="h-36 w-36 shrink-0 rounded-2xl object-contain sm:h-40 sm:w-40 md:h-52 md:w-52"
               priority
             />
           </div>
 
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/map"
-              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-            >
-              {t("home.openMap")}
-            </Link>
+          <HomePreviewCarousel className="mt-10 border-t border-zinc-200 pt-8 dark:border-zinc-700" />
+
+          <div className="mt-8 flex flex-wrap justify-center gap-3 md:justify-start">
             <Link
               href="/login"
+              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
+            >
+              {t("home.getStarted")}
+            </Link>
+            <Link
+              href="/map"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-900"
             >
-              {t("home.login")}
+              {t("home.openMap")}
             </Link>
           </div>
         </div>

@@ -13,55 +13,87 @@ import {
   type AdminSummaryResponse,
 } from "@/lib/api";
 
+const MIN_ACCOUNT_SEARCH_LEN = 2;
+
 export default function AdminPage() {
   const { user, isReady } = useAuth();
   const { t } = useLocale();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
+  const [searchNotice, setSearchNotice] = useState("");
   const [accounts, setAccounts] = useState<AdminAccountRowResponse[]>([]);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
   const [summary, setSummary] = useState<AdminSummaryResponse | null>(null);
   const [busyAccountId, setBusyAccountId] = useState<number | null>(null);
 
-  const load = useCallback(async () => {
-    if (!user) return;
-    setLoading(true);
+  useEffect(() => {
+    if (!user) {
+      setInitializing(false);
+      return;
+    }
+    let cancelled = false;
+    setError("");
+    (async () => {
+      try {
+        const me = await fetchAdminMe();
+        if (cancelled) return;
+        if (!me.admin) {
+          setIsAdmin(false);
+          setSummary(null);
+          setAccounts([]);
+          return;
+        }
+        setIsAdmin(true);
+        const nextSummary = await fetchAdminSummary();
+        if (cancelled) return;
+        setSummary(nextSummary);
+      } catch (e) {
+        if (!cancelled) setError(getDisplayErrorMessage(e, t("admin.error.load")));
+      } finally {
+        if (!cancelled) setInitializing(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user, t]);
+
+  const runAccountSearch = useCallback(async () => {
+    const q = query.trim();
+    if (q.length < MIN_ACCOUNT_SEARCH_LEN) {
+      setAccounts([]);
+      setHasSearched(false);
+      setSearchNotice(t("admin.searchMinChars"));
+      return;
+    }
+    setSearchNotice("");
+    setTableLoading(true);
     setError("");
     try {
-      const me = await fetchAdminMe();
-      if (!me.admin) {
-        setIsAdmin(false);
-        setSummary(null);
-        setAccounts([]);
-        return;
-      }
-      setIsAdmin(true);
-      const [nextSummary, nextAccounts] = await Promise.all([
-        fetchAdminSummary(),
-        fetchAdminAccounts(query, 100),
-      ]);
-      setSummary(nextSummary);
-      setAccounts(nextAccounts);
+      const rows = await fetchAdminAccounts(q, 100);
+      setAccounts(rows);
+      setHasSearched(true);
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("admin.error.load")));
+      setAccounts([]);
     } finally {
-      setLoading(false);
+      setTableLoading(false);
     }
-  }, [user, query, t]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
+  }, [query, t]);
 
   async function handleDeleteAccount(accountId: number, username: string) {
-    const confirmed = window.confirm(t("admin.confirm.delete").replace("{{username}}", username));
+    const confirmed = window.confirm(
+      t("admin.confirm.delete").replace("{{username}}", username),
+    );
     if (!confirmed) return;
     setBusyAccountId(accountId);
     setError("");
     try {
       await adminDeleteAccount(accountId);
-      await load();
+      setAccounts((prev) => prev.filter((a) => a.id !== accountId));
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("admin.error.delete")));
     } finally {
@@ -77,7 +109,7 @@ export default function AdminPage() {
     return <div className="p-6 text-zinc-500">{t("admin.loginRequired")}</div>;
   }
 
-  if (loading) {
+  if (initializing) {
     return <div className="p-6 text-zinc-500">{t("admin.loading")}</div>;
   }
 
@@ -110,61 +142,82 @@ export default function AdminPage() {
       )}
 
       <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-        <div className="mb-3 flex items-center gap-2">
+        <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
+          {t("admin.searchToStart")}
+        </p>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              if (searchNotice) setSearchNotice("");
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void runAccountSearch();
+            }}
             placeholder={t("admin.searchPlaceholder")}
-            className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            className="min-w-[12rem] flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            aria-label={t("admin.searchPlaceholder")}
           />
           <button
             type="button"
-            onClick={() => void load()}
-            className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700"
+            onClick={() => void runAccountSearch()}
+            disabled={tableLoading}
+            className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700 disabled:opacity-60"
           >
             {t("admin.search")}
           </button>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="text-zinc-500">
-              <tr>
-                <th className="px-2 py-2">{t("admin.table.username")}</th>
-                <th className="px-2 py-2">{t("admin.table.locations")}</th>
-                <th className="px-2 py-2">{t("admin.table.catches")}</th>
-                <th className="px-2 py-2">{t("admin.table.comments")}</th>
-                <th className="px-2 py-2">{t("admin.table.likes")}</th>
-                <th className="px-2 py-2">{t("admin.table.actions")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {accounts.map((account) => (
-                <tr key={account.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                  <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
-                    @{account.username}
-                  </td>
-                  <td className="px-2 py-2">{account.locations}</td>
-                  <td className="px-2 py-2">{account.catches}</td>
-                  <td className="px-2 py-2">{account.comments}</td>
-                  <td className="px-2 py-2">{account.likes}</td>
-                  <td className="px-2 py-2">
-                    <button
-                      type="button"
-                      onClick={() => void handleDeleteAccount(account.id, account.username)}
-                      disabled={busyAccountId === account.id}
-                      className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20"
-                    >
-                      {busyAccountId === account.id
-                        ? t("admin.deleting")
-                        : t("admin.deleteAccount")}
-                    </button>
-                  </td>
+        {searchNotice && (
+          <p className="mb-3 text-sm text-amber-700 dark:text-amber-400">{searchNotice}</p>
+        )}
+
+        {tableLoading ? (
+          <p className="py-6 text-sm text-zinc-500">{t("admin.searchingAccounts")}</p>
+        ) : accounts.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-left text-sm">
+              <thead className="text-zinc-500">
+                <tr>
+                  <th className="px-2 py-2">{t("admin.table.username")}</th>
+                  <th className="px-2 py-2">{t("admin.table.locations")}</th>
+                  <th className="px-2 py-2">{t("admin.table.catches")}</th>
+                  <th className="px-2 py-2">{t("admin.table.comments")}</th>
+                  <th className="px-2 py-2">{t("admin.table.likes")}</th>
+                  <th className="px-2 py-2">{t("admin.table.actions")}</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {accounts.map((account) => (
+                  <tr key={account.id} className="border-t border-zinc-200 dark:border-zinc-800">
+                    <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                      @{account.username}
+                    </td>
+                    <td className="px-2 py-2">{account.locations}</td>
+                    <td className="px-2 py-2">{account.catches}</td>
+                    <td className="px-2 py-2">{account.comments}</td>
+                    <td className="px-2 py-2">{account.likes}</td>
+                    <td className="px-2 py-2">
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteAccount(account.id, account.username)}
+                        disabled={busyAccountId === account.id}
+                        className="rounded-md border border-red-200 px-2 py-1 text-xs font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-60 dark:border-red-900 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        {busyAccountId === account.id
+                          ? t("admin.deleting")
+                          : t("admin.deleteAccount")}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : hasSearched ? (
+          <p className="py-4 text-sm text-zinc-500">{t("admin.noAccountResults")}</p>
+        ) : null}
       </div>
     </div>
   );

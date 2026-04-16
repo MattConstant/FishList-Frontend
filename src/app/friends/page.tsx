@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -11,6 +11,9 @@ import {
   searchAccounts,
   type AccountResponse,
 } from "@/lib/api";
+
+/** Limits how often we hit /api/accounts/search while typing (was firing every keystroke ≥2 chars). */
+const SEARCH_DEBOUNCE_MS = 320;
 
 export default function FriendsPage() {
   const { user, isReady } = useAuth();
@@ -37,24 +40,37 @@ export default function FriendsPage() {
   useEffect(() => {
     if (!user || query.trim().length < 2) {
       setResults([]);
+      setSearching(false);
       return;
     }
-    let cancelled = false;
-    setSearching(true);
-    searchAccounts(query.trim())
-      .then((list) => {
-        if (!cancelled) setResults(list);
-      })
-      .catch(() => {
-        if (!cancelled) setResults([]);
-      })
-      .finally(() => {
-        if (!cancelled) setSearching(false);
-      });
+    const q = query.trim();
+    let stale = false;
+
+    const timer = window.setTimeout(() => {
+      setSearching(true);
+      searchAccounts(q)
+        .then((list) => {
+          if (!stale) setResults(list);
+        })
+        .catch(() => {
+          if (!stale) setResults([]);
+        })
+        .finally(() => {
+          if (!stale) setSearching(false);
+        });
+    }, SEARCH_DEBOUNCE_MS);
+
     return () => {
-      cancelled = true;
+      stale = true;
+      window.clearTimeout(timer);
+      setSearching(false);
     };
   }, [query, user]);
+
+  const friendIds = useMemo(
+    () => new Set(friends.map((f) => f.id)),
+    [friends],
+  );
 
   async function onAdd(account: AccountResponse) {
     if (busyId != null) return;
@@ -106,8 +122,6 @@ export default function FriendsPage() {
       </div>
     );
   }
-
-  const friendIds = new Set(friends.map((f) => f.id));
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 px-6 py-10">
