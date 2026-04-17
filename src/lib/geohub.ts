@@ -95,6 +95,11 @@ function isExcludedSpecies(species: string): boolean {
   );
 }
 
+/** Locale-aware alphabetical order for display lists (case-insensitive base letters). */
+export function compareLocaleStrings(a: string, b: string): number {
+  return a.localeCompare(b, undefined, { sensitivity: "base" });
+}
+
 /**
  * Fetches all stocking records from the last `years` years.
  * Paginates automatically (1 000 records/page).
@@ -178,19 +183,23 @@ export function groupByWaterbody(records: StockingRecord[]): WaterbodyGroup[] {
 export function allSpecies(records: StockingRecord[]): string[] {
   return [...new Set(records.map((r) => r.species))]
     .filter((species) => !isExcludedSpecies(species))
-    .sort();
+    .sort(compareLocaleStrings);
 }
 
 /**
  * Returns distinct MNRF districts across records.
  */
 export function allDistricts(records: StockingRecord[]): string[] {
-  return [...new Set(records.map((r) => r.district))].sort();
+  return [...new Set(records.map((r) => r.district))].sort(
+    compareLocaleStrings,
+  );
 }
 
 /**
  * Returns distinct developmental stages across records.
  */
 export function allDevelopmentalStages(records: StockingRecord[]): string[] {
-  return [...new Set(records.map((r) => r.developmentalStage))].sort();
+  return [...new Set(records.map((r) => r.developmentalStage))].sort(
+    compareLocaleStrings,
+  );
 }

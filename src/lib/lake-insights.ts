@@ -1,4 +1,4 @@
-import type { WaterbodyGroup } from "@/lib/geohub";
+import { compareLocaleStrings, type WaterbodyGroup } from "@/lib/geohub";
 
 /** Request body for {@link fetchLakeFishingInsights} in `api.ts` (Spring `/api/ai/lake-fishing-insights`). */
 export type LakeFishingInsightPayload = {
@@ -21,9 +21,11 @@ export function waterbodyToInsightPayload(g: WaterbodyGroup): LakeFishingInsight
     waterbody: g.waterbody,
     lat: g.lat,
     lng: g.lng,
-    districts: Array.from(g.districtSet).sort(),
-    developmentalStages: Array.from(g.developmentalStageSet).sort(),
-    speciesStocked: Array.from(g.speciesSet).sort(),
+    districts: Array.from(g.districtSet).sort(compareLocaleStrings),
+    developmentalStages: Array.from(g.developmentalStageSet).sort(
+      compareLocaleStrings,
+    ),
+    speciesStocked: Array.from(g.speciesSet).sort(compareLocaleStrings),
     stockingRows,
     totalFish: g.totalFish,
   };
