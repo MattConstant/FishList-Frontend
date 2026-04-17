@@ -111,7 +111,6 @@ export function getDisplayErrorMessage(
     if (err.status >= 500) return "Server error. Please try again.";
     return fallback;
   }
-  if (err instanceof Error) return fallback;
   return fallback;
 }
 
@@ -210,18 +209,22 @@ export async function apiGet(path: string): Promise<Response> {
   return fetch(url, { headers });
 }
 
+async function apiGetJson<T>(path: string): Promise<T> {
+  const res = await apiGet(path);
+  await throwIfNotOk(res);
+  return res.json() as Promise<T>;
+}
+
 /** Updates username and/or profile image (object key from {@link uploadImage}; empty string clears photo). Returns a new JWT. */
 export async function patchMyProfile(payload: {
   username?: string;
   profileImageKey?: string;
 }): Promise<AccountUpdateResponse> {
-  const res = await authenticatedFetch("/api/accounts/me", {
+  return authJson<AccountUpdateResponse>("/api/accounts/me", {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountUpdateResponse>;
 }
 
 /**
@@ -229,50 +232,37 @@ export async function patchMyProfile(payload: {
  * if the API allows anonymous GET (otherwise returns 401).
  */
 export async function fetchAccountById(id: number): Promise<AccountResponse> {
-  const res = await apiGet(`/api/accounts/${id}`);
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse>;
+  return apiGetJson<AccountResponse>(`/api/accounts/${id}`);
 }
 
 export async function searchAccounts(query: string): Promise<AccountResponse[]> {
-  const res = await authenticatedFetch(
+  return authJson<AccountResponse[]>(
     `/api/accounts/search?query=${encodeURIComponent(query)}`,
   );
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse[]>;
 }
 
 export async function fetchMyFriends(): Promise<AccountResponse[]> {
-  const res = await authenticatedFetch("/api/accounts/me/friends");
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse[]>;
+  return authJson<AccountResponse[]>("/api/accounts/me/friends");
 }
 
 export async function addFriend(accountId: number): Promise<AccountResponse> {
-  const res = await authenticatedFetch(`/api/accounts/${accountId}/friends`, {
+  return authJson<AccountResponse>(`/api/accounts/${accountId}/friends`, {
     method: "POST",
   });
-  await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse>;
 }
 
 export async function removeFriend(accountId: number): Promise<void> {
-  const res = await authenticatedFetch(`/api/accounts/${accountId}/friends`, {
+  await authVoid(`/api/accounts/${accountId}/friends`, {
     method: "DELETE",
   });
-  await throwIfNotOk(res);
 }
 
 export async function fetchAdminMe(): Promise<AdminMeResponse> {
-  const res = await authenticatedFetch("/api/admin/me");
-  await throwIfNotOk(res);
-  return res.json() as Promise<AdminMeResponse>;
+  return authJson<AdminMeResponse>("/api/admin/me");
 }
 
 export async function fetchAdminSummary(): Promise<AdminSummaryResponse> {
-  const res = await authenticatedFetch("/api/admin/summary");
-  await throwIfNotOk(res);
-  return res.json() as Promise<AdminSummaryResponse>;
+  return authJson<AdminSummaryResponse>("/api/admin/summary");
 }
 
 export async function fetchAdminAccounts(
@@ -283,16 +273,15 @@ export async function fetchAdminAccounts(
     query,
     limit: String(limit),
   });
-  const res = await authenticatedFetch(`/api/admin/accounts?${params.toString()}`);
-  await throwIfNotOk(res);
-  return res.json() as Promise<AdminAccountRowResponse[]>;
+  return authJson<AdminAccountRowResponse[]>(
+    `/api/admin/accounts?${params.toString()}`,
+  );
 }
 
 export async function adminDeleteAccount(accountId: number): Promise<void> {
-  const res = await authenticatedFetch(`/api/admin/accounts/${accountId}`, {
+  await authVoid(`/api/admin/accounts/${accountId}`, {
     method: "DELETE",
   });
-  await throwIfNotOk(res);
 }
 
 /**
@@ -326,6 +315,17 @@ export async function authenticatedFetch(
     redirectToLogin();
   }
   return res;
+}
+
+async function authJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await authenticatedFetch(path, init);
+  await throwIfNotOk(res);
+  return res.json() as Promise<T>;
+}
+
+async function authVoid(path: string, init?: RequestInit): Promise<void> {
+  const res = await authenticatedFetch(path, init);
+  await throwIfNotOk(res);
 }
 
 // ── Location + Catch types ──────────────────────────────────────────
@@ -496,11 +496,9 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
 
   while (remaining > 0) {
     const pageSize = Math.min(MAX_PAGE, remaining);
-    const res = await authenticatedFetch(
+    const rows = await authJson<FeedPostResponse[]>(
       `/api/locations/feed?offset=${currentOffset}&limit=${pageSize}`,
     );
-    await throwIfNotOk(res);
-    const rows = (await res.json()) as FeedPostResponse[];
     allRows.push(...rows);
     if (rows.length < pageSize) break;
     remaining -= rows.length;
@@ -544,31 +542,29 @@ export async function fetchCatchLike(
   locationId: number,
   catchId: number,
 ): Promise<CatchLikeResponse> {
-  const res = await authenticatedFetch(`/api/locations/${locationId}/catches/${catchId}/like`);
-  await throwIfNotOk(res);
-  return res.json() as Promise<CatchLikeResponse>;
+  return authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+  );
 }
 
 export async function likeCatch(
   locationId: number,
   catchId: number,
 ): Promise<CatchLikeResponse> {
-  const res = await authenticatedFetch(`/api/locations/${locationId}/catches/${catchId}/like`, {
-    method: "POST",
-  });
-  await throwIfNotOk(res);
-  return res.json() as Promise<CatchLikeResponse>;
+  return authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+    { method: "POST" },
+  );
 }
 
 export async function unlikeCatch(
   locationId: number,
   catchId: number,
 ): Promise<CatchLikeResponse> {
-  const res = await authenticatedFetch(`/api/locations/${locationId}/catches/${catchId}/like`, {
-    method: "DELETE",
-  });
-  await throwIfNotOk(res);
-  return res.json() as Promise<CatchLikeResponse>;
+  return authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+    { method: "DELETE" },
+  );
 }
 
 export async function fetchCatchComments(
@@ -577,11 +573,9 @@ export async function fetchCatchComments(
   offset = 0,
   limit = 3,
 ): Promise<CatchCommentsPageResponse> {
-  const res = await authenticatedFetch(
+  return authJson<CatchCommentsPageResponse>(
     `/api/locations/${locationId}/catches/${catchId}/comments?offset=${offset}&limit=${limit}`,
   );
-  await throwIfNotOk(res);
-  return res.json() as Promise<CatchCommentsPageResponse>;
 }
 
 export async function createCatchComment(
@@ -589,7 +583,7 @@ export async function createCatchComment(
   catchId: number,
   message: string,
 ): Promise<CatchCommentResponse> {
-  const res = await authenticatedFetch(
+  return authJson<CatchCommentResponse>(
     `/api/locations/${locationId}/catches/${catchId}/comments`,
     {
       method: "POST",
@@ -597,8 +591,6 @@ export async function createCatchComment(
       body: JSON.stringify({ message }),
     },
   );
-  await throwIfNotOk(res);
-  return res.json() as Promise<CatchCommentResponse>;
 }
 
 export async function deleteCatchComment(
@@ -606,22 +598,19 @@ export async function deleteCatchComment(
   catchId: number,
   commentId: number,
 ): Promise<void> {
-  const res = await authenticatedFetch(
+  await authVoid(
     `/api/locations/${locationId}/catches/${catchId}/comments/${commentId}`,
     { method: "DELETE" },
   );
-  await throwIfNotOk(res);
 }
 
 export async function deleteCatch(
   locationId: number,
   catchId: number,
 ): Promise<void> {
-  const res = await authenticatedFetch(
-    `/api/locations/${locationId}/catches/${catchId}`,
-    { method: "DELETE" },
-  );
-  await throwIfNotOk(res);
+  await authVoid(`/api/locations/${locationId}/catches/${catchId}`, {
+    method: "DELETE",
+  });
 }
 
 // ── Image upload ────────────────────────────────────────────────────
@@ -687,12 +676,10 @@ export async function uploadImage(file: File): Promise<ImageUploadResponse> {
   validateImageFileForUpload(file);
   const formData = new FormData();
   formData.append("file", file);
-  const res = await authenticatedFetch("/api/storage/images", {
+  return authJson<ImageUploadResponse>("/api/storage/images", {
     method: "POST",
     body: formData,
   });
-  await throwIfNotOk(res);
-  return res.json() as Promise<ImageUploadResponse>;
 }
 
 export async function identifyFishFromImage(
@@ -701,12 +688,10 @@ export async function identifyFishFromImage(
   validateImageFileForUpload(file);
   const formData = new FormData();
   formData.append("file", file);
-  const res = await authenticatedFetch("/api/ai/identify-fish", {
+  return authJson<FishIdentificationResponse>("/api/ai/identify-fish", {
     method: "POST",
     body: formData,
   });
-  await throwIfNotOk(res);
-  return res.json() as Promise<FishIdentificationResponse>;
 }
 
 type CachedDownloadUrl = { url: string; expiresAt: number };
@@ -726,14 +711,12 @@ export async function getImageUrl(objectKey: string): Promise<string> {
   let inflight = downloadUrlInflight.get(key);
   if (!inflight) {
     inflight = (async () => {
-      const res = await authenticatedFetch(
-        `/api/storage/images/download-url?key=${encodeURIComponent(key)}`,
-      );
-      await throwIfNotOk(res);
-      const data = (await res.json()) as {
+      const data = await authJson<{
         url: string;
         expiresInSeconds?: number;
-      };
+      }>(
+        `/api/storage/images/download-url?key=${encodeURIComponent(key)}`,
+      );
       const resolvedAt = Date.now();
       const sec = data.expiresInSeconds ?? 3600;
       const ttlMs = Math.min(Math.max(30_000, sec * 1000 * 0.85), 55 * 60 * 1000);
