@@ -1,8 +1,20 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 import { useLocale } from "@/contexts/locale-context";
+
+/** True only after hydration — `useSyncExternalStore` + microtask, not setState in useEffect. */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    (onStoreChange) => {
+      queueMicrotask(onStoreChange);
+      return () => {};
+    },
+    () => true,
+    () => false,
+  );
+}
 
 function SunIcon({ className }: { className?: string }) {
   return (
@@ -39,11 +51,7 @@ type NavThemeToggleProps = {
 export function NavThemeToggle({ grouped }: NavThemeToggleProps) {
   const { t } = useLocale();
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   const isDark = mounted && resolvedTheme === "dark";
   const label = isDark ? t("nav.useLightMode") : t("nav.useDarkMode");
