@@ -24,17 +24,24 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Official node image includes user/group `node` (uid 1000). Run the app as non-root.
-# package.json is read-only at runtime (Sonar: no write bit on copied manifest).
-COPY --chown=node:node --chmod=444 --from=builder /app/package.json ./package.json
-COPY --chown=node:node --from=builder /app/node_modules ./node_modules
-COPY --chown=node:node --from=builder /app/public ./public
-COPY --chown=node:node --from=builder /app/.next ./.next
+# package.json: mode 0444 only on COPY (no write for u/g/o); do not use --chown here so the layer is explicitly non-writable.
+COPY --chmod=444 --from=builder /app/package.json ./package.json
+# Dependencies: copy without --chown; chmod strips all write bits (u/g/o) after chown below (Sonar).
+COPY --from=builder /app/node_modules ./node_modules
+# Static assets: COPY without --chown; files 0444 / dirs 0555 in RUN (no write for u/g/o).
+COPY --from=builder /app/public ./public
+# Build output: COPY without --chown; chown + chmod in RUN (no g/o write; owner may write under .next for Next cache).
+COPY --from=builder /app/.next ./.next
 
-# Strip group/other write bits on shipped trees; owner (node) keeps write where Next needs cache under .next.
-RUN chmod 444 /app/package.json \
+# Enforce read-only package.json; lock down public + node_modules (no write bits); .next owned by node, no g/o write.
+RUN chmod 0444 /app/package.json \
+  && chown node:node /app/package.json \
+  && chown -R node:node /app/public \
   && find /app/public -type f -exec chmod 444 {} + \
   && find /app/public -type d -exec chmod 555 {} + \
-  && chmod -R g-w,o-w /app/node_modules \
+  && chown -R node:node /app/node_modules \
+  && find /app/node_modules \( -type f -o -type d \) -exec chmod a-w {} + \
+  && chown -R node:node /app/.next \
   && chmod -R g-w,o-w /app/.next
 
 # WORKDIR is created as root; ensure the runtime user owns the app directory for any writes (e.g. cache).
