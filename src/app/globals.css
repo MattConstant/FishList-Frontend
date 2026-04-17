@@ -1,4 +1,12 @@
 @import "tailwindcss";
+@import "../styles/map-page.css";
+@import "../styles/about-page.css";
+@import "../styles/login-page.css";
+@import "../styles/leaflet-map.css";
+@import "../styles/home-preview.css";
+
+/* Manual dark mode (next-themes adds class="dark" on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
   --background: #ffffff;
@@ -16,12 +24,10 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #131a2a;
-    --background-accent: #1d2b42;
-    --foreground: #e8edf7;
-  }
+html.dark {
+  --background: #131a2a;
+  --background-accent: #1d2b42;
+  --foreground: #e8edf7;
 }
 
 html {
@@ -35,14 +41,21 @@ body {
   /* Dynamic viewport — avoids 100vh bugs when the iOS URL bar shows/hides */
   min-height: 100%;
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 15% 20%, var(--background-accent) 0%, transparent 36%),
-    radial-gradient(circle at 85% 0%, var(--background-accent) 0%, transparent 32%),
-    linear-gradient(180deg, var(--background) 0%, var(--background) 100%);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
   /* Tone down tap flash on controls */
   -webkit-tap-highlight-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+html:not(.dark) body {
+  background-color: var(--background);
+}
+
+html.dark body {
+  background:
+    radial-gradient(circle at 15% 20%, var(--background-accent) 0%, transparent 36%),
+    radial-gradient(circle at 85% 0%, var(--background-accent) 0%, transparent 32%),
+    linear-gradient(180deg, var(--background) 0%, var(--background) 100%);
 }
 
 /*
@@ -66,70 +79,4 @@ button,
 }
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
-}
-
-/*
- * Tailwind v4 preflight sets *, *::before, *::after to border-box and resets
- * img to display:block / max-width:100%. Leaflet's internal positioning math
- * for tiles, panes, markers, and popups assumes content-box sizing and
- * inline images. Without these overrides, every marker renders with a
- * consistent downward shift.
- */
-.leaflet-container,
-.leaflet-container *,
-.leaflet-container *::before,
-.leaflet-container *::after {
-  box-sizing: content-box !important;
-}
-
-.leaflet-container img {
-  max-width: none !important;
-  max-height: none !important;
-  display: inline !important;
-  padding: 0 !important;
-  border: none !important;
-}
-
-.leaflet-marker-icon {
-  padding: 0 !important;
-  border: none !important;
-  background: none !important;
-}
-
-/* Home preview carousel — stacked “photos” (see HomePreviewCarousel) */
-@keyframes fishlist-preview-front-next {
-  from {
-    opacity: 0;
-    transform: translate3d(40px, 32px, 0) rotate(6deg) scale(0.86);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(-0.5deg) scale(1);
-  }
-}
-
-@keyframes fishlist-preview-front-prev {
-  from {
-    opacity: 0;
-    transform: translate3d(-40px, 32px, 0) rotate(-10deg) scale(0.86);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(-0.5deg) scale(1);
-  }
-}
-
-.fishlist-preview-front-next {
-  animation: fishlist-preview-front-next 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.fishlist-preview-front-prev {
-  animation: fishlist-preview-front-prev 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .fishlist-preview-front-next,
-  .fishlist-preview-front-prev {
-    animation: none !important;
-  }
 }

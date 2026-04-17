@@ -1,0 +1,9 @@
+/* About — dark-mode hero layer (Quetico image + gradient). */
+.about-page__dark-hero {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.58), rgba(15, 23, 42, 0.72)),
+    url("/Quetico_NorthernLights-scaled.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: scroll;
+}

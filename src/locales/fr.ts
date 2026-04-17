@@ -7,6 +7,9 @@ const fr = {
   "nav.login": "Connexion",
   "nav.profile": "Profil",
   "nav.language": "Langue",
+  "nav.useLightMode": "Passer en mode clair",
+  "nav.useDarkMode": "Passer en mode sombre",
+  "nav.langThemeGroup": "Langue et thème",
   "nav.brand": "FishList",
   "nav.ariaMainNav": "Navigation principale",
 
@@ -242,7 +245,6 @@ const fr = {
   "users.accountId": "Compte",
   "users.sectionSpots": "Lieux et prises",
 
-  "admin.kicker": "Administration",
   "admin.title": "Panneau admin",
   "admin.loading": "Chargement des donnees admin...",
   "admin.loginRequired": "Connectez-vous pour acceder aux outils admin.",

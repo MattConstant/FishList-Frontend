@@ -119,14 +119,9 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8">
-      <div>
-        <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
-          {t("admin.kicker")}
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
-          {t("admin.title")}
-        </h1>
-      </div>
+      <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+        {t("admin.title")}
+      </h1>
 
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
@@ -141,7 +136,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
           {t("admin.searchToStart")}
         </p>
@@ -225,7 +220,7 @@ export default function AdminPage() {
 
 function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-1 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
         {value.toLocaleString()}

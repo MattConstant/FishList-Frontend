@@ -2,6 +2,8 @@
  * FishList Spring API — Bearer JWT after Google Sign-In (see POST /api/auth/google).
  */
 
+import type { LakeFishingInsightPayload } from "@/lib/lake-insights";
+
 const SESSION_KEY = "fishlist-session";
 
 /**
@@ -637,6 +639,49 @@ export type FishIdentificationResponse = {
   confidence: number | null;
   message: string;
 };
+
+export type LakeFishingInsightApiResponse = {
+  text: string;
+};
+
+/**
+ * Lake stocking insights — POST same-origin `/api/ai/lake-fishing-insights` (Next proxy → Spring).
+ * Returns narrative text (species, tactics, general tips — no map pins).
+ */
+export async function fetchLakeFishingInsights(
+  payload: LakeFishingInsightPayload,
+): Promise<{ text: string }> {
+  const session = loadSession();
+  if (!session) {
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+    throw new Error("Not authenticated");
+  }
+
+  const res = await fetch("/api/ai/lake-fishing-insights", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: session.authorizationHeader,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+  }
+
+  await throwIfNotOk(res);
+  const data = (await res.json()) as LakeFishingInsightApiResponse;
+  if (typeof data.text !== "string") {
+    throw new Error("Invalid response from server");
+  }
+  return { text: data.text };
+}
 
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {
   validateImageFileForUpload(file);

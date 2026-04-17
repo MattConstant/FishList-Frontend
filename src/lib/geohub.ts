@@ -52,6 +52,11 @@ export type WaterbodyGroup = {
   developmentalStageSet: Set<string>;
 };
 
+/** Stable id for a stocking marker (matches internal grouping key). */
+export function waterbodyGroupKey(g: WaterbodyGroup): string {
+  return `${g.waterbody}|${g.lat.toFixed(6)},${g.lng.toFixed(6)}`;
+}
+
 type ArcGISResponse = {
   exceededTransferLimit?: boolean;
   features: {

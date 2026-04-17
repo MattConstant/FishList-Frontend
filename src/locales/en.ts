@@ -7,6 +7,9 @@ const en = {
   "nav.login": "Log in",
   "nav.profile": "Profile",
   "nav.language": "Language",
+  "nav.useLightMode": "Switch to light mode",
+  "nav.useDarkMode": "Switch to dark mode",
+  "nav.langThemeGroup": "Language and theme",
   "nav.brand": "FishList",
   "nav.ariaMainNav": "Main navigation",
 
@@ -240,7 +243,6 @@ const en = {
   "users.accountId": "Account",
   "users.sectionSpots": "Spots & catches",
 
-  "admin.kicker": "Administration",
   "admin.title": "Admin panel",
   "admin.loading": "Loading admin data...",
   "admin.loginRequired": "Log in to access admin tools.",

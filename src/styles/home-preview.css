@@ -1,0 +1,37 @@
+/* Home preview carousel — stacked “photos” (see HomePreviewCarousel) */
+@keyframes fishlist-preview-front-next {
+  from {
+    opacity: 0;
+    transform: translate3d(40px, 32px, 0) rotate(6deg) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-0.5deg) scale(1);
+  }
+}
+
+@keyframes fishlist-preview-front-prev {
+  from {
+    opacity: 0;
+    transform: translate3d(-40px, 32px, 0) rotate(-10deg) scale(0.86);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-0.5deg) scale(1);
+  }
+}
+
+.fishlist-preview-front-next {
+  animation: fishlist-preview-front-next 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.fishlist-preview-front-prev {
+  animation: fishlist-preview-front-prev 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fishlist-preview-front-next,
+  .fishlist-preview-front-prev {
+    animation: none !important;
+  }
+}

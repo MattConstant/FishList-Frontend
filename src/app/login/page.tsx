@@ -21,15 +21,7 @@ export default function LoginPage() {
 
   if (user) {
     return (
-      <div
-        className="relative flex flex-1 items-center justify-center px-6 py-16"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(15,23,42,0.6), rgba(15,23,42,0.6)), url('/Quetico_NorthernLights-scaled.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
+      <div className="login-page__backdrop relative flex flex-1 items-center justify-center px-6 py-16">
         <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
           <p className="text-center text-zinc-600 dark:text-zinc-400">
             {t("login.signedInAs", { username: user.username })}
@@ -46,15 +38,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div
-      className="relative flex flex-1 items-center justify-center px-6 py-16"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(15,23,42,0.6), rgba(15,23,42,0.6)), url('/Quetico_NorthernLights-scaled.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
-    >
+    <div className="login-page__backdrop relative flex flex-1 items-center justify-center px-6 py-16">
       <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           {t("login.title.login")}

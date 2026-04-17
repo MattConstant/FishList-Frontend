@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { NavLangThemeGroup } from "@/components/nav-lang-theme-group";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -29,7 +30,7 @@ function ProfileIcon({ className }: { className?: string }) {
 export function NavBar() {
   const pathname = usePathname();
   const { user, isReady, isAdmin } = useAuth();
-  const { locale, setLocale, t } = useLocale();
+  const { t } = useLocale();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pathnameForMenu, setPathnameForMenu] = useState(pathname);
   if (pathname !== pathnameForMenu) {
@@ -63,14 +64,14 @@ export function NavBar() {
       <Link href="/" className={linkClass("/")} onClick={() => setMobileMenuOpen(false)}>
         {t("nav.home")}
       </Link>
-      <Link href="/about" className={linkClass("/about")} onClick={() => setMobileMenuOpen(false)}>
-        {t("nav.about")}
-      </Link>
       <Link href="/map" className={linkClass("/map")} onClick={() => setMobileMenuOpen(false)}>
         {t("nav.map")}
       </Link>
       <Link href="/friends" className={linkClass("/friends")} onClick={() => setMobileMenuOpen(false)}>
         {t("nav.friends")}
+      </Link>
+      <Link href="/about" className={linkClass("/about")} onClick={() => setMobileMenuOpen(false)}>
+        {t("nav.about")}
       </Link>
       {user && isAdmin && (
         <Link href="/admin" className={linkClass("/admin")} onClick={() => setMobileMenuOpen(false)}>
@@ -82,10 +83,10 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-40 shrink-0 border-b border-zinc-200/80 bg-white/90 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/90">
-      <div className="mx-auto flex h-14 max-w-5xl items-center justify-between gap-2 px-3 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:gap-3 sm:px-4">
+      <div className="mx-auto flex min-h-14 max-w-5xl items-center justify-between gap-2 px-3 py-2 pl-[max(0.75rem,env(safe-area-inset-left))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:gap-3 sm:px-4">
         <Link
           href="/"
-          className="inline-flex min-w-0 shrink items-center gap-2 text-base font-semibold tracking-tight text-sky-700 sm:text-lg dark:text-sky-400"
+          className="inline-flex min-w-0 shrink items-center gap-1.5 text-base font-semibold tracking-tight text-sky-700 sm:gap-2 sm:text-lg dark:text-sky-400"
         >
           <Image
             src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
@@ -95,20 +96,20 @@ export function NavBar() {
             className="shrink-0 rounded-md"
             priority
           />
-          <span className="truncate">{t("nav.brand")}</span>
+          <span className="truncate max-[340px]:hidden">{t("nav.brand")}</span>
         </Link>
 
         <nav
-          className="hide-scrollbar mx-2 hidden min-w-0 flex-1 touch-manipulation items-center justify-center gap-0.5 overflow-x-auto whitespace-nowrap md:flex md:gap-1.5"
+          className="hide-scrollbar mx-2 hidden min-w-0 flex-1 touch-manipulation items-center justify-center gap-1 overflow-x-auto whitespace-nowrap md:flex md:gap-2"
           aria-label={t("nav.ariaMainNav")}
         >
           {navLinks}
         </nav>
 
-        <div className="flex shrink-0 items-center justify-end gap-1.5 sm:gap-2">
+        <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2.5">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 transition hover:bg-zinc-100 md:hidden dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 transition hover:bg-zinc-100 active:bg-zinc-200/80 md:hidden dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-700/80"
             aria-expanded={mobileMenuOpen}
             aria-controls="mobile-nav-menu"
             aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
@@ -133,40 +134,12 @@ export function NavBar() {
             )}
           </button>
 
-          <div
-            className="inline-flex rounded-lg border border-zinc-300 p-0.5 dark:border-zinc-700"
-            aria-label={t("nav.language")}
-            title={t("nav.language")}
-          >
-            <button
-              type="button"
-              onClick={() => setLocale("en")}
-              className={[
-                "rounded px-1.5 py-1 text-xs font-semibold",
-                locale === "en"
-                  ? "bg-sky-600 text-white"
-                  : "text-zinc-600 dark:text-zinc-300",
-              ].join(" ")}
-            >
-              EN
-            </button>
-            <button
-              type="button"
-              onClick={() => setLocale("fr")}
-              className={[
-                "rounded px-1.5 py-1 text-xs font-semibold",
-                locale === "fr"
-                  ? "bg-sky-600 text-white"
-                  : "text-zinc-600 dark:text-zinc-300",
-              ].join(" ")}
-            >
-              FR
-            </button>
-          </div>
+          <NavLangThemeGroup />
+
           {isReady && !user && (
             <Link
               href="/login"
-              className="rounded-lg px-2 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50 dark:text-sky-400 dark:hover:bg-sky-950/50 sm:px-3"
+              className="touch-manipulation rounded-lg px-2 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50 active:bg-sky-100/80 dark:text-sky-400 dark:hover:bg-sky-950/50 dark:active:bg-sky-950 sm:px-3"
             >
               {t("nav.login")}
             </Link>
@@ -174,7 +147,7 @@ export function NavBar() {
           <Link
             href="/profile"
             className={[
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors",
+              "flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border transition-colors active:opacity-90 sm:h-10 sm:w-10",
               pathname === "/profile"
                 ? user
                   ? "overflow-hidden border-sky-500 p-0 ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:border-sky-400 dark:ring-sky-400 dark:ring-offset-zinc-950"
@@ -214,14 +187,14 @@ export function NavBar() {
             <Link href="/" className={linkClassMobile("/")} onClick={() => setMobileMenuOpen(false)}>
               {t("nav.home")}
             </Link>
-            <Link href="/about" className={linkClassMobile("/about")} onClick={() => setMobileMenuOpen(false)}>
-              {t("nav.about")}
-            </Link>
             <Link href="/map" className={linkClassMobile("/map")} onClick={() => setMobileMenuOpen(false)}>
               {t("nav.map")}
             </Link>
             <Link href="/friends" className={linkClassMobile("/friends")} onClick={() => setMobileMenuOpen(false)}>
               {t("nav.friends")}
+            </Link>
+            <Link href="/about" className={linkClassMobile("/about")} onClick={() => setMobileMenuOpen(false)}>
+              {t("nav.about")}
             </Link>
             {user && isAdmin && (
               <Link href="/admin" className={linkClassMobile("/admin")} onClick={() => setMobileMenuOpen(false)}>

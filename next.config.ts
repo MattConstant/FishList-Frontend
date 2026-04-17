@@ -1,15 +1,8 @@
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
 import type { NextConfig } from "next";
 
-/** Pin Turbopack to this app when another lockfile exists higher in the tree (e.g. monorepo / home dir). */
-const turbopackRoot = path.dirname(fileURLToPath(import.meta.url));
-
-const nextConfig: NextConfig = {
-  turbopack: {
-    root: turbopackRoot,
-  },
-};
+// Avoid `turbopack.root` here — pinning it caused Turbopack HMR panics ("Next.js
+// package not found"). Dev uses webpack; use `npm run dev:turbo` after cleaning
+// stray parent lockfiles if you want Turbopack.
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

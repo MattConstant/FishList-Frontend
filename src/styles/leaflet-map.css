@@ -1,0 +1,27 @@
+/*
+ * Tailwind v4 preflight sets *, *::before, *::after to border-box and resets
+ * img to display:block / max-width:100%. Leaflet's internal positioning math
+ * for tiles, panes, markers, and popups assumes content-box sizing and
+ * inline images. Without these overrides, every marker renders with a
+ * consistent downward shift.
+ */
+.leaflet-container,
+.leaflet-container *,
+.leaflet-container *::before,
+.leaflet-container *::after {
+  box-sizing: content-box !important;
+}
+
+.leaflet-container img {
+  max-width: none !important;
+  max-height: none !important;
+  display: inline !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+.leaflet-marker-icon {
+  padding: 0 !important;
+  border: none !important;
+  background: none !important;
+}

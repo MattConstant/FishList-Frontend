@@ -134,7 +134,7 @@ export default function FriendsPage() {
         </h1>
       </div>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
           {t("friends.find")}
         </p>
@@ -186,7 +186,7 @@ export default function FriendsPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
+      <section className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
           {t("friends.myFriends")}
         </p>

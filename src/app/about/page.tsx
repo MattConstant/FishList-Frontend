@@ -8,17 +8,13 @@ import { useLocale } from "@/contexts/locale-context";
 export default function AboutPage() {
   const { t } = useLocale();
   return (
-    <div
-      className="relative flex w-full min-h-full flex-col px-4 py-10 sm:px-6 sm:py-16"
-      style={{
-        backgroundImage:
-          "linear-gradient(rgba(15,23,42,0.58), rgba(15,23,42,0.72)), url('/Quetico_NorthernLights-scaled.jpg')",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundAttachment: "scroll",
-      }}
-    >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.24),transparent_35%),radial-gradient(circle_at_80%_84%,rgba(34,197,94,0.16),transparent_35%)]" />
+    <div className="relative flex w-full min-h-full flex-col px-4 py-10 sm:px-6 sm:py-16">
+      {/* Dark mode only: hero photo. Light mode uses the global body background. */}
+      <div
+        className="about-page__dark-hero pointer-events-none absolute inset-0 hidden dark:block"
+        aria-hidden
+      />
+      <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.24),transparent_35%),radial-gradient(circle_at_80%_84%,rgba(34,197,94,0.16),transparent_35%)] dark:block" aria-hidden />
 
       <article className="relative z-10 mx-auto w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
         <div className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/70 dark:bg-sky-900/30 dark:text-sky-300">
@@ -144,7 +140,7 @@ export default function AboutPage() {
       </article>
 
       <div className="relative z-10 mx-auto mt-12 w-full max-w-4xl px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6">
-        <SiteFooter className="border-white/25 text-zinc-300 [&_a]:text-sky-200 [&_a:hover]:text-white [&_p]:text-zinc-500" />
+        <SiteFooter className="border-zinc-200/90 text-zinc-600 [&_a]:text-sky-700 [&_a:hover]:text-sky-900 [&_p]:text-zinc-500 dark:border-white/25 dark:text-zinc-300 dark:[&_a]:text-sky-200 dark:[&_a:hover]:text-white dark:[&_p]:text-zinc-500" />
       </div>
     </div>
   );

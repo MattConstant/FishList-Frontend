@@ -1,0 +1,147 @@
+/**
+ * Map route — toolbar, filters, and map chrome.
+ * Imported from app/globals.css (Tailwind pipeline).
+ */
+
+.map-page__root {
+  @apply flex min-h-0 flex-1 flex-col overflow-hidden;
+}
+
+.map-page__chrome {
+  @apply border-b border-zinc-200/90 bg-white dark:border-zinc-700/90 dark:bg-zinc-900;
+}
+
+.map-page__toolbar {
+  @apply flex shrink-0 flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-6 sm:py-4;
+}
+
+.map-page__toolbar-title {
+  @apply text-xl font-semibold text-zinc-900 dark:text-zinc-50;
+}
+
+.map-page__toolbar-desc {
+  @apply mt-1 text-sm text-zinc-600 dark:text-zinc-400;
+}
+
+.map-page__toolbar-actions {
+  @apply flex shrink-0 flex-wrap items-center gap-2 pt-0.5;
+}
+
+.map-page__segment-wrap {
+  @apply inline-flex rounded-xl border border-zinc-200/90 bg-zinc-100/70 p-0.5 shadow-sm dark:border-zinc-600/80 dark:bg-zinc-800/90;
+}
+
+.map-page__segment-btn {
+  @apply rounded-lg px-3 py-1.5 text-xs font-semibold transition;
+  @apply text-zinc-600 hover:bg-white/90 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100;
+}
+
+.map-page__segment-btn--active {
+  @apply bg-sky-600 text-white shadow-sm;
+  @apply hover:bg-sky-600 hover:text-white dark:hover:bg-sky-600;
+}
+
+.map-page__log-catch {
+  @apply inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-semibold shadow-sm transition;
+  @apply bg-sky-600 text-white hover:bg-sky-700;
+}
+
+.map-page__log-catch--placing {
+  @apply bg-amber-500 text-white hover:bg-amber-500;
+}
+
+.map-page__login-link {
+  @apply inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition;
+  @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800/70 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-700 dark:hover:text-white;
+}
+
+.map-page__cancel-btn {
+  @apply rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800/70 dark:text-zinc-300 dark:hover:bg-zinc-700;
+}
+
+.map-page__filter-shell {
+  @apply shrink-0;
+}
+
+.map-page__filter-bar {
+  @apply flex items-center gap-3 px-4 py-2.5 sm:px-6;
+}
+
+.map-page__filter-bar--expanded {
+  @apply border-b border-zinc-100/90 dark:border-zinc-800/90;
+}
+
+.map-page__filter-toggle {
+  @apply flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 text-left transition hover:opacity-90;
+}
+
+.map-page__filter-heading {
+  @apply shrink-0 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400;
+}
+
+.map-page__filter-summary {
+  @apply truncate text-sm text-zinc-600 dark:text-zinc-400;
+}
+
+.map-page__filter-chevron-btn {
+  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-sm transition;
+  @apply hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-700 dark:hover:text-sky-300;
+}
+
+.map-page__filter-panel {
+  @apply flex max-h-[min(50vh,28rem)] flex-wrap items-center gap-x-2 gap-y-2 overflow-y-auto px-4 pb-4 pt-3 sm:px-6;
+}
+
+.map-page__species-pill {
+  @apply rounded-full border px-3 py-1.5 text-xs font-medium transition;
+  @apply border-zinc-200 bg-zinc-50/90 text-zinc-700 hover:border-sky-400 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800/55 dark:text-zinc-300 dark:hover:border-sky-500/70 dark:hover:bg-zinc-700/80 dark:hover:text-zinc-50;
+}
+
+.map-page__species-pill--active {
+  @apply border-sky-600 bg-sky-600 text-white shadow-sm;
+  @apply hover:border-sky-600 hover:bg-sky-600 hover:text-white dark:hover:border-sky-600 dark:hover:bg-sky-600;
+}
+
+.map-page__filter-divider {
+  @apply ml-0 mt-1 w-full border-t border-zinc-100 pt-3 dark:border-zinc-800/90;
+}
+
+.map-page__filter-label {
+  @apply text-[0.65rem] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400/90;
+}
+
+.map-page__filter-label--spaced {
+  @apply ml-1 sm:ml-3;
+}
+
+.map-page__field {
+  @apply min-w-0 rounded-xl border border-zinc-200 bg-zinc-50/90 px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-zinc-600 dark:bg-zinc-800/75 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-sky-400 dark:focus:ring-sky-400/25;
+}
+
+.map-page__field--waterbody {
+  @apply min-w-56;
+}
+
+.map-page__map-area {
+  @apply relative min-h-[12rem] flex-1 basis-0 overflow-hidden;
+}
+
+.map-page__map-area--placing {
+  cursor: crosshair;
+}
+
+.map-page__loading-overlay {
+  @apply absolute inset-0 z-10 flex items-center justify-center bg-white/85 backdrop-blur-[2px] dark:bg-zinc-900/85;
+}
+
+.map-page__loading-status {
+  @apply text-sm font-medium text-zinc-700 dark:text-zinc-300;
+}
+
+.map-page__placing-banner {
+  @apply absolute left-1/2 top-3 z-20 -translate-x-1/2 rounded-xl border border-amber-300 bg-amber-50 px-5 py-2.5 text-sm font-medium text-amber-800 shadow-lg dark:border-amber-700 dark:bg-amber-950 dark:text-amber-200;
+}
+
+.map-page__stocking-loading {
+  @apply flex flex-1 items-center justify-center text-zinc-500;
+}
