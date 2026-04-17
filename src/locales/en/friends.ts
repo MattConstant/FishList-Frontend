@@ -1,0 +1,17 @@
+export default {
+  "friends.title": "Friends",
+  "friends.kicker": "Social",
+  "friends.find": "Find anglers",
+  "friends.searchPlaceholder": "Search username (min 2 chars)",
+  "friends.searching": "Searching...",
+  "friends.working": "Working...",
+  "friends.unfriend": "Unfriend",
+  "friends.add": "Add friend",
+  "friends.myFriends": "My friends",
+  "friends.loading": "Loading...",
+  "friends.loadingFriends": "Loading friends...",
+  "friends.removing": "Removing...",
+  "friends.empty": "No friends yet. Search and add anglers above.",
+  "friends.requireLogin":
+    "Log in to manage friends and filter posts by people you know.",
+} as const;

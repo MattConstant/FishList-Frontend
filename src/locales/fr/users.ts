@@ -1,0 +1,17 @@
+export default {
+  "users.invalidId": "Identifiant utilisateur invalide.",
+  "users.loadError": "Impossible de charger le profil utilisateur.",
+  "users.loadingProfile": "Chargement du profil...",
+  "users.mustLogin": "Connectez-vous pour voir ce profil.",
+  "users.angler": "Pecheur",
+  "users.catches": "Prises",
+  "users.noCatches": "Aucune prise publiee pour le moment.",
+  "users.editProfile": "Modifier mon profil",
+  "users.addFriend": "Ajouter",
+  "users.removeFriend": "Retirer",
+  "users.friendBusy": "Traitement...",
+  "users.locations": "Lieux",
+  "users.totalCatches": "Prises totales",
+  "users.accountId": "Compte",
+  "users.sectionSpots": "Lieux et prises",
+} as const;
