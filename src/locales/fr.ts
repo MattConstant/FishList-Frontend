@@ -1,5 +1,6 @@
 import about from "./fr/about";
 import admin from "./fr/admin";
+import catchDict from "./fr/catch";
 import errors from "./fr/errors";
 import friends from "./fr/friends";
 import home from "./fr/home";
@@ -11,6 +12,7 @@ import users from "./fr/users";
 
 const fr = {
   ...nav,
+  ...catchDict,
   ...login,
   ...about,
   ...legal,

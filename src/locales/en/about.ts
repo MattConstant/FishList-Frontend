@@ -1,12 +1,12 @@
 export default {
   "about.kicker": "About FishList",
-  "about.title": "Built by an Ontarian, for Ontarians",
+  "about.title": "A labour of love from Ottawa",
   "about.p1":
-    "FishList was made with the local fishing community in mind, from early spring trout openers to quiet evenings on cottage lakes. The goal is simple: make it easy to track catches, remember spots, and share what is happening on the water.",
+    "I'm a developer based in Ottawa who simply loves to fish. A lot of my free time goes into scouting new spots, reading stocking updates, and piecing together maps, photos, and notes from all over the place, usually across more apps and browser tabs than I'd like to admit.",
   "about.p2":
-    "Ontario is huge and every region fishes a little differently. A day in Quetico feels different from a day on Simcoe or the Ottawa River. FishList gives you one home for those moments: where you went, what hit, what worked, and what you learned.",
+    "So I decided to bring the tools I actually use into one home: FishList. Explore Ontario waters, log catches with photos and details, connect with friends, and scroll a community feed without juggling half a dozen different services every time you plan a day on the water.",
   "about.p3":
-    "This app is still growing, and community feedback shapes what comes next. If it helps one more local angler plan a better day out, that is a win.",
+    "The app is still growing, and honest feedback from anglers means the world. If FishList saves you a little hassle and helps you spend more time fishing and less time organizing, that's exactly what it was built for.",
   "about.card.local.title": "Local-first",
   "about.card.local.body":
     "Built around Ontario waters and stocking data so your map feels familiar from day one.",

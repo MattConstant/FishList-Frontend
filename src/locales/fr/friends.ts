@@ -14,4 +14,7 @@ export default {
   "friends.empty": "Aucun ami pour le moment. Recherchez et ajoutez des pecheurs ci-dessus.",
   "friends.requireLogin":
     "Connectez-vous pour gerer vos amis et filtrer les publications des personnes que vous connaissez.",
+  "friends.pagePrev": "Précédent",
+  "friends.pageNext": "Suivant",
+  "friends.pageStatus": "Page {{current}} sur {{total}}",
 } as const;

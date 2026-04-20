@@ -6,7 +6,11 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
-import { fetchLakeFishingInsights, getDisplayErrorMessage } from "@/lib/api";
+import {
+  fetchLakeFishingInsights,
+  getDisplayErrorMessage,
+  type FishEntryPayload,
+} from "@/lib/api";
 import { waterbodyGroupKey, type WaterbodyGroup } from "@/lib/geohub";
 import { refineLakePin } from "@/lib/lake-geocode";
 import { waterbodyToInsightPayload } from "@/lib/lake-insights";
@@ -115,7 +119,12 @@ export type CatchMapMarker = {
   accountId: number;
   username: string;
   locationName: string;
-  catches: { species: string; quantity?: number; imageUrl?: string }[];
+  catches: {
+    species: string;
+    quantity?: number;
+    imageUrl?: string;
+    fishDetails?: FishEntryPayload[];
+  }[];
 };
 
 type StockingMapProps = {
@@ -477,13 +486,32 @@ export default function StockingMap({
     const mineIcon = userCatchIcon();
     const othersIcon = otherCatchIcon();
 
+    function formatCatchText(c: CatchMapMarker["catches"][number]): string {
+      if (c.fishDetails && c.fishDetails.length > 0) {
+        return c.fishDetails
+          .map((f) => {
+            const bits = [
+              f.species,
+              f.lengthCm != null ? `${f.lengthCm} cm` : null,
+              f.weightKg != null ? `${f.weightKg} kg` : null,
+            ].filter(Boolean);
+            return bits.join(" · ");
+          })
+          .join("<br/>");
+      }
+      return `${c.species}${c.quantity && c.quantity > 1 ? ` x${c.quantity}` : ""}`;
+    }
+
     for (const markerData of filteredCatchMarkers) {
       const isMine = markerData.accountId === currentUserId;
-      const catchLines = markerData.catches
-        .map((c) => `${c.species}${c.quantity && c.quantity > 1 ? ` x${c.quantity}` : ""}`)
-        .join("<br/>");
+      const catchLines = markerData.catches.map((c) => formatCatchText(c)).join("<br/>");
+      const seenImageUrls = new Set<string>();
       const images = markerData.catches
-        .filter((c) => c.imageUrl)
+        .filter((c) => {
+          if (!c.imageUrl || seenImageUrls.has(c.imageUrl)) return false;
+          seenImageUrls.add(c.imageUrl);
+          return true;
+        })
         .map(
           (c) =>
             `<img src="${c.imageUrl}" alt="${c.species}" style="width:100%;max-height:160px;object-fit:cover;border-radius:6px;margin-top:6px"/>`,

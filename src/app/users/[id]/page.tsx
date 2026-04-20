@@ -67,6 +67,21 @@ export default function UserProfilePage() {
   }, [load]);
 
   useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") void load();
+    }
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) void load();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [load]);
+
+  useEffect(() => {
     if (!user) {
       setFriendIds(new Set());
       return;

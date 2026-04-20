@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { HomePreviewCarousel } from "@/components/home-preview-carousel";
+import HomeLandingPage from "@/components/home-landing-page";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -364,21 +364,45 @@ const FeedCard = memo(function FeedCard({
         <p className="font-semibold text-zinc-900 dark:text-zinc-100">
           {post.catch.species}
         </p>
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          {[
-            post.catch.quantity && post.catch.quantity > 1
-              ? `×${post.catch.quantity}`
-              : null,
-            post.catch.lengthCm ? `${post.catch.lengthCm} cm` : null,
-            post.catch.weightKg ? `${post.catch.weightKg} kg` : null,
-          ]
-            .filter(Boolean)
-            .join(" · ") || "No measurements"}
-        </p>
-        {post.catch.notes && (
-          <p className="line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
-            {post.catch.notes}
-          </p>
+        {post.catch.fishDetails && post.catch.fishDetails.length > 0 ? (
+          <ul className="list-inside list-disc space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
+            {post.catch.fishDetails.map((f, i) => {
+              const measureBits = [
+                f.lengthCm != null ? `${f.lengthCm} cm` : null,
+                f.weightKg != null ? `${f.weightKg} kg` : null,
+              ].filter(Boolean);
+              return (
+                <li key={i}>
+                  <span className="font-medium text-zinc-800 dark:text-zinc-200">{f.species}</span>
+                  {measureBits.length > 0 ? ` · ${measureBits.join(" · ")}` : null}
+                  {f.notes ? (
+                    <span className="mt-0.5 block text-zinc-500 dark:text-zinc-500">
+                      {f.notes}
+                    </span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              {[
+                post.catch.quantity && post.catch.quantity > 1
+                  ? `×${post.catch.quantity}`
+                  : null,
+                post.catch.lengthCm ? `${post.catch.lengthCm} cm` : null,
+                post.catch.weightKg ? `${post.catch.weightKg} kg` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ") || "No measurements"}
+            </p>
+            {post.catch.notes && (
+              <p className="line-clamp-3 text-sm text-zinc-600 dark:text-zinc-400">
+                {post.catch.notes}
+              </p>
+            )}
+          </>
         )}
         <div className="pt-1">
           <button
@@ -593,58 +617,7 @@ export default function HomePage() {
   }
 
   if (!user) {
-    return (
-      <div
-        className="relative flex flex-1 flex-col items-center justify-start px-4 py-10 sm:px-6 sm:py-16"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgba(15,23,42,0.6), rgba(15,23,42,0.6)), url('/Quetico_NorthernLights-scaled.jpg')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="w-full max-w-4xl rounded-2xl border border-white/30 bg-white/90 p-6 shadow-xl backdrop-blur sm:p-8 dark:border-zinc-700 dark:bg-zinc-900/90">
-          <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:justify-between">
-            <div className="min-w-0 flex-1 space-y-3 text-center md:text-left">
-              <p className="text-sm font-medium uppercase tracking-wide text-sky-600 dark:text-sky-400">
-                {t("home.welcome")}
-              </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 sm:text-4xl dark:text-zinc-50">
-                {t("home.heroTitle")}
-              </h1>
-              <p className="mx-auto max-w-xl text-lg leading-relaxed text-zinc-600 md:mx-0 dark:text-zinc-400">
-                {t("home.heroBody")}
-              </p>
-            </div>
-            <Image
-              src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
-              alt="FishList logo"
-              width={200}
-              height={200}
-              className="h-36 w-36 shrink-0 rounded-2xl object-contain sm:h-40 sm:w-40 md:h-52 md:w-52"
-              priority
-            />
-          </div>
-
-          <HomePreviewCarousel className="mt-10 border-t border-zinc-200 pt-8 dark:border-zinc-700" />
-
-          <div className="mt-8 flex flex-wrap justify-center gap-3 md:justify-start">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-xl bg-sky-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-sky-700"
-            >
-              {t("home.getStarted")}
-            </Link>
-            <Link
-              href="/map"
-              className="inline-flex items-center justify-center rounded-xl border border-zinc-300 px-5 py-3 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-900"
-            >
-              {t("home.openMap")}
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    return <HomeLandingPage />;
   }
 
   return (

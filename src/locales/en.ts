@@ -1,5 +1,6 @@
 import about from "./en/about";
 import admin from "./en/admin";
+import catchDict from "./en/catch";
 import errors from "./en/errors";
 import friends from "./en/friends";
 import home from "./en/home";
@@ -11,6 +12,7 @@ import users from "./en/users";
 
 const en = {
   ...nav,
+  ...catchDict,
   ...login,
   ...about,
   ...legal,

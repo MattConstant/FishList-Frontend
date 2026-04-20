@@ -54,6 +54,36 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
   "image/heif",
 ]);
 
+/**
+ * Must stay in sync with Spring `MULTIPART_MAX_SIZE` (default 25MB in application.properties).
+ * Reject before upload so users get a clear message instead of a 502 from the gateway.
+ */
+export const MAX_IMAGE_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+/** Filename part for multipart uploads — some browsers send an empty name; the API needs an extension. */
+export function imageUploadFileName(file: File): string {
+  const trimmed = file.name?.trim();
+  if (trimmed && getFileExtension(trimmed)) {
+    return trimmed;
+  }
+  const ext = inferExtensionFromMime(file.type) || ".jpg";
+  return `image${ext}`;
+}
+
+function inferExtensionFromMime(mimeRaw: string): string {
+  const mime = mimeRaw.split(";")[0]?.trim().toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/heic": ".heic",
+    "image/heif": ".heic",
+  };
+  return map[mime] ?? "";
+}
+
 export type AccountResponse = {
   id: number;
   username: string;
@@ -108,6 +138,8 @@ export function getDisplayErrorMessage(
     if (err.status === 404) return "The requested item was not found.";
     if (err.status === 409) return "That value is already in use.";
     if (err.status === 429) return "Too many requests. Please try again later.";
+    if (err.status === 502)
+      return "Upload failed (bad gateway). Try a smaller photo, or ask the host to raise MULTIPART_MAX_SIZE / proxy body limits.";
     if (err.status >= 500) return "Server error. Please try again.";
     return fallback;
   }
@@ -122,11 +154,20 @@ export function getApiBaseUrl(): string {
 }
 
 export function validateImageFileForUpload(file: File): void {
-  const ext = getFileExtension(file.name);
+  if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    const mb = Math.floor(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024));
+    throw new Error(
+      `Each photo must be at most ${mb} MB. Pick a smaller file or reduce export/camera quality.`,
+    );
+  }
+  let ext = getFileExtension(file.name);
+  if (!ext) {
+    ext = inferExtensionFromMime(file.type);
+  }
   if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
     throw new Error("Unsupported file extension. Allowed: jpg, jpeg, png, gif, webp, heic.");
   }
-  const mime = file.type.trim().toLowerCase();
+  const mime = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
   if (mime && !ALLOWED_IMAGE_MIME_TYPES.has(mime)) {
     throw new Error("Unsupported file type. Allowed image formats: JPEG, PNG, GIF, WEBP, HEIC.");
   }
@@ -206,7 +247,7 @@ export async function apiGet(path: string): Promise<Response> {
   if (session?.authorizationHeader) {
     headers.Authorization = session.authorizationHeader;
   }
-  return fetch(url, { headers });
+  return fetch(url, { headers, cache: "no-store" });
 }
 
 async function apiGetJson<T>(path: string): Promise<T> {
@@ -304,6 +345,7 @@ export async function authenticatedFetch(
 
   const res = await fetch(url, {
     ...init,
+    cache: init.cache ?? "no-store",
     headers: {
       ...normalizeHeaders(init.headers),
       Authorization: session.authorizationHeader,
@@ -330,12 +372,16 @@ async function authVoid(path: string, init?: RequestInit): Promise<void> {
 
 // ── Location + Catch types ──────────────────────────────────────────
 
+/** Matches server `PostVisibility` (who can see the location / feed post). */
+export type PostVisibility = "PUBLIC" | "FRIENDS" | "PRIVATE";
+
 export type LocationPayload = {
   locationName: string;
   latitude: string;
   longitude: string;
   timeStamp: string;
   Details?: string;
+  visibility?: PostVisibility;
 };
 
 export type LocationResponse = LocationPayload & {
@@ -343,9 +389,20 @@ export type LocationResponse = LocationPayload & {
   accountId: number;
 };
 
-export type AddCatchPayload = {
+/** One fish line in a catch (matches server `FishEntryRequest` / `fishDetails` JSON). */
+export type FishEntryPayload = {
   species: string;
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+};
+
+/** Payload for POST /locations/{id}/catches — use `fish` for multiple fish in one post. */
+export type AddCatchPayload = {
+  species?: string;
   quantity?: number;
+  /** When set (and non-empty), all fish are stored on one catch as `fishDetails` on the server. */
+  fish?: FishEntryPayload[];
   lengthCm?: number;
   weightKg?: number;
   notes?: string;
@@ -354,9 +411,18 @@ export type AddCatchPayload = {
   imageUrls?: string[];
 };
 
-export type CatchResponse = AddCatchPayload & {
+export type CatchResponse = {
   id: number;
   locationId: number;
+  species: string;
+  quantity?: number;
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+  description?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  fishDetails?: FishEntryPayload[] | null;
 };
 
 export async function createLocation(
@@ -369,6 +435,20 @@ export async function createLocation(
   });
   await throwIfNotOk(res);
   return res.text();
+}
+
+/** Adds one catch to an existing location (same trip / coordinates). */
+export async function addCatchToLocation(
+  locationId: string,
+  catchData: AddCatchPayload,
+): Promise<CatchResponse> {
+  const catchRes = await authenticatedFetch(`/api/locations/${locationId}/catches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(catchData),
+  });
+  await throwIfNotOk(catchRes);
+  return catchRes.json() as Promise<CatchResponse>;
 }
 
 export async function createLocationAndCatch(
@@ -462,7 +542,21 @@ type FeedPostResponse = {
   description?: string;
   imageUrl?: string;
   imageUrls?: string;
+  fishDetailsJson?: string | null;
 };
+
+function parseFishDetailsJson(
+  raw: string | undefined | null,
+): FishEntryPayload[] | undefined {
+  if (raw == null || raw.trim() === "") return undefined;
+  try {
+    const v = JSON.parse(raw) as unknown;
+    if (!Array.isArray(v)) return undefined;
+    return v as FishEntryPayload[];
+  } catch {
+    return undefined;
+  }
+}
 
 export type CatchLikeResponse = {
   catchId: number;
@@ -534,6 +628,7 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
         : row.imageUrl
           ? [row.imageUrl]
           : [],
+      fishDetails: parseFishDetailsJson(row.fishDetailsJson),
     },
   }));
 }
@@ -675,7 +770,7 @@ export async function fetchLakeFishingInsights(
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {
   validateImageFileForUpload(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file, imageUploadFileName(file));
   return authJson<ImageUploadResponse>("/api/storage/images", {
     method: "POST",
     body: formData,
@@ -687,7 +782,7 @@ export async function identifyFishFromImage(
 ): Promise<FishIdentificationResponse> {
   validateImageFileForUpload(file);
   const formData = new FormData();
-  formData.append("file", file);
+  formData.append("file", file, imageUploadFileName(file));
   return authJson<FishIdentificationResponse>("/api/ai/identify-fish", {
     method: "POST",
     body: formData,

@@ -2,11 +2,11 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
 import type { CatchMapMarker } from "@/components/stocking-map";
-import { fetchLatestPosts, fetchMyFriends, getImageUrl } from "@/lib/api";
+import { fetchLatestPosts, fetchMyFriends, getImageUrl, type FishEntryPayload } from "@/lib/api";
 import {
   allDevelopmentalStages,
   allDistricts,
@@ -63,12 +63,13 @@ export default function MapPage() {
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("all");
-  const [filtersExpanded, setFiltersExpanded] = useState(true);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
+  const skipFiltersExpandedSave = useRef(true);
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(MAP_FILTERS_EXPANDED_KEY) === "false") {
-        setFiltersExpanded(false);
+      if (localStorage.getItem(MAP_FILTERS_EXPANDED_KEY) === "true") {
+        setFiltersExpanded(true);
       }
     } catch {
       /* ignore */
@@ -76,6 +77,10 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
+    if (skipFiltersExpandedSave.current) {
+      skipFiltersExpandedSave.current = false;
+      return;
+    }
     try {
       localStorage.setItem(MAP_FILTERS_EXPANDED_KEY, String(filtersExpanded));
     } catch {
@@ -143,6 +148,7 @@ export default function MapPage() {
             species: post.catch.species ?? "",
             quantity: post.catch.quantity,
             imageUrl: await resolveImageUrl(post.catch.imageUrl),
+            fishDetails: post.catch.fishDetails as FishEntryPayload[] | undefined,
           };
           const existing = byLocation.get(post.locationId);
           if (existing) {
@@ -606,7 +612,10 @@ export default function MapPage() {
             }
             const newCatch = {
               species: info.species,
+              quantity:
+                info.fishDetails.length > 1 ? info.fishDetails.length : undefined,
               imageUrl: resolvedUrl,
+              fishDetails: info.fishDetails,
             };
             setCatchMarkers((prev) => {
               const existing = prev.find(

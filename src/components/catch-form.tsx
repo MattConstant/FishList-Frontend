@@ -1,43 +1,89 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useRef, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useLocale } from "@/contexts/locale-context";
 import {
   ApiHttpError,
   createLocationAndCatch,
   getDisplayErrorMessage,
   identifyFishFromImage,
+  MAX_IMAGE_UPLOAD_BYTES,
   uploadImage,
   validateImageFileForUpload,
   type AddCatchPayload,
+  type FishEntryPayload,
+  type PostVisibility,
 } from "@/lib/api";
+
+type FishRow = {
+  id: string;
+  species: string;
+  lengthCm: string;
+  weightKg: string;
+  notes: string;
+};
+
+function createEmptyFishRow(): FishRow {
+  return {
+    id:
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `fish-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    species: "",
+    lengthCm: "",
+    weightKg: "",
+    notes: "",
+  };
+}
+
+export type CatchFormSuccessInfo = {
+  locationName: string;
+  lat: number;
+  lng: number;
+  /** Summary line (comma-separated species) */
+  species: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  fishDetails: FishEntryPayload[];
+};
 
 type CatchFormProps = {
   lat: number;
   lng: number;
   onClose: () => void;
-  onSuccess: (info: {
-    locationName: string;
-    species: string;
-    lat: number;
-    lng: number;
-    imageUrl?: string;
-    imageUrls?: string[];
-  }) => void;
+  onSuccess: (info: CatchFormSuccessInfo) => void;
 };
 
 const ACCEPTED = ".jpg,.jpeg,.png,.gif,.webp,.heic";
 const MAX_FILES = 4;
 
+const VISIBILITY_OPTIONS: {
+  value: PostVisibility;
+  labelKey: string;
+  hintKey: string;
+}[] = [
+  {
+    value: "PUBLIC",
+    labelKey: "catch.visibility.public",
+    hintKey: "catch.visibility.publicHint",
+  },
+  {
+    value: "FRIENDS",
+    labelKey: "catch.visibility.friends",
+    hintKey: "catch.visibility.friendsHint",
+  },
+  {
+    value: "PRIVATE",
+    labelKey: "catch.visibility.private",
+    hintKey: "catch.visibility.privateHint",
+  },
+];
+
 export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormProps) {
   const { t } = useLocale();
   const [locationName, setLocationName] = useState("");
-  const [species, setSpecies] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [lengthCm, setLengthCm] = useState("");
-  const [weightKg, setWeightKg] = useState("");
-  const [notes, setNotes] = useState("");
+  const [fishRows, setFishRows] = useState<FishRow[]>(() => [createEmptyFishRow()]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [pending, setPending] = useState(false);
@@ -45,7 +91,17 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [uploadWarning, setUploadWarning] = useState("");
+  /** When every selected photo fails to upload — full detail; blocks save and keeps modal open. */
+  const [photoUploadDetails, setPhotoUploadDetails] = useState<string | null>(null);
+  const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const fileRef = useRef<HTMLInputElement>(null);
+  const photoUploadErrorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (photoUploadDetails) {
+      photoUploadErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [photoUploadDetails]);
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const allIncoming = Array.from(e.target.files ?? []);
@@ -66,9 +122,11 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
     }
     setSelectedFiles(valid);
     setPreviews(valid.map((f) => URL.createObjectURL(f)));
+    setPhotoUploadDetails(null);
     if (rejected > 0 || ignoredByCount > 0) {
+      const maxMb = Math.floor(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024));
       setUploadWarning(
-        "Only JPG, JPEG, PNG, GIF, WEBP, and HEIC files are allowed (max 4 photos).",
+        `Some files were skipped. Allowed: JPG, PNG, GIF, WEBP, HEIC — up to ${maxMb} MB each, max ${MAX_FILES} photos.`,
       );
     } else {
       setUploadWarning("");
@@ -91,16 +149,23 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
     e.preventDefault();
     setError("");
     setUploadWarning("");
+    setPhotoUploadDetails(null);
 
     const name = locationName.trim();
-    const sp = species.trim();
     if (!name) {
       setError("Location name is required.");
       return;
     }
-    if (!sp) {
-      setError("Species is required.");
-      return;
+
+    const normalizedRows = fishRows.map((row) => ({
+      ...row,
+      species: row.species.trim(),
+    }));
+    for (const row of normalizedRows) {
+      if (!row.species) {
+        setError("Each fish must have a species.");
+        return;
+      }
     }
 
     setPending(true);
@@ -109,7 +174,10 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
 
       if (selectedFiles.length > 0) {
         setStatus("Uploading photos…");
-        for (const file of selectedFiles.slice(0, MAX_FILES)) {
+        const uploadFailures: string[] = [];
+        for (let i = 0; i < selectedFiles.slice(0, MAX_FILES).length; i++) {
+          const file = selectedFiles[i];
+          const label = file.name?.trim() || `Photo ${i + 1}`;
           try {
             const uploadRes = await uploadImage(file);
             imageUrls.push(uploadRes.objectKey);
@@ -118,22 +186,44 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
               window.alert(t("errors.uploadLimitReached"));
               return;
             }
-            setUploadWarning(
-              "One or more photos could not be uploaded. Your catch will still be saved with successful uploads.",
-            );
+            const detail =
+              err instanceof ApiHttpError
+                ? err.message
+                : err instanceof Error
+                  ? err.message
+                  : "Upload failed";
+            uploadFailures.push(`${label}: ${detail}`);
           }
+        }
+        if (uploadFailures.length > 0 && imageUrls.length > 0) {
+          setUploadWarning(
+            `${uploadFailures.length} of ${selectedFiles.length} photo(s) could not be uploaded. Your catch will still be saved with the photos that succeeded.\n\n${uploadFailures.join("\n")}`,
+          );
+        }
+
+        if (selectedFiles.length > 0 && imageUrls.length === 0) {
+          const detail =
+            uploadFailures.length > 0
+              ? uploadFailures.join("\n")
+              : "No response from the upload service. Open DevTools → Network and check POST /api/storage/images.";
+          setPhotoUploadDetails(detail);
+          return;
         }
       }
 
       setStatus("Saving catch…");
-      const catchData: AddCatchPayload = { species: sp };
-      const q = parseInt(quantity, 10);
-      if (!isNaN(q) && q >= 1) catchData.quantity = q;
-      const l = parseFloat(lengthCm);
-      if (!isNaN(l) && l > 0) catchData.lengthCm = l;
-      const w = parseFloat(weightKg);
-      if (!isNaN(w) && w > 0) catchData.weightKg = w;
-      if (notes.trim()) catchData.notes = notes.trim();
+
+      const fish: FishEntryPayload[] = normalizedRows.map((row) => {
+        const line: FishEntryPayload = { species: row.species };
+        const l = parseFloat(row.lengthCm);
+        if (!isNaN(l) && l > 0) line.lengthCm = l;
+        const w = parseFloat(row.weightKg);
+        if (!isNaN(w) && w > 0) line.weightKg = w;
+        if (row.notes.trim()) line.notes = row.notes.trim();
+        return line;
+      });
+
+      const catchData: AddCatchPayload = { fish };
       if (imageUrls.length > 0) {
         catchData.imageUrl = imageUrls[0];
         catchData.imageUrls = imageUrls;
@@ -145,16 +235,19 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
           latitude: lat.toFixed(6),
           longitude: lng.toFixed(6),
           timeStamp: new Date().toISOString(),
+          visibility,
         },
         catchData,
       );
+
       onSuccess({
         locationName: name,
-        species: sp,
+        species: fish.map((f) => f.species).join(", "),
         lat,
         lng,
         imageUrl: imageUrls[0],
         imageUrls,
+        fishDetails: fish,
       });
     } catch (err) {
       setError(getDisplayErrorMessage(err, t("errors.saveCatchFailed")));
@@ -175,7 +268,12 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
     try {
       const result = await identifyFishFromImage(selectedFiles[0]);
       if (result.suggestedSpecies && result.suggestedSpecies !== "Unknown") {
-        setSpecies(result.suggestedSpecies);
+        setFishRows((prev) => {
+          const next = [...prev];
+          const head = next[0];
+          if (head) next[0] = { ...head, species: result.suggestedSpecies ?? "" };
+          return next;
+        });
       } else {
         setUploadWarning(t("errors.aiIdentifyInconclusive"));
       }
@@ -228,75 +326,151 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2">
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Species *
-              </label>
-              <input
-                type="text"
-                value={species}
-                onChange={(e) => setSpecies(e.target.value)}
-                className={inputClass}
-                placeholder="e.g. Brook Trout"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Quantity
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                className={inputClass}
-                placeholder="1"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Length (cm)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.1"
-                value={lengthCm}
-                onChange={(e) => setLengthCm(e.target.value)}
-                className={inputClass}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                Weight (kg)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={weightKg}
-                onChange={(e) => setWeightKg(e.target.value)}
-                className={inputClass}
-              />
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              {t("catch.visibility.label")}
+            </span>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:gap-x-4">
+              {VISIBILITY_OPTIONS.map((opt) => (
+                <label
+                  key={opt.value}
+                  className="inline-flex cursor-pointer items-center gap-1 text-xs text-zinc-700 dark:text-zinc-300"
+                  title={t(opt.hintKey)}
+                >
+                  <input
+                    type="radio"
+                    name="catch-visibility"
+                    value={opt.value}
+                    checked={visibility === opt.value}
+                    onChange={() => setVisibility(opt.value)}
+                    className="h-3.5 w-3.5 shrink-0 border-zinc-300 text-sky-600 focus:ring-sky-500"
+                  />
+                  {t(opt.labelKey)}
+                </label>
+              ))}
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-              Notes
-            </label>
-            <textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className={inputClass}
-              placeholder="Weather, bait, technique…"
-            />
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                {t("catch.fish.section")}
+              </span>
+              <button
+                type="button"
+                onClick={() => setFishRows((prev) => [...prev, createEmptyFishRow()])}
+                className="rounded-lg border border-sky-600 bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-800 transition hover:bg-sky-100 dark:border-sky-500 dark:bg-sky-950/40 dark:text-sky-100 dark:hover:bg-sky-900/50"
+              >
+                {t("catch.fish.add")}
+              </button>
+            </div>
+
+            {fishRows.map((row, index) => (
+              <div
+                key={row.id}
+                className="rounded-xl border border-zinc-200 bg-zinc-50/80 p-3 dark:border-zinc-600 dark:bg-zinc-800/50"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span className="text-xs font-semibold text-zinc-800 dark:text-zinc-100">
+                    {t("catch.fish.heading").replace("{n}", String(index + 1))}
+                  </span>
+                  {fishRows.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setFishRows((prev) =>
+                          prev.length <= 1 ? prev : prev.filter((r) => r.id !== row.id),
+                        )
+                      }
+                      className="text-xs font-medium text-red-600 hover:underline dark:text-red-400"
+                    >
+                      {t("catch.fish.remove")}
+                    </button>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("catch.fish.species")} *
+                    </label>
+                    <input
+                      type="text"
+                      value={row.species}
+                      onChange={(e) =>
+                        setFishRows((prev) =>
+                          prev.map((r) =>
+                            r.id === row.id ? { ...r, species: e.target.value } : r,
+                          ),
+                        )
+                      }
+                      className={inputClass}
+                      placeholder="e.g. Brook Trout"
+                      required
+                      aria-required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("catch.fish.lengthCm")}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      value={row.lengthCm}
+                      onChange={(e) =>
+                        setFishRows((prev) =>
+                          prev.map((r) =>
+                            r.id === row.id ? { ...r, lengthCm: e.target.value } : r,
+                          ),
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("catch.fish.weightKg")}
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={row.weightKg}
+                      onChange={(e) =>
+                        setFishRows((prev) =>
+                          prev.map((r) =>
+                            r.id === row.id ? { ...r, weightKg: e.target.value } : r,
+                          ),
+                        )
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div className="col-span-2">
+                    <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                      {t("catch.fish.notes")}
+                    </label>
+                    <textarea
+                      value={row.notes}
+                      onChange={(e) =>
+                        setFishRows((prev) =>
+                          prev.map((r) =>
+                            r.id === row.id ? { ...r, notes: e.target.value } : r,
+                          ),
+                        )
+                      }
+                      rows={2}
+                      className={inputClass}
+                      placeholder="Weather, bait, technique…"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {/* Photo upload */}
@@ -307,6 +481,9 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
             <p className="mt-1 text-xs text-amber-700 dark:text-amber-400">
               Since this is a new app and my budget is not amazing, we are limiting image uploads to 15 per user per day.
               If you wish to support this app, feel free to donate.
+            </p>
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Tip: photos around 10 MB or smaller usually upload most reliably; very large camera files can time out.
             </p>
             <div className="mt-2">
               <button
@@ -382,8 +559,30 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
               {error}
             </p>
           )}
+
+          {photoUploadDetails && (
+            <div
+              ref={photoUploadErrorRef}
+              role="alert"
+              className="max-h-[min(50vh,16rem)] overflow-y-auto rounded-xl border border-red-400/90 bg-red-50 p-4 text-red-950 shadow-sm dark:border-red-500/80 dark:bg-red-950/50 dark:text-red-50"
+            >
+              <p className="text-sm font-semibold">We couldn’t attach your photos</p>
+              <p className="mt-1 text-xs leading-relaxed opacity-95">
+                Your catch hasn’t been saved yet, so you can swap in different photos or tap Save again.
+                Very large files (often about 10 MB and up) are more likely to fail on a slow
+                connection — exporting or resizing the image first usually helps. Details are below.
+              </p>
+              <pre className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-white/80 px-3 py-2 font-sans text-xs leading-relaxed text-red-900 dark:bg-black/30 dark:text-red-100">
+                {photoUploadDetails}
+              </pre>
+            </div>
+          )}
+
           {uploadWarning && (
-            <p className="text-sm text-amber-700 dark:text-amber-400" role="status">
+            <p
+              className="whitespace-pre-wrap break-words text-sm text-amber-800 dark:text-amber-300"
+              role="status"
+            >
               {uploadWarning}
             </p>
           )}

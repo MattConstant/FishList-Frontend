@@ -31,4 +31,8 @@ export default {
     "Image uploads are disabled on the server. Your profile can still use a new username.",
   "profile.saved": "Profile updated.",
   "profile.accountId": "Account",
+  "profile.pagePrev": "Previous",
+  "profile.pageNext": "Next",
+  "profile.pageStatus": "Page {{current}} of {{total}}",
+  "profile.morePhotos": "+{{n}} more photos",
 } as const;

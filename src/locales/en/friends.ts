@@ -14,4 +14,7 @@ export default {
   "friends.empty": "No friends yet. Search and add anglers above.",
   "friends.requireLogin":
     "Log in to manage friends and filter posts by people you know.",
+  "friends.pagePrev": "Previous",
+  "friends.pageNext": "Next",
+  "friends.pageStatus": "Page {{current}} of {{total}}",
 } as const;

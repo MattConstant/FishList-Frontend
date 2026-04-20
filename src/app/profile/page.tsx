@@ -57,6 +57,22 @@ export default function ProfilePage() {
     void loadCatches();
   }, [loadCatches]);
 
+  /** Deleted posts on the feed were still visible here when the API response was cached or the tab was restored from bfcache. */
+  useEffect(() => {
+    function onVisible() {
+      if (document.visibilityState === "visible") void loadCatches();
+    }
+    function onPageShow(e: PageTransitionEvent) {
+      if (e.persisted) void loadCatches();
+    }
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
+    };
+  }, [loadCatches]);
+
   useEffect(() => {
     if (!user) return;
     setNameDraft(user.username);
@@ -207,7 +223,7 @@ export default function ProfilePage() {
 
   return (
     <div className="relative min-h-full flex-1">
-      <div className="relative mx-auto flex w-full max-w-2xl flex-col gap-8 px-4 pb-20 pt-8 sm:px-6">
+      <div className="relative mx-auto flex w-full max-w-4xl flex-col gap-8 px-4 pb-20 pt-8 sm:px-6">
         <div className="overflow-hidden rounded-[28px] border border-zinc-200/90 bg-white/95 shadow-xl shadow-zinc-900/10 backdrop-blur dark:border-zinc-700/90 dark:bg-zinc-900/90">
           <div className="bg-white/95 px-5 pb-8 pt-7 dark:bg-zinc-900/90 sm:px-8 sm:pt-9">
             <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:gap-6">

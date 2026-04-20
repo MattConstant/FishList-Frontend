@@ -31,4 +31,8 @@ export default {
     "Le televersement d'images est desactive sur le serveur. Vous pouvez tout de meme changer votre nom.",
   "profile.saved": "Profil mis a jour.",
   "profile.accountId": "Compte",
+  "profile.pagePrev": "Précédent",
+  "profile.pageNext": "Suivant",
+  "profile.pageStatus": "Page {{current}} sur {{total}}",
+  "profile.morePhotos": "+{{n}} photos de plus",
 } as const;

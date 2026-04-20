@@ -2,7 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { useLocale } from "@/contexts/locale-context";
 import { getImageUrl, type CatchResponse, type LocationWithCatches } from "@/lib/api";
+
+const CATCHES_PER_PAGE = 5;
 
 function formatLocationDate(iso: string) {
   try {
@@ -21,6 +24,7 @@ function isObjectKey(url: string) {
 }
 
 export function CatchCard({ c }: { c: CatchResponse }) {
+  const { t } = useLocale();
   const [open, setOpen] = useState(false);
   const imageCandidates = useMemo(
     () =>
@@ -31,10 +35,36 @@ export function CatchCard({ c }: { c: CatchResponse }) {
           : [],
     [c.imageUrls, c.imageUrl],
   );
+  const firstImageKey = imageCandidates[0];
+  const [thumbSrc, setThumbSrc] = useState<string | null>(() =>
+    firstImageKey && !isObjectKey(firstImageKey) ? firstImageKey : null,
+  );
   const [resolvedUrls, setResolvedUrls] = useState<string[]>(
     imageCandidates.filter((u) => !isObjectKey(u)),
   );
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    if (!firstImageKey) {
+      setThumbSrc(null);
+      return;
+    }
+    if (!isObjectKey(firstImageKey)) {
+      setThumbSrc(firstImageKey);
+      return;
+    }
+    let cancelled = false;
+    getImageUrl(firstImageKey)
+      .then((url) => {
+        if (!cancelled) setThumbSrc(url);
+      })
+      .catch(() => {
+        if (!cancelled) setThumbSrc(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [firstImageKey]);
 
   useEffect(() => {
     if (!open || imageCandidates.length === 0) return;
@@ -58,30 +88,53 @@ export function CatchCard({ c }: { c: CatchResponse }) {
   }, [open, imageCandidates]);
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white shadow-sm transition hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900">
+    <div className="rounded-xl border border-zinc-200 bg-zinc-50/80 shadow-sm transition hover:shadow-md dark:border-zinc-700 dark:bg-zinc-900/40">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        aria-expanded={open}
+        className="flex w-full items-start gap-3 px-4 py-3 text-left"
       >
-        <span className="text-2xl">🐟</span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-medium text-zinc-900 dark:text-zinc-50">
+        <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800">
+          {thumbSrc ? (
+            <Image
+              src={thumbSrc}
+              alt=""
+              width={112}
+              height={112}
+              className="h-full w-full object-cover"
+              unoptimized
+            />
+          ) : (
+            <span
+              className="flex h-full w-full items-center justify-center text-2xl"
+              aria-hidden
+            >
+              🐟
+            </span>
+          )}
+        </div>
+        <div className="min-w-0 flex-1 pt-0.5">
+          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
             {c.species}
           </p>
-          <p className="text-xs text-zinc-500">
-            {[
-              c.quantity && c.quantity > 1 ? `×${c.quantity}` : null,
-              c.lengthCm ? `${c.lengthCm} cm` : null,
-              c.weightKg ? `${c.weightKg} kg` : null,
-            ]
-              .filter(Boolean)
-              .join(" · ") || "No measurements"}
+          <p className="mt-0.5 text-xs text-zinc-500">
+            {c.fishDetails && c.fishDetails.length > 0
+              ? `${c.fishDetails.length} fish in this post`
+              : [
+                    c.quantity && c.quantity > 1 ? `×${c.quantity}` : null,
+                    c.lengthCm ? `${c.lengthCm} cm` : null,
+                    c.weightKg ? `${c.weightKg} kg` : null,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || "No measurements"}
           </p>
+          {imageCandidates.length > 1 && (
+            <p className="mt-1 text-[11px] font-medium text-sky-600 dark:text-sky-400">
+              {t("profile.morePhotos", { n: imageCandidates.length - 1 })}
+            </p>
+          )}
         </div>
-        {imageCandidates.length > 0 && (
-          <span className="text-xs text-sky-500">📷</span>
-        )}
         <svg
           viewBox="0 0 20 20"
           fill="currentColor"
@@ -97,6 +150,31 @@ export function CatchCard({ c }: { c: CatchResponse }) {
 
       {open && (
         <div className="border-t border-zinc-100 px-4 pb-4 pt-3 dark:border-zinc-800">
+          {c.fishDetails && c.fishDetails.length > 0 ? (
+            <ul className="space-y-3 text-sm">
+              {c.fishDetails.map((f, i) => (
+                <li
+                  key={i}
+                  className="rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-2 dark:border-zinc-700 dark:bg-zinc-800/50"
+                >
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">{f.species}</p>
+                  <p className="text-xs text-zinc-500">
+                    {[
+                      f.lengthCm != null ? `${f.lengthCm} cm` : null,
+                      f.weightKg != null ? `${f.weightKg} kg` : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "—"}
+                  </p>
+                  {f.notes ? (
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-600 dark:text-zinc-400">
+                      {f.notes}
+                    </p>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {c.quantity != null && (
               <div>
@@ -133,6 +211,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
               </div>
             )}
           </dl>
+          )}
           {imageCandidates.length > 0 && !imgError && (
             resolvedUrls.length > 0 ? (
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -165,8 +244,31 @@ export function CatchCard({ c }: { c: CatchResponse }) {
 }
 
 export function LocationCard({ loc }: { loc: LocationWithCatches }) {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState(false);
+  const [catchPage, setCatchPage] = useState(0);
   const totalCatches = loc.catches.length;
+
+  const catchTotalPages =
+    totalCatches === 0 ? 0 : Math.ceil(totalCatches / CATCHES_PER_PAGE);
+
+  useEffect(() => {
+    const tp =
+      loc.catches.length === 0 ? 0 : Math.ceil(loc.catches.length / CATCHES_PER_PAGE);
+    if (tp === 0) {
+      setCatchPage(0);
+      return;
+    }
+    setCatchPage((p) => Math.min(p, tp - 1));
+  }, [loc.catches.length]);
+
+  const catchPageIndex =
+    catchTotalPages === 0 ? 0 : Math.min(catchPage, catchTotalPages - 1);
+
+  const catchesOnPage = useMemo(() => {
+    const start = catchPageIndex * CATCHES_PER_PAGE;
+    return loc.catches.slice(start, start + CATCHES_PER_PAGE);
+  }, [loc.catches, catchPageIndex]);
 
   return (
     <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50">
@@ -208,7 +310,43 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
           {loc.catches.length === 0 ? (
             <p className="py-2 text-sm text-zinc-400">No catches recorded.</p>
           ) : (
-            loc.catches.map((c) => <CatchCard key={c.id} c={c} />)
+            <>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {catchesOnPage.map((c) => (
+                  <CatchCard key={c.id} c={c} />
+                ))}
+              </div>
+              {catchTotalPages > 1 && (
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                  <button
+                    type="button"
+                    onClick={() => setCatchPage((p) => Math.max(0, p - 1))}
+                    disabled={catchPageIndex <= 0}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    {t("profile.pagePrev")}
+                  </button>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                    {t("profile.pageStatus", {
+                      current: catchPageIndex + 1,
+                      total: catchTotalPages,
+                    })}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCatchPage((p) =>
+                        Math.min(catchTotalPages - 1, p + 1),
+                      )
+                    }
+                    disabled={catchPageIndex >= catchTotalPages - 1}
+                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                  >
+                    {t("profile.pageNext")}
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
