@@ -2,6 +2,7 @@ import about from "./en/about";
 import admin from "./en/admin";
 import catchDict from "./en/catch";
 import errors from "./en/errors";
+import forecast from "./en/forecast";
 import friends from "./en/friends";
 import home from "./en/home";
 import legal from "./en/legal";
@@ -22,6 +23,7 @@ const en = {
   ...users,
   ...admin,
   ...errors,
+  ...forecast,
 } as const;
 
 export default en;

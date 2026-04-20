@@ -2,6 +2,7 @@ export default {
   "nav.home": "Accueil",
   "nav.about": "A propos",
   "nav.map": "Carte",
+  "nav.forecast": "Prévisions",
   "nav.friends": "Amis",
   "nav.admin": "Admin",
   "nav.login": "Connexion",

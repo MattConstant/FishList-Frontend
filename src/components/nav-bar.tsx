@@ -67,6 +67,13 @@ export function NavBar() {
       <Link href="/map" className={linkClass("/map")} onClick={() => setMobileMenuOpen(false)}>
         {t("nav.map")}
       </Link>
+      <Link
+        href="/fishing-forecast"
+        className={linkClass("/fishing-forecast")}
+        onClick={() => setMobileMenuOpen(false)}
+      >
+        {t("nav.forecast")}
+      </Link>
       <Link href="/friends" className={linkClass("/friends")} onClick={() => setMobileMenuOpen(false)}>
         {t("nav.friends")}
       </Link>
@@ -189,6 +196,13 @@ export function NavBar() {
             </Link>
             <Link href="/map" className={linkClassMobile("/map")} onClick={() => setMobileMenuOpen(false)}>
               {t("nav.map")}
+            </Link>
+            <Link
+              href="/fishing-forecast"
+              className={linkClassMobile("/fishing-forecast")}
+              onClick={() => setMobileMenuOpen(false)}
+            >
+              {t("nav.forecast")}
             </Link>
             <Link href="/friends" className={linkClassMobile("/friends")} onClick={() => setMobileMenuOpen(false)}>
               {t("nav.friends")}

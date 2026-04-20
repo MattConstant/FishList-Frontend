@@ -157,7 +157,17 @@ function InstaPostCard({
 const STACK_CLASS =
   "relative mx-auto mt-5 flex min-h-[min(78vh,640px)] w-full max-w-[min(100%,28rem)] items-center justify-center sm:max-w-[min(100%,30rem)] sm:min-h-[min(72vh,680px)]";
 
-export function HomePreviewCarousel({ className = "" }: { className?: string }) {
+/** Tighter stack when embedded beside the hero (landing). */
+const STACK_CLASS_HERO =
+  "relative mx-auto mt-1 flex min-h-[min(40vh,360px)] w-full max-w-[min(100%,28rem)] items-center justify-center sm:min-h-[min(42vh,400px)] sm:max-w-[min(100%,30rem)]";
+
+export function HomePreviewCarousel({
+  className = "",
+  variant = "default",
+}: {
+  className?: string;
+  variant?: "default" | "hero";
+}) {
   const { t } = useLocale();
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -227,15 +237,28 @@ export function HomePreviewCarousel({ className = "" }: { className?: string }) 
     }
   };
 
+  const stackClass = variant === "hero" ? STACK_CLASS_HERO : STACK_CLASS;
+  const dotsMargin = variant === "hero" ? "mt-6" : "mt-8";
+
   return (
-    <section className={className} aria-label={t("home.preview.carouselLabel")} aria-roledescription="carousel">
-      <div className="flex items-center justify-end gap-2">
+    <section
+      className={className}
+      aria-label={t("home.preview.carouselLabel")}
+      aria-roledescription="carousel"
+    >
+      <div
+        className={
+          variant === "hero"
+            ? "mb-1 flex items-center justify-end gap-2 sm:mb-2"
+            : "flex items-center justify-end gap-2"
+        }
+      >
         <CarouselArrow direction="prev" label={t("home.preview.prev")} onClick={() => go(-1)} />
         <CarouselArrow direction="next" label={t("home.preview.next")} onClick={() => go(1)} />
       </div>
 
       <div
-        className={STACK_CLASS}
+        className={stackClass}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onKeyDown={onStackKeyDown}
@@ -268,7 +291,11 @@ export function HomePreviewCarousel({ className = "" }: { className?: string }) 
         </div>
       </div>
 
-      <div className="mt-8 flex justify-center gap-2" role="tablist" aria-label={t("home.preview.dotsLabel")}>
+      <div
+        className={`${dotsMargin} flex justify-center gap-2`}
+        role="tablist"
+        aria-label={t("home.preview.dotsLabel")}
+      >
         {PREVIEW_SLIDES.map((_, idx) => (
           <button
             key={idx}

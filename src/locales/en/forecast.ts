@@ -1,0 +1,57 @@
+export default {
+  "forecast.title": "Fishing forecast",
+  "forecast.subtitle":
+    "Barometric pressure from Open-Meteo and solunar bite windows for your chosen day and place.",
+  "forecast.date": "Date",
+  "forecast.location": "Location",
+  "forecast.searchPlaceholder": "Search for a city, town, lake…",
+  "forecast.searching": "Searching…",
+  "forecast.searchNoResults": "No matching places.",
+  "forecast.locationUnset":
+    "Search for a place above, or use your current position. Until then we use a default area.",
+  "forecast.nearYou": "Near you",
+  "forecast.useLocation": "Use my location",
+  "forecast.locationDenied":
+    "Location permission was denied. Try searching for a place instead.",
+  "forecast.locationError":
+    "Could not read your location. Try searching for a place instead.",
+  "forecast.load": "Load forecast",
+  "forecast.loading": "Loading…",
+  "forecast.error": "Could not load forecast.",
+  "forecast.dateNotAvailable":
+    "This date is not available yet. Forecasts only cover the next couple of weeks — pick a nearer day.",
+  "forecast.pressureTitle": "Barometric pressure",
+  "forecast.pressureTrend": "Day trend (surface)",
+  "forecast.trend.rising": "Rising — often good before a front",
+  "forecast.trend.falling": "Falling — can slow bites; change can still trigger feeds",
+  "forecast.trend.steady": "Steady",
+  "forecast.trend.unknown": "Not enough hourly data",
+  "forecast.pressureHpa": "{{first}} → {{last}} hPa",
+  "forecast.hourlyChart": "Hourly pressure (hPa)",
+  "forecast.chart.aria":
+    "Hourly barometric pressure from {{min}} to {{max}} hectopascals",
+  "forecast.rating.title": "Day rating",
+  "forecast.rating.subtitle":
+    "From pressure trend, solunar windows, and cloud cover — a rough guide, not a guarantee.",
+  "forecast.rating.aria": "{{stars}} out of 5: {{label}}",
+  "forecast.rating.level.1": "Tough conditions",
+  "forecast.rating.level.2": "Below average",
+  "forecast.rating.level.3": "Fair",
+  "forecast.rating.level.4": "Good",
+  "forecast.rating.level.5": "Excellent",
+  "forecast.solunarTitle": "Solunar bite windows",
+  "forecast.major": "Major",
+  "forecast.minor": "Minor",
+  "forecast.window": "{{start}} – {{end}}",
+  "forecast.sunMoon": "Sun & moon",
+  "forecast.sunrise": "Sunrise",
+  "forecast.sunset": "Sunset",
+  "forecast.moonrise": "Moonrise",
+  "forecast.moonset": "Moonset",
+  "forecast.noMoon": "—",
+  "forecast.disclaimer":
+    "Forecasts are informational, not guarantees. Cross-check wind, water safety, regulations, and ice conditions before you go.",
+  "forecast.attributionTitle": "Data & credits",
+  "forecast.linkOpenMeteo": "Open-Meteo",
+  "forecast.timezone": "Time zone: {{tz}}",
+} as const;

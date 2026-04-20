@@ -2,6 +2,7 @@ export default {
   "nav.home": "Home",
   "nav.about": "About",
   "nav.map": "Map",
+  "nav.forecast": "Forecast",
   "nav.friends": "Friends",
   "nav.admin": "Admin",
   "nav.login": "Log in",
