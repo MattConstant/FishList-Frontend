@@ -4,7 +4,6 @@ import type { ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { HomePreviewCarousel } from "@/components/home-preview-carousel";
-import { LandingImagePlaceholder } from "@/components/landing-image-placeholder";
 import { useLocale } from "@/contexts/locale-context";
 
 function SectionBlock({
@@ -152,11 +151,20 @@ export default function HomeLandingPage() {
           title={t("home.landing.map.title")}
           body={t("home.landing.map.body")}
         >
-          <LandingImagePlaceholder
-            label={t("home.landing.map.placeholderLabel")}
-            caption={t("home.landing.placeholderCaption")}
-            className="lg:max-w-none"
-          />
+          <figure className="w-full max-w-xl lg:max-w-none">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-700">
+              <Image
+                src="/home1.png"
+                alt={t("home.landing.map.placeholderLabel")}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
+            <figcaption className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-500">
+              {t("home.landing.placeholderCaption")}
+            </figcaption>
+          </figure>
         </SectionBlock>
 
         <SectionBlock
@@ -165,11 +173,20 @@ export default function HomeLandingPage() {
           body={t("home.landing.catch.body")}
           reverse
         >
-          <LandingImagePlaceholder
-            label={t("home.landing.catch.placeholderLabel")}
-            caption={t("home.landing.placeholderCaption")}
-            className="lg:max-w-none"
-          />
+          <figure className="w-full max-w-xl lg:max-w-none">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-700">
+              <Image
+                src="/home2.png"
+                alt={t("home.landing.catch.placeholderLabel")}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
+            <figcaption className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-500">
+              {t("home.landing.placeholderCaption")}
+            </figcaption>
+          </figure>
         </SectionBlock>
 
         <SectionBlock
@@ -177,11 +194,20 @@ export default function HomeLandingPage() {
           title={t("home.landing.social.title")}
           body={t("home.landing.social.body")}
         >
-          <LandingImagePlaceholder
-            label={t("home.landing.social.placeholderLabel")}
-            caption={t("home.landing.placeholderCaption")}
-            className="lg:max-w-none"
-          />
+          <figure className="w-full max-w-xl lg:max-w-none">
+            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-zinc-200 shadow-sm dark:border-zinc-700">
+              <Image
+                src="/home3.png"
+                alt={t("home.landing.social.placeholderLabel")}
+                fill
+                className="object-cover"
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
+            <figcaption className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-500">
+              {t("home.landing.placeholderCaption")}
+            </figcaption>
+          </figure>
         </SectionBlock>
 
         <div className="flex flex-wrap justify-center gap-3 pb-4">

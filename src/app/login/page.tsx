@@ -43,45 +43,46 @@ export default function LoginPage() {
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           {t("login.title.login")}
         </h1>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          {t("login.desc")}
-        </p>
+        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t("login.desc")}</p>
 
-        <div className="mt-8 flex flex-col items-center gap-4">
-          {!hasGoogleClientId ? (
+        <div className="mt-8 flex flex-col items-stretch gap-4">
+          {hasGoogleClientId ? (
+            <div className="flex flex-col items-center">
+              <GoogleLogin
+                onSuccess={async (credentialResponse: CredentialResponse) => {
+                  const cred = credentialResponse.credential;
+                  if (!cred) {
+                    setError(t("login.error.noCredential"));
+                    return;
+                  }
+                  setError("");
+                  setPending(true);
+                  try {
+                    await signInWithGoogle(cred);
+                    router.push("/profile");
+                  } catch (err) {
+                    setError(getDisplayErrorMessage(err, "Could not authenticate."));
+                  } finally {
+                    setPending(false);
+                  }
+                }}
+                onError={() => setError(t("login.error.google"))}
+                useOneTap={false}
+                theme="outline"
+                size="large"
+                text="continue_with"
+                shape="rectangular"
+                width={320}
+              />
+            </div>
+          ) : (
             <p className="text-center text-sm text-amber-800 dark:text-amber-200" role="alert">
               {t("login.missingClientId")}
             </p>
-          ) : (
-            <GoogleLogin
-              onSuccess={async (credentialResponse: CredentialResponse) => {
-                const cred = credentialResponse.credential;
-                if (!cred) {
-                  setError(t("login.error.noCredential"));
-                  return;
-                }
-                setError("");
-                setPending(true);
-                try {
-                  await signInWithGoogle(cred);
-                  router.push("/profile");
-                } catch (err) {
-                  setError(getDisplayErrorMessage(err, "Could not authenticate."));
-                } finally {
-                  setPending(false);
-                }
-              }}
-              onError={() => setError(t("login.error.google"))}
-              useOneTap={false}
-              theme="outline"
-              size="large"
-              text="continue_with"
-              shape="rectangular"
-              width={320}
-            />
           )}
+
           {pending ? (
-            <p className="text-sm text-zinc-500">{t("login.pending")}</p>
+            <p className="text-center text-sm text-zinc-500">{t("login.pending")}</p>
           ) : null}
           {error ? (
             <p className="text-center text-sm text-red-600 dark:text-red-400" role="alert">

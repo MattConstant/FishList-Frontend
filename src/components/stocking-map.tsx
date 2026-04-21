@@ -73,6 +73,23 @@ function otherCatchIcon(): L.Icon {
   });
 }
 
+const FORECAST_PIN_SVG =
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="38">` +
+    `<path d="M12 0C5.4 0 0 5.2 0 11.6 0 20.4 12 36 12 36s12-15.6 12-24.4C24 5.2 18.6 0 12 0z" fill="#0ea5e9" stroke="#fff" stroke-width="1.5"/>` +
+    `<circle cx="12" cy="11.5" r="4.5" fill="#fff"/>` +
+    `</svg>`,
+  )}`;
+
+function forecastPinIcon(): L.Icon {
+  return L.icon({
+    iconUrl: FORECAST_PIN_SVG,
+    iconSize: [32, 38],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36],
+  });
+}
+
 function buildPopupHtml(g: WaterbodyGroup, lakeKeyEncoded: string): string {
   const districts = Array.from(g.districtSet).join(", ");
   const stages = Array.from(g.developmentalStageSet).join(", ");
@@ -134,6 +151,10 @@ type StockingMapProps = {
   /** Logged-in users can request AI fishing tips (text) from the popup. */
   canUseAi?: boolean;
   placing?: boolean;
+  /** Click-to-forecast pin (e.g. Open-Meteo + solunar popup). */
+  forecastPin?: { lat: number; lng: number } | null;
+  /** Leaflet popup content node — parent should `createPortal` forecast UI here for React context. */
+  onForecastPopupMount?: (el: HTMLDivElement | null) => void;
   catchMarkers?: CatchMapMarker[];
   catchScope?: "all" | "friends" | "mine";
   friendIds?: Set<number>;
@@ -146,6 +167,8 @@ export default function StockingMap({
   onMapClick,
   canUseAi = false,
   placing,
+  forecastPin = null,
+  onForecastPopupMount,
   catchMarkers = [],
   catchScope = "all",
   friendIds = new Set<number>(),
@@ -153,6 +176,7 @@ export default function StockingMap({
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const forecastMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster and closing popups). */
   const stockingMarkerByKeyRef = useRef<Map<string, L.Marker>>(new Map());
@@ -211,6 +235,61 @@ export default function StockingMap({
     if (!container) return;
     container.style.cursor = placing ? "crosshair" : "";
   }, [placing]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const lat = forecastPin?.lat;
+    const lng = forecastPin?.lng;
+
+    if (
+      forecastPin == null ||
+      lat == null ||
+      lng == null ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
+      if (forecastMarkerRef.current) {
+        map.removeLayer(forecastMarkerRef.current);
+        forecastMarkerRef.current = null;
+      }
+      onForecastPopupMount?.(null);
+      return;
+    }
+
+    if (forecastMarkerRef.current) {
+      map.removeLayer(forecastMarkerRef.current);
+      forecastMarkerRef.current = null;
+    }
+    onForecastPopupMount?.(null);
+
+    const el = document.createElement("div");
+    const marker = L.marker([lat, lng], {
+      icon: forecastPinIcon(),
+      zIndexOffset: 1200,
+    });
+    marker.bindPopup(el, {
+      minWidth: 480,
+      maxWidth: 480,
+      className: "fishlist-forecast-leaflet-popup",
+      closeButton: true,
+      autoPan: true,
+      autoPanPadding: [12, 12],
+    });
+    marker.addTo(map);
+    forecastMarkerRef.current = marker;
+    onForecastPopupMount?.(el);
+    marker.openPopup();
+
+    return () => {
+      onForecastPopupMount?.(null);
+      if (forecastMarkerRef.current) {
+        map.removeLayer(forecastMarkerRef.current);
+        forecastMarkerRef.current = null;
+      }
+    };
+  }, [forecastPin?.lat, forecastPin?.lng, onForecastPopupMount]);
 
   const filteredGroups = useMemo(() => {
     if (activeSpecies.size === 0) return [];

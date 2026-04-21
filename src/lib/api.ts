@@ -183,9 +183,11 @@ export type GoogleAuthResponse = {
 export async function exchangeGoogleCredential(
   credential: string,
 ): Promise<GoogleAuthResponse> {
+  clearSession();
   const res = await fetch(`${getApiBaseUrl()}/api/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    credentials: "omit",
     body: JSON.stringify({ credential }),
   });
   await throwIfNotOk(res);

@@ -71,9 +71,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  const signInWithGoogle = useCallback(async (credential: string) => {
-    try {
-      const data = await exchangeGoogleCredential(credential);
+  const applyAuthResponse = useCallback(
+    async (data: {
+      accessToken: string;
+      tokenType: string;
+      account: AccountResponse;
+    }) => {
       const authorizationHeader = `${data.tokenType} ${data.accessToken}`;
       saveSession({
         username: data.account.username,
@@ -86,10 +89,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch {
         setIsAdmin(false);
       }
-    } catch (e) {
-      throw new Error(getDisplayErrorMessage(e, "Could not sign in."));
-    }
-  }, []);
+    },
+    [],
+  );
+
+  const signInWithGoogle = useCallback(
+    async (credential: string) => {
+      try {
+        const data = await exchangeGoogleCredential(credential);
+        await applyAuthResponse(data);
+      } catch (e) {
+        throw new Error(getDisplayErrorMessage(e, "Could not sign in."));
+      }
+    },
+    [applyAuthResponse],
+  );
 
   const refreshUser = useCallback(async () => {
     const session = loadSession();
@@ -120,7 +134,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, isAdmin, signInWithGoogle, refreshUser, logout, isReady }),
+    () => ({
+      user,
+      isAdmin,
+      signInWithGoogle,
+      refreshUser,
+      logout,
+      isReady,
+    }),
     [user, isAdmin, signInWithGoogle, refreshUser, logout, isReady],
   );
 

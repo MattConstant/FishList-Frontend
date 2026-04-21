@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { MAX_FORECAST_DAYS_AHEAD } from "@/lib/fishing-forecast-constants";
-import type { FishingForecastPayload } from "@/lib/fishing-forecast-types";
+import type {
+  FishingDayWeatherSummary,
+  FishingForecastPayload,
+} from "@/lib/fishing-forecast-types";
 import { computeSolunarForDay, sunMoonSummary } from "@/lib/solunar";
 
 /** Server-side proxy to Open-Meteo + local solunar math. Validates inputs; no API keys. */
@@ -19,6 +22,79 @@ function daysFromTodayUtc(dateStr: string): number {
     now.getUTCDate(),
   );
   return Math.round((target - startToday) / (24 * 60 * 60 * 1000));
+}
+
+function summarizeDayFromHourly(
+  _times: string[],
+  temperature2m: (number | null)[],
+  relativeHumidity2m: (number | null)[],
+  precipitation: (number | null)[],
+  windSpeed10m: (number | null)[],
+  windDirection10m: (number | null)[],
+  cloudCover: (number | null)[],
+): FishingDayWeatherSummary {
+  const n = Math.max(
+    _times.length,
+    temperature2m.length,
+    relativeHumidity2m.length,
+    precipitation.length,
+    windSpeed10m.length,
+    windDirection10m.length,
+    cloudCover.length,
+  );
+
+  const temps: number[] = [];
+  const humid: number[] = [];
+  const clouds: number[] = [];
+  let precipSum = 0;
+  let windMax: number | null = null;
+  let windDirAtMax: number | null = null;
+
+  for (let i = 0; i < n; i++) {
+    const t = temperature2m[i];
+    if (t != null && Number.isFinite(t)) temps.push(t);
+
+    const h = relativeHumidity2m[i];
+    if (h != null && Number.isFinite(h)) humid.push(h);
+
+    const c = cloudCover[i];
+    if (c != null && Number.isFinite(c)) clouds.push(c);
+
+    const pr = precipitation[i];
+    if (pr != null && Number.isFinite(pr)) precipSum += pr;
+
+    const ws = windSpeed10m[i];
+    if (ws != null && Number.isFinite(ws)) {
+      if (windMax === null || ws > windMax) {
+        windMax = ws;
+        const wd = windDirection10m[i];
+        windDirAtMax = wd != null && Number.isFinite(wd) ? wd : null;
+      }
+    }
+  }
+
+  const tempMinC = temps.length ? Math.min(...temps) : null;
+  const tempMaxC = temps.length ? Math.max(...temps) : null;
+  const humidityAvgPct = humid.length
+    ? humid.reduce((a, b) => a + b, 0) / humid.length
+    : null;
+  const cloudCoverAvgPct = clouds.length
+    ? clouds.reduce((a, b) => a + b, 0) / clouds.length
+    : null;
+
+  return {
+    tempMinC,
+    tempMaxC,
+    humidityAvgPct:
+      humidityAvgPct != null ? Math.round(humidityAvgPct * 10) / 10 : null,
+    precipMmSum: Math.round(precipSum * 100) / 100,
+    windSpeedMaxKmh:
+      windMax != null ? Math.round(windMax * 10) / 10 : null,
+    windDirectionAtMaxDeg:
+      windDirAtMax != null ? Math.round(windDirAtMax) : null,
+    cloudCoverAvgPct:
+      cloudCoverAvgPct != null ? Math.round(cloudCoverAvgPct * 10) / 10 : null,
+  };
 }
 
 function parseDate(s: string | null): string | null {
@@ -65,7 +141,18 @@ export async function GET(request: Request) {
   const omUrl = new URL(OPEN_METEO);
   omUrl.searchParams.set("latitude", String(lat));
   omUrl.searchParams.set("longitude", String(lon));
-  omUrl.searchParams.set("hourly", "pressure_msl,cloud_cover");
+  omUrl.searchParams.set(
+    "hourly",
+    [
+      "pressure_msl",
+      "cloud_cover",
+      "temperature_2m",
+      "relative_humidity_2m",
+      "precipitation",
+      "wind_speed_10m",
+      "wind_direction_10m",
+    ].join(","),
+  );
   omUrl.searchParams.set("timezone", "auto");
   omUrl.searchParams.set("start_date", date);
   omUrl.searchParams.set("end_date", date);
@@ -77,6 +164,11 @@ export async function GET(request: Request) {
       time?: string[];
       pressure_msl?: (number | null)[];
       cloud_cover?: (number | null)[];
+      temperature_2m?: (number | null)[];
+      relative_humidity_2m?: (number | null)[];
+      precipitation?: (number | null)[];
+      wind_speed_10m?: (number | null)[];
+      wind_direction_10m?: (number | null)[];
     };
   };
 
@@ -123,6 +215,11 @@ export async function GET(request: Request) {
   const times = omJson.hourly?.time ?? [];
   const pressure = omJson.hourly?.pressure_msl ?? [];
   const cloud = omJson.hourly?.cloud_cover ?? [];
+  const temperature2m = omJson.hourly?.temperature_2m ?? [];
+  const relativeHumidity2m = omJson.hourly?.relative_humidity_2m ?? [];
+  const precipitation = omJson.hourly?.precipitation ?? [];
+  const windSpeed10m = omJson.hourly?.wind_speed_10m ?? [];
+  const windDirection10m = omJson.hourly?.wind_direction_10m ?? [];
 
   if (times.length === 0 && pressure.length === 0) {
     return NextResponse.json(
@@ -150,6 +247,16 @@ export async function GET(request: Request) {
   const biteWindows = computeSolunarForDay(date, timeZone, lat, lon);
   const sunMoon = sunMoonSummary(date, timeZone, lat, lon);
 
+  const daySummary = summarizeDayFromHourly(
+    times,
+    temperature2m,
+    relativeHumidity2m,
+    precipitation,
+    windSpeed10m,
+    windDirection10m,
+    cloud,
+  );
+
   const payload: FishingForecastPayload = {
     date,
     timezone: timeZone,
@@ -160,7 +267,13 @@ export async function GET(request: Request) {
       time: times,
       pressureMsl: pressure,
       cloudCover: cloud,
+      temperature2m,
+      relativeHumidity2m,
+      precipitation,
+      windSpeed10m,
+      windDirection10m,
     },
+    daySummary,
     pressureTrend,
     pressureHpaFirst,
     pressureHpaLast,

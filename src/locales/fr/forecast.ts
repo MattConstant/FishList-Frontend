@@ -1,4 +1,17 @@
 export default {
+  "forecast.mapHint": "Cliquez sur la carte pour une prévision à cet endroit.",
+  "forecast.clearPin": "Retirer l’épingle",
+  "forecast.popupTitle": "Prévision de pêche",
+  "forecast.weatherSummaryTitle": "Aperçu météo (heures du jour)",
+  "forecast.tempRangeLabel": "Température de l’air (min–max)",
+  "forecast.tempRange": "{{min}} à {{max}} °C",
+  "forecast.humidityAvg": "Humidité relative (moy.)",
+  "forecast.precipDay": "Précipitations (somme)",
+  "forecast.precipMm": "{{mm}} mm",
+  "forecast.windMax": "Vent (rafale max.)",
+  "forecast.windDetail": "{{speed}} km/h {{cardinal}} ({{deg}}°)",
+  "forecast.windSpeedOnly": "{{speed}} km/h",
+  "forecast.cloudAvg": "Nébulosité (moy.)",
   "forecast.title": "Prévisions de pêche",
   "forecast.subtitle":
     "Pression barométrique (Open-Meteo) et fenêtres solunaires pour le jour et le lieu choisis.",

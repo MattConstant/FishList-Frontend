@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 
 type Props = {
   timeIso: string[];
@@ -30,6 +30,7 @@ export function FishingPressureChart({
   intlLocale,
   "aria-label": ariaLabel,
 }: Props) {
+  const gradId = useId().replace(/:/g, "");
   const model = useMemo(() => {
     const series: { time: string; p: number }[] = [];
     for (let i = 0; i < timeIso.length; i++) {
@@ -98,7 +99,7 @@ export function FishingPressureChart({
       aria-label={ariaLabel}
     >
       <defs>
-        <linearGradient id="pressureFill" x1="0" y1="0" x2="0" y2="1">
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.35} />
           <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.04} />
         </linearGradient>
@@ -142,7 +143,7 @@ export function FishingPressureChart({
       </text>
 
       {/* Area + line (two points minimum for a visible polyline) */}
-      <path d={areaD} fill="url(#pressureFill)" />
+      <path d={areaD} fill={`url(#${gradId})`} />
       {n === 1 ? (
         <line
           x1={xAt(0) - 24}

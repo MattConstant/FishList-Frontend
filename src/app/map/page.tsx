@@ -3,8 +3,11 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
+import { MapForecastPopup } from "@/components/map-forecast-popup";
+import { useLocale } from "@/contexts/locale-context";
 import type { CatchMapMarker } from "@/components/stocking-map";
 import { fetchLatestPosts, fetchMyFriends, getImageUrl, type FishEntryPayload } from "@/lib/api";
 import {
@@ -42,6 +45,7 @@ function speciesPillClass(active: boolean) {
 
 export default function MapPage() {
   const { user } = useAuth();
+  const { t } = useLocale();
   const [records, setRecords] = useState<StockingRecord[]>([]);
   const [groups, setGroups] = useState<WaterbodyGroup[]>([]);
   const [species, setSpecies] = useState<string[]>([]);
@@ -59,6 +63,13 @@ export default function MapPage() {
   const [minSpeciesCount, setMinSpeciesCount] = useState<1 | 2 | 3>(1);
 
   const [placing, setPlacing] = useState(false);
+  const [forecastSelection, setForecastSelection] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [forecastPopupEl, setForecastPopupEl] = useState<HTMLDivElement | null>(
+    null,
+  );
   const [pendingCatch, setPendingCatch] = useState<PendingCatch | null>(null);
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
@@ -273,9 +284,12 @@ export default function MapPage() {
 
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
-      if (!placing) return;
-      setPlacing(false);
-      setPendingCatch({ lat, lng });
+      if (placing) {
+        setPlacing(false);
+        setPendingCatch({ lat, lng });
+        return;
+      }
+      setForecastSelection({ lat, lng });
     },
     [placing],
   );
@@ -297,6 +311,14 @@ export default function MapPage() {
               : error
                 ? error
                 : `${records.length.toLocaleString()} stocking records across ${groups.length.toLocaleString()} waterbodies (last 5 years)`}
+            {!loading && !error && !placing ? (
+              <>
+                {" "}
+                <span className="text-sky-700 dark:text-sky-400">
+                  {t("forecast.mapHint")}
+                </span>
+              </>
+            ) : null}
           </p>
         </div>
         <div className="map-page__toolbar-actions">
@@ -369,6 +391,15 @@ export default function MapPage() {
               className="map-page__cancel-btn"
             >
               Cancel
+            </button>
+          )}
+          {forecastSelection && !placing && (
+            <button
+              type="button"
+              onClick={() => setForecastSelection(null)}
+              className="map-page__cancel-btn"
+            >
+              {t("forecast.clearPin")}
             </button>
           )}
         </div>
@@ -584,11 +615,23 @@ export default function MapPage() {
           onMapClick={handleMapClick}
           canUseAi={!!user}
           placing={placing}
+          forecastPin={forecastSelection}
+          onForecastPopupMount={setForecastPopupEl}
           catchMarkers={catchMarkers}
           catchScope={catchScope}
           friendIds={friendIds}
           currentUserId={user?.id}
         />
+        {forecastPopupEl &&
+          forecastSelection &&
+          createPortal(
+            <MapForecastPopup
+              key={`${forecastSelection.lat.toFixed(5)},${forecastSelection.lng.toFixed(5)}`}
+              lat={forecastSelection.lat}
+              lng={forecastSelection.lng}
+            />,
+            forecastPopupEl,
+          )}
       </div>
 
       {/* Catch registration form */}

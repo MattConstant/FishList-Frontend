@@ -25,3 +25,30 @@
   border: none !important;
   background: none !important;
 }
+
+/* Fishing forecast popup — fixed width (responsive cap on narrow viewports) */
+.leaflet-popup.fishlist-forecast-leaflet-popup {
+  width: min(480px, calc(100vw - 1.25rem)) !important;
+}
+
+.leaflet-popup.fishlist-forecast-leaflet-popup .leaflet-popup-content-wrapper {
+  width: 100% !important;
+  max-width: none !important;
+  border-radius: 12px;
+  /* Let .leaflet-popup-content own scrolling — avoid nested scrollbars */
+  overflow: visible;
+  box-sizing: border-box !important;
+}
+
+.leaflet-popup.fishlist-forecast-leaflet-popup .leaflet-popup-content {
+  margin: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  padding: 16px 20px;
+  box-sizing: border-box !important;
+  max-height: min(72vh, 600px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+}

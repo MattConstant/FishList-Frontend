@@ -1,4 +1,17 @@
 export default {
+  "forecast.mapHint": "Click the map for a fishing forecast at that spot.",
+  "forecast.clearPin": "Clear forecast pin",
+  "forecast.popupTitle": "Fishing forecast",
+  "forecast.weatherSummaryTitle": "Weather snapshot (today’s hours)",
+  "forecast.tempRangeLabel": "Air temperature (range)",
+  "forecast.tempRange": "{{min}}–{{max}} °C",
+  "forecast.humidityAvg": "Relative humidity (avg)",
+  "forecast.precipDay": "Precipitation (sum)",
+  "forecast.precipMm": "{{mm}} mm",
+  "forecast.windMax": "Wind (peak)",
+  "forecast.windDetail": "{{speed}} km/h {{cardinal}} ({{deg}}°)",
+  "forecast.windSpeedOnly": "{{speed}} km/h",
+  "forecast.cloudAvg": "Cloud cover (avg)",
   "forecast.title": "Fishing forecast",
   "forecast.subtitle":
     "Barometric pressure from Open-Meteo and solunar bite windows for your chosen day and place.",
