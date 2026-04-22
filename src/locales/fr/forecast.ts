@@ -1,5 +1,7 @@
 export default {
   "forecast.mapHint": "Cliquez sur la carte pour une prévision à cet endroit.",
+  "forecast.mapHintBottomSheet":
+    "Touchez la carte pour ouvrir la prévision dans le panneau du bas. Déployez-le pour la carte complète.",
   "forecast.clearPin": "Retirer l’épingle",
   "forecast.popupTitle": "Prévision de pêche",
   "forecast.weatherSummaryTitle": "Aperçu météo (heures du jour)",
@@ -68,4 +70,32 @@ export default {
   "forecast.attributionTitle": "Données et crédits",
   "forecast.linkOpenMeteo": "Open-Meteo",
   "forecast.timezone": "Fuseau horaire : {{tz}}",
+  "forecast.mapTabFish": "Poissons",
+  "forecast.mapTabStocking": "Ensemencement",
+  "forecast.mapTabForecast": "Prévision",
+  "forecast.mapSheetExpand": "Déployer le panneau",
+  "forecast.mapSheetCollapse": "Réduire le panneau",
+  "forecast.mapSheetClose": "Fermer le panneau",
+  "forecast.mapSheetTabsAria": "Détails du plan d’eau",
+  "forecast.mapLakeSummary":
+    "{{species}} espèces · {{total}} poissons stockés (enregistrements récents)",
+  "forecast.mapForecastPeek": "Prévision de pêche — déployer pour les détails",
+  "forecast.mapFishIntro":
+    "Espèces stockées sur ce plan d’eau (totaux cumulés selon les enregistrements récents).",
+  "forecast.mapFishEmpty": "Aucune donnée d’espèces pour ce repère.",
+  "forecast.mapGeohubNote":
+    "Les coordonnées GeoHub sont souvent approximatives ; nous essayons d’ancrer l’épingle sur le lac via OpenStreetMap.",
+  "forecast.mapDistrict": "District :",
+  "forecast.mapStage": "Stade(s) :",
+  "forecast.mapColSpecies": "Espèce",
+  "forecast.mapColYear": "Année",
+  "forecast.mapColCount": "Nombre",
+  "forecast.mapAiStockedLabel": "Poissons stockés ici",
+  "forecast.mapAiSignIn": "Connectez-vous",
+  "forecast.mapAiSignInSuffix": "pour obtenir des conseils IA.",
+  "forecast.mapAiTipsButton": "Conseils de pêche (IA)",
+  "forecast.mapAiDisclaimer":
+    "Les conseils sont généraux — vérifiez toujours la réglementation, les limites et l’accès avant de pêcher.",
+  "forecast.areaNameLoading": "Recherche du lieu…",
+  "forecast.openInGoogleMaps": "Ouvrir dans Google Maps",
 } as const;

@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { FishLoadingSpinner } from "@/components/fish-loading-spinner";
 import {
   formatGeocodeHitLabel,
   type GeocodeSearchHit,
@@ -153,8 +154,8 @@ export function FishingLocationSearch({
           className="absolute left-0 right-0 top-full z-20 mt-1 max-h-60 overflow-y-auto rounded-xl border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-700 dark:bg-zinc-900"
         >
           {loading ? (
-            <li className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">
-              {searchingLabel}
+            <li className="px-3 py-2.5">
+              <FishLoadingSpinner label={searchingLabel} size="sm" />
             </li>
           ) : results.length === 0 ? (
             <li className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
+import { FishLoadingSpinner } from "@/components/fish-loading-spinner";
 import { UserAvatar } from "@/components/user-avatar";
 import {
   addFriend,
@@ -124,7 +125,7 @@ export default function FriendsPage() {
   if (!isReady) {
     return (
       <div className="mx-auto flex max-w-3xl flex-1 items-center justify-center px-6 py-16">
-        <p className="text-zinc-500">{t("friends.loading")}</p>
+        <FishLoadingSpinner label={t("friends.loading")} size="md" />
       </div>
     );
   }
@@ -171,7 +172,9 @@ export default function FriendsPage() {
           className="mt-2 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
         />
         <div className="mt-3 space-y-2">
-          {searching && <p className="text-sm text-zinc-500">{t("friends.searching")}</p>}
+          {searching && (
+            <FishLoadingSpinner label={t("friends.searching")} size="sm" />
+          )}
           {!searching &&
             results.map((account) => {
               const isFriend = friendIds.has(account.id);
@@ -216,7 +219,9 @@ export default function FriendsPage() {
           {t("friends.myFriends")}
         </p>
         {loadingFriends ? (
-          <p className="mt-2 text-sm text-zinc-500">{t("friends.loadingFriends")}</p>
+          <div className="mt-3">
+            <FishLoadingSpinner label={t("friends.loadingFriends")} size="sm" />
+          </div>
         ) : friends.length === 0 ? (
           <p className="mt-2 text-sm text-zinc-500">
             {t("friends.empty")}

@@ -131,12 +131,25 @@ export function getDisplayErrorMessage(
 ): string {
   if (err instanceof ApiHttpError) {
     if (err.code === "VALIDATION_ERROR") return "Please check your input and try again.";
-    if (err.status === 401) return "Session expired or invalid. Please sign in again.";
+    if (err.status === 400) {
+      const m = err.message?.trim();
+      if (m) return m;
+      return "Invalid request.";
+    }
+    if (err.status === 401) {
+      const m = err.message?.trim();
+      if (m && m !== "Unauthorized") return m;
+      return "Session expired or invalid. Please sign in again.";
+    }
     if (err.status === 503) return "Sign-in is not configured on the server.";
     if (err.status === 403)
       return "Access denied. New site URL? Add that origin to the API CORS list (app.cors.*), not only Google OAuth.";
     if (err.status === 404) return "The requested item was not found.";
-    if (err.status === 409) return "That value is already in use.";
+    if (err.status === 409) {
+      const m = err.message?.trim();
+      if (m) return m;
+      return "That value is already in use.";
+    }
     if (err.status === 429) return "Too many requests. Please try again later.";
     if (err.status === 502)
       return "Upload failed (bad gateway). Try a smaller photo, or ask the host to raise MULTIPART_MAX_SIZE / proxy body limits.";
@@ -189,6 +202,38 @@ export async function exchangeGoogleCredential(
     headers: { "Content-Type": "application/json" },
     credentials: "omit",
     body: JSON.stringify({ credential }),
+  });
+  await throwIfNotOk(res);
+  return res.json() as Promise<GoogleAuthResponse>;
+}
+
+/** Username + password — same response shape as Google exchange (FishList JWT). */
+export async function exchangePasswordLogin(
+  username: string,
+  password: string,
+): Promise<GoogleAuthResponse> {
+  clearSession();
+  const res = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ username: username.trim(), password }),
+  });
+  await throwIfNotOk(res);
+  return res.json() as Promise<GoogleAuthResponse>;
+}
+
+/** Create account with username + password; same response shape as login (FishList JWT). */
+export async function exchangeRegister(
+  username: string,
+  password: string,
+): Promise<GoogleAuthResponse> {
+  clearSession();
+  const res = await fetch(`${getApiBaseUrl()}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ username: username.trim(), password }),
   });
   await throwIfNotOk(res);
   return res.json() as Promise<GoogleAuthResponse>;

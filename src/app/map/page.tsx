@@ -3,10 +3,9 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
-import { MapForecastPopup } from "@/components/map-forecast-popup";
+import { MapDetailBottomSheet } from "@/components/map-detail-bottom-sheet";
 import { useLocale } from "@/contexts/locale-context";
 import type { CatchMapMarker } from "@/components/stocking-map";
 import { fetchLatestPosts, fetchMyFriends, getImageUrl, type FishEntryPayload } from "@/lib/api";
@@ -63,13 +62,14 @@ export default function MapPage() {
   const [minSpeciesCount, setMinSpeciesCount] = useState<1 | 2 | 3>(1);
 
   const [placing, setPlacing] = useState(false);
-  const [forecastSelection, setForecastSelection] = useState<{
-    lat: number;
-    lng: number;
-  } | null>(null);
-  const [forecastPopupEl, setForecastPopupEl] = useState<HTMLDivElement | null>(
-    null,
-  );
+  const [mapSheet, setMapSheet] = useState<
+    | null
+    | { mode: "forecast"; lat: number; lng: number }
+    | { mode: "lake"; group: WaterbodyGroup; lat: number; lng: number }
+  >(null);
+  const [sheetExpanded, setSheetExpanded] = useState(false);
+  const [forecastAreaLabel, setForecastAreaLabel] = useState<string | null>(null);
+  const [forecastAreaLabelLoading, setForecastAreaLabelLoading] = useState(false);
   const [pendingCatch, setPendingCatch] = useState<PendingCatch | null>(null);
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
@@ -289,10 +289,82 @@ export default function MapPage() {
         setPendingCatch({ lat, lng });
         return;
       }
-      setForecastSelection({ lat, lng });
+      setMapSheet({ mode: "forecast", lat, lng });
+      setSheetExpanded(false);
     },
     [placing],
   );
+
+  const handleStockingLakeClick = useCallback(
+    (payload: { group: WaterbodyGroup; lat: number; lng: number }) => {
+      setMapSheet({
+        mode: "lake",
+        group: payload.group,
+        lat: payload.lat,
+        lng: payload.lng,
+      });
+      setSheetExpanded(false);
+    },
+    [],
+  );
+
+  /** Forecast pin only for “tap map for forecast” — not when a stocking marker is selected (avoids covering the fish icon). */
+  const forecastPin = useMemo(() => {
+    if (!mapSheet || placing) return null;
+    if (mapSheet.mode !== "forecast") return null;
+    return { lat: mapSheet.lat, lng: mapSheet.lng };
+  }, [mapSheet, placing]);
+
+  useEffect(() => {
+    if (!mapSheet || mapSheet.mode !== "forecast") {
+      setForecastAreaLabel(null);
+      setForecastAreaLabelLoading(false);
+      return;
+    }
+    const { lat, lng } = mapSheet;
+    setForecastAreaLabel(null);
+    setForecastAreaLabelLoading(true);
+    let cancelled = false;
+    const u = new URL("/api/reverse-geocode", window.location.origin);
+    u.searchParams.set("lat", String(lat));
+    u.searchParams.set("lon", String(lng));
+    fetch(u.toString())
+      .then((res) => res.json() as Promise<{ label?: string; error?: string }>)
+      .then((json) => {
+        if (cancelled) return;
+        if (typeof json.label === "string" && json.label.length > 0) {
+          setForecastAreaLabel(json.label);
+        } else {
+          setForecastAreaLabel(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setForecastAreaLabel(null);
+      })
+      .finally(() => {
+        if (!cancelled) setForecastAreaLabelLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mapSheet]);
+
+  const selectionFocus = useMemo(() => {
+    if (!mapSheet || placing) return null;
+    return {
+      lat: mapSheet.lat,
+      lng: mapSheet.lng,
+      id:
+        mapSheet.mode === "lake"
+          ? `lake-${mapSheet.group.waterbody}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+          : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`,
+    };
+  }, [mapSheet, placing]);
+
+  const closeMapSheet = useCallback(() => {
+    setMapSheet(null);
+    setSheetExpanded(false);
+  }, []);
 
   function handleLogCatchClick() {
     if (!user) return;
@@ -315,7 +387,7 @@ export default function MapPage() {
               <>
                 {" "}
                 <span className="text-sky-700 dark:text-sky-400">
-                  {t("forecast.mapHint")}
+                  {t("forecast.mapHintBottomSheet")}
                 </span>
               </>
             ) : null}
@@ -393,10 +465,10 @@ export default function MapPage() {
               Cancel
             </button>
           )}
-          {forecastSelection && !placing && (
+          {mapSheet && !placing && (
             <button
               type="button"
-              onClick={() => setForecastSelection(null)}
+              onClick={closeMapSheet}
               className="map-page__cancel-btn"
             >
               {t("forecast.clearPin")}
@@ -613,25 +685,39 @@ export default function MapPage() {
           groups={filteredGroups}
           activeSpecies={activeSpecies}
           onMapClick={handleMapClick}
-          canUseAi={!!user}
           placing={placing}
-          forecastPin={forecastSelection}
-          onForecastPopupMount={setForecastPopupEl}
+          forecastPin={forecastPin}
+          selectionFocus={selectionFocus}
+          onStockingLakeClick={handleStockingLakeClick}
           catchMarkers={catchMarkers}
           catchScope={catchScope}
           friendIds={friendIds}
           currentUserId={user?.id}
         />
-        {forecastPopupEl &&
-          forecastSelection &&
-          createPortal(
-            <MapForecastPopup
-              key={`${forecastSelection.lat.toFixed(5)},${forecastSelection.lng.toFixed(5)}`}
-              lat={forecastSelection.lat}
-              lng={forecastSelection.lng}
-            />,
-            forecastPopupEl,
-          )}
+        {mapSheet && !placing ? (
+          <MapDetailBottomSheet
+            key={
+              mapSheet.mode === "lake"
+                ? `lake-${mapSheet.group.waterbody}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+                : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+            }
+            mode={mapSheet.mode}
+            lat={mapSheet.lat}
+            lng={mapSheet.lng}
+            lake={mapSheet.mode === "lake" ? mapSheet.group : undefined}
+            forecastAreaLabel={
+              mapSheet.mode === "forecast" ? forecastAreaLabel : null
+            }
+            forecastAreaLabelLoading={
+              mapSheet.mode === "forecast" ? forecastAreaLabelLoading : false
+            }
+            defaultLakeTab="fish"
+            expanded={sheetExpanded}
+            onExpandedChange={setSheetExpanded}
+            onClose={closeMapSheet}
+            canUseAi={!!user}
+          />
+        ) : null}
       </div>
 
       {/* Catch registration form */}

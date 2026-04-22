@@ -2770,14 +2770,15 @@ export function validateUsernameClient(
   return null;
 }
 
-/** Maps API USERNAME_* machine messages from PATCH /accounts/me to locale-backed strings. */
+/** Maps API USERNAME_* machine messages (400) to locale-backed strings. Works with {@link ApiHttpError} or a wrapped {@link Error} whose message is still the raw code. */
 export function tryMapUsernameHttpError(
   err: unknown,
   t: (key: string) => string,
 ): string | null {
-  if (err instanceof ApiHttpError && err.status === 400) {
-    if (err.message === "USERNAME_RESERVED") return t("validation.usernameReserved");
-    if (err.message === "USERNAME_INAPPROPRIATE") return t("validation.usernameInappropriate");
-  }
+  if (err instanceof ApiHttpError && err.status !== 400) return null;
+  const msg =
+    err instanceof ApiHttpError ? err.message : err instanceof Error ? err.message : null;
+  if (msg === "USERNAME_RESERVED") return t("validation.usernameReserved");
+  if (msg === "USERNAME_INAPPROPRIATE") return t("validation.usernameInappropriate");
   return null;
 }

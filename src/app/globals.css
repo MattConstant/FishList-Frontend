@@ -80,3 +80,20 @@ button,
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
+
+/* Fish loading spinner — wiggle + drift (friends page, location search, etc.) */
+@keyframes fish-loading-swim {
+  0%,
+  100% {
+    transform: translateX(-3px) rotate(-10deg);
+  }
+  50% {
+    transform: translateX(5px) rotate(10deg);
+  }
+}
+
+.fish-loading-spinner__icon {
+  animation: fish-loading-swim 0.95s ease-in-out infinite;
+  transform-origin: 45% 55%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08));
+}

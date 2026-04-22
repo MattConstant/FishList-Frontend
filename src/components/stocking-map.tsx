@@ -6,70 +6,45 @@ import "leaflet/dist/leaflet.css";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "leaflet.markercluster";
-import {
-  fetchLakeFishingInsights,
-  getDisplayErrorMessage,
-  type FishEntryPayload,
-} from "@/lib/api";
+import type { FishEntryPayload } from "@/lib/api";
 import { waterbodyGroupKey, type WaterbodyGroup } from "@/lib/geohub";
 import { refineLakePin } from "@/lib/lake-geocode";
-import { waterbodyToInsightPayload } from "@/lib/lake-insights";
 
 const ONTARIO_CENTER: [number, number] = [49.5, -85.0];
 const DEFAULT_ZOOM = 5;
 
-const FISH_SVG =
-  `data:image/svg+xml,${encodeURIComponent(
+/** Same fish silhouette as stocking markers; only {@link bodyFill} changes for catches vs stocking. */
+const FISH_BODY_PATH =
+  "M12 4C7 4 2 8 1 12c1 4 6 8 11 8 2-1.5 3.5-3 4.5-4.5L21 18l-1-6 1-6-4.5 2.5C15.5 7 14 5.5 12 4z";
+
+function fishMarkerDataUrl(bodyFill: string): string {
+  return `data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28">` +
-    `<path fill="#0369a1" stroke="#fff" stroke-width="1.2" d="M12 4C7 4 2 8 1 12c1 4 6 8 11 8 2-1.5 3.5-3 4.5-4.5L21 18l-1-6 1-6-4.5 2.5C15.5 7 14 5.5 12 4z"/>` +
-    `<circle cx="7" cy="11.5" r="1.2" fill="#fff"/>` +
-    `</svg>`,
+      `<path fill="${bodyFill}" stroke="#fff" stroke-width="1.2" d="${FISH_BODY_PATH}"/>` +
+      `<circle cx="7" cy="11.5" r="1.2" fill="#fff"/>` +
+      `</svg>`,
   )}`;
+}
 
-const USER_CATCH_SVG =
-  `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44" width="32" height="38">` +
-    `<path d="M18 1.5C9.2 1.5 2 8.7 2 17.5c0 12.2 13 23.5 15.1 25.2a1.4 1.4 0 0 0 1.8 0C21 41 34 29.7 34 17.5 34 8.7 26.8 1.5 18 1.5z" fill="#dc2626" stroke="#fff" stroke-width="2"/>` +
-    `<path d="M23.2 11.8 14 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>` +
-    `<circle cx="12.2" cy="22.8" r="5.6" fill="none" stroke="#fff" stroke-width="2"/>` +
-    `<path d="m8.6 19.2 7.2 7.2m-7.2 0 7.2-7.2" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>` +
-    `</svg>`,
-  )}`;
-
-const OTHER_CATCH_SVG =
-  `data:image/svg+xml,${encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 44" width="30" height="36">` +
-    `<path d="M18 1.5C9.2 1.5 2 8.7 2 17.5c0 12.2 13 23.5 15.1 25.2a1.4 1.4 0 0 0 1.8 0C21 41 34 29.7 34 17.5 34 8.7 26.8 1.5 18 1.5z" fill="#0284c7" stroke="#fff" stroke-width="2"/>` +
-    `<path d="M23.2 11.8 14 21" stroke="#fff" stroke-width="2.2" stroke-linecap="round"/>` +
-    `<circle cx="12.2" cy="22.8" r="5.6" fill="none" stroke="#fff" stroke-width="2"/>` +
-    `<path d="m8.6 19.2 7.2 7.2m-7.2 0 7.2-7.2" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>` +
-    `</svg>`,
-  )}`;
+/** Stocking lakes — sky blue (original inline asset). */
+const FISH_SVG_STOCKING = fishMarkerDataUrl("#0369a1");
 
 function fishIcon(): L.Icon {
   return L.icon({
-    iconUrl: FISH_SVG,
+    iconUrl: FISH_SVG_STOCKING,
     iconSize: [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -14],
   });
 }
 
-function userCatchIcon(): L.Icon {
+/** {@link /public/catch.png} — raw image, centered on the coordinates. */
+function catchPinIcon(): L.Icon {
   return L.icon({
-    iconUrl: USER_CATCH_SVG,
-    iconSize: [32, 38],
-    iconAnchor: [16, 36],
-    popupAnchor: [0, -30],
-  });
-}
-
-function otherCatchIcon(): L.Icon {
-  return L.icon({
-    iconUrl: OTHER_CATCH_SVG,
-    iconSize: [30, 36],
-    iconAnchor: [15, 34],
-    popupAnchor: [0, -28],
+    iconUrl: "/catch.png",
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -14],
   });
 }
 
@@ -90,46 +65,6 @@ function forecastPinIcon(): L.Icon {
   });
 }
 
-function buildPopupHtml(g: WaterbodyGroup, lakeKeyEncoded: string): string {
-  const districts = Array.from(g.districtSet).join(", ");
-  const stages = Array.from(g.developmentalStageSet).join(", ");
-  const rows = g.records
-    .sort((a, b) => b.year - a.year || a.species.localeCompare(b.species))
-    .map(
-      (r) =>
-        `<tr><td style="padding:2px 6px">${r.species}</td>` +
-        `<td style="padding:2px 6px;text-align:center">${r.year}</td>` +
-        `<td style="padding:2px 6px;text-align:right">${r.count.toLocaleString()}</td></tr>`,
-    )
-    .join("");
-
-  return (
-    `<div class="fishlist-stock-popup" style="max-height:280px;overflow:auto;font-size:13px;line-height:1.4">` +
-    `<strong style="font-size:14px">${g.waterbody}</strong><br/>` +
-    `<span style="color:#555">${g.speciesSet.size} species &middot; ${g.totalFish.toLocaleString()} fish total</span>` +
-    `<br/><span style="color:#777;font-size:12px">GeoHub coordinates are often approximate; we try to snap the pin onto the lake using OpenStreetMap search.</span>` +
-    `<br/><span style="color:#555">District: ${districts || "Unknown"}</span>` +
-    `<br/><span style="color:#555">Stage(s): ${stages || "Unknown"}</span>` +
-    `<table style="margin-top:6px;border-collapse:collapse;width:100%">` +
-    `<tr style="border-bottom:1px solid #ddd;font-weight:600">` +
-    `<td style="padding:2px 6px">Species</td><td style="padding:2px 6px;text-align:center">Year</td>` +
-    `<td style="padding:2px 6px;text-align:right">Count</td></tr>` +
-    rows +
-    `</table>` +
-    `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e4e4e7">` +
-    `<div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:11px;color:#059669;font-weight:600">` +
-    `<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#22c55e;box-shadow:0 0 0 2px rgba(34,197,94,.25)"></span>` +
-    `Fish stocked here` +
-    `</div>` +
-    `<button type="button" class="fishlist-ai-tips-btn" data-lake-key="${lakeKeyEncoded}" ` +
-    `style="width:auto;max-width:min(100%,220px);cursor:pointer;border-radius:8px;border:1px solid #c4b5fd;background:#f5f3ff;color:#5b21b6;font-size:12px;font-weight:600;padding:6px 12px;display:inline-flex;align-items:center;justify-content:center;gap:6px">` +
-    `<span aria-hidden="true">✨</span> Fishing tips <span style="opacity:.85;font-weight:500">(AI)</span>` +
-    `</button>` +
-    `<div class="fishlist-ai-tips-result" style="display:none;margin-top:8px;padding:8px;border-radius:8px;background:#fafafa;border:1px solid #e4e4e7;font-size:12px;line-height:1.45;color:#3f3f46;white-space:pre-wrap;max-height:280px;overflow-y:auto"></div>` +
-    `</div></div>`
-  );
-}
-
 export type CatchMapMarker = {
   lat: number;
   lng: number;
@@ -148,42 +83,45 @@ type StockingMapProps = {
   groups: WaterbodyGroup[];
   activeSpecies: Set<string>;
   onMapClick?: (lat: number, lng: number) => void;
-  /** Logged-in users can request AI fishing tips (text) from the popup. */
-  canUseAi?: boolean;
   placing?: boolean;
-  /** Click-to-forecast pin (e.g. Open-Meteo + solunar popup). */
+  /** Forecast pin (click-to-forecast); details render in the parent bottom sheet. */
   forecastPin?: { lat: number; lng: number } | null;
-  /** Leaflet popup content node — parent should `createPortal` forecast UI here for React context. */
-  onForecastPopupMount?: (el: HTMLDivElement | null) => void;
   catchMarkers?: CatchMapMarker[];
   catchScope?: "all" | "friends" | "mine";
   friendIds?: Set<number>;
   currentUserId?: number;
+  /** Stocking marker clicked — open lake detail in parent UI (no Leaflet popup). */
+  onStockingLakeClick?: (payload: {
+    group: WaterbodyGroup;
+    lat: number;
+    lng: number;
+  }) => void;
+  /** When the bottom sheet opens for a place, pan/zoom here (id must change per new selection). */
+  selectionFocus?: { lat: number; lng: number; id: string } | null;
 };
 
 export default function StockingMap({
   groups,
   activeSpecies,
   onMapClick,
-  canUseAi = false,
   placing,
   forecastPin = null,
-  onForecastPopupMount,
   catchMarkers = [],
   catchScope = "all",
   friendIds = new Set<number>(),
   currentUserId,
+  onStockingLakeClick,
+  selectionFocus = null,
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const forecastMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
-  /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster and closing popups). */
+  /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster). */
   const stockingMarkerByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const userLayerRef = useRef<L.LayerGroup | null>(null);
-  const groupsByKeyRef = useRef<Map<string, WaterbodyGroup>>(new Map());
-  const canUseAiRef = useRef(canUseAi);
-  canUseAiRef.current = canUseAi;
+  const onStockingLakeClickRef = useRef(onStockingLakeClick);
+  onStockingLakeClickRef.current = onStockingLakeClick;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -254,7 +192,6 @@ export default function StockingMap({
         map.removeLayer(forecastMarkerRef.current);
         forecastMarkerRef.current = null;
       }
-      onForecastPopupMount?.(null);
       return;
     }
 
@@ -262,34 +199,46 @@ export default function StockingMap({
       map.removeLayer(forecastMarkerRef.current);
       forecastMarkerRef.current = null;
     }
-    onForecastPopupMount?.(null);
 
-    const el = document.createElement("div");
     const marker = L.marker([lat, lng], {
       icon: forecastPinIcon(),
       zIndexOffset: 1200,
     });
-    marker.bindPopup(el, {
-      minWidth: 480,
-      maxWidth: 480,
-      className: "fishlist-forecast-leaflet-popup",
-      closeButton: true,
-      autoPan: true,
-      autoPanPadding: [12, 12],
-    });
     marker.addTo(map);
     forecastMarkerRef.current = marker;
-    onForecastPopupMount?.(el);
-    marker.openPopup();
 
     return () => {
-      onForecastPopupMount?.(null);
       if (forecastMarkerRef.current) {
         map.removeLayer(forecastMarkerRef.current);
         forecastMarkerRef.current = null;
       }
     };
-  }, [forecastPin?.lat, forecastPin?.lng, onForecastPopupMount]);
+  }, [forecastPin]);
+
+  useEffect(() => {
+    const mapInstance = mapRef.current;
+    if (!mapInstance || !selectionFocus) return;
+    const { lat, lng } = selectionFocus;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+    /**
+     * One animation: fit a tiny box around the point with extra bottom padding so the
+     * pin sits above the bottom sheet (avoids flyTo + panBy “double move”).
+     */
+    const padDeg = 0.00012;
+    const bounds = L.latLngBounds(
+      [lat - padDeg, lng - padDeg],
+      [lat + padDeg, lng + padDeg],
+    );
+
+    mapInstance.flyToBounds(bounds, {
+      paddingTopLeft: L.point(12, 12),
+      paddingBottomRight: L.point(12, 260),
+      maxZoom: 14,
+      duration: 0.75,
+      easeLinearity: 0.22,
+    });
+  }, [selectionFocus?.id, selectionFocus?.lat, selectionFocus?.lng]);
 
   const filteredGroups = useMemo(() => {
     if (activeSpecies.size === 0) return [];
@@ -321,15 +270,6 @@ export default function StockingMap({
     }
     return m;
   }, [filteredGroups]);
-
-  const displayGroups = useMemo(() => {
-    return filteredGroups.map((g) => {
-      const k = waterbodyGroupKey(g);
-      const o = positionOverrides[k];
-      if (!o) return g;
-      return { ...g, lat: o.lat, lng: o.lng };
-    });
-  }, [filteredGroups, positionOverrides]);
 
   const filteredGroupsRef = useRef(filteredGroups);
   filteredGroupsRef.current = filteredGroups;
@@ -377,74 +317,6 @@ export default function StockingMap({
     [runGeocodeQueue],
   );
 
-  useEffect(() => {
-    const m = new Map<string, WaterbodyGroup>();
-    for (const g of displayGroups) {
-      m.set(waterbodyGroupKey(g), g);
-    }
-    groupsByKeyRef.current = m;
-  }, [displayGroups]);
-
-  const onAiTipsButton = useCallback(async (ev: MouseEvent) => {
-    const raw = (ev.target as HTMLElement).closest(
-      "button.fishlist-ai-tips-btn",
-    ) as HTMLButtonElement | null;
-    if (!raw || !containerRef.current?.contains(raw)) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    const enc = raw.getAttribute("data-lake-key");
-    if (!enc) return;
-    let key: string;
-    try {
-      key = decodeURIComponent(enc);
-    } catch {
-      return;
-    }
-    const g = groupsByKeyRef.current.get(key);
-    const resultEl = raw.parentElement?.querySelector(
-      ".fishlist-ai-tips-result",
-    ) as HTMLDivElement | null;
-    if (!g || !resultEl) return;
-
-    resultEl.style.display = "block";
-    if (!canUseAiRef.current) {
-      resultEl.innerHTML =
-        '<a href="/login" style="color:#2563eb;font-weight:600;text-decoration:underline">Sign in</a> to get AI tips.';
-      return;
-    }
-    resultEl.textContent = "Loading…";
-    raw.disabled = true;
-    try {
-      const { text } = await fetchLakeFishingInsights(
-        waterbodyToInsightPayload(g),
-      );
-      resultEl.textContent = "";
-      const narrative = document.createElement("div");
-      narrative.style.whiteSpace = "pre-wrap";
-      narrative.textContent = text;
-      resultEl.appendChild(narrative);
-      const note = document.createElement("div");
-      note.style.fontSize = "11px";
-      note.style.color = "#71717a";
-      note.style.marginTop = "8px";
-      note.style.lineHeight = "1.4";
-      note.textContent =
-        "Tips are general ideas only — always check Ontario regulations, limits, and access before fishing.";
-      resultEl.appendChild(note);
-    } catch (e) {
-      resultEl.textContent = getDisplayErrorMessage(e, "Could not load tips.");
-    } finally {
-      raw.disabled = false;
-    }
-  }, []);
-
-  useEffect(() => {
-    const root = containerRef.current;
-    if (!root) return;
-    root.addEventListener("click", onAiTipsButton);
-    return () => root.removeEventListener("click", onAiTipsButton);
-  }, [onAiTipsButton]);
-
   const filteredCatchMarkers = useMemo(() => {
     if (catchScope === "mine") {
       return catchMarkers.filter((c) => c.accountId === currentUserId);
@@ -484,15 +356,16 @@ export default function StockingMap({
       const gPopup: WaterbodyGroup = o ? { ...g, lat: o.lat, lng: o.lng } : g;
 
       const marker = L.marker([lat, lng], { icon });
-      marker.bindPopup(buildPopupHtml(gPopup, encodeURIComponent(key)), {
-        maxWidth: 340,
-        closeOnClick: false,
-      });
-      marker.on("popupopen", () => {
+      marker.on("click", () => {
         const hint = hintsByKey.get(key);
         if (hint) {
           enqueueGeocode(key, hint.waterbody, hint.lat, hint.lng);
         }
+        onStockingLakeClickRef.current?.({
+          group: gPopup,
+          lat,
+          lng,
+        });
       });
       cluster.addLayer(marker);
       stockingMarkerByKeyRef.current.set(key, marker);
@@ -562,8 +435,7 @@ export default function StockingMap({
     if (filteredCatchMarkers.length === 0) return;
 
     const layer = L.layerGroup();
-    const mineIcon = userCatchIcon();
-    const othersIcon = otherCatchIcon();
+    const catchIcon = catchPinIcon();
 
     function formatCatchText(c: CatchMapMarker["catches"][number]): string {
       if (c.fishDetails && c.fishDetails.length > 0) {
@@ -605,7 +477,7 @@ export default function StockingMap({
         badge +
         `<br/>${catchLines}${images}</div>`;
       const marker = L.marker([markerData.lat, markerData.lng], {
-        icon: isMine ? mineIcon : othersIcon,
+        icon: catchIcon,
       });
       marker.bindPopup(html, { maxWidth: 320 });
       layer.addLayer(marker);

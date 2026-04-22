@@ -12,6 +12,8 @@ import {
   ApiHttpError,
   clearSession,
   exchangeGoogleCredential,
+  exchangePasswordLogin,
+  exchangeRegister,
   fetchAdminMe,
   fetchCurrentAccount,
   getDisplayErrorMessage,
@@ -26,6 +28,8 @@ type AuthContextValue = {
   user: User | null;
   isAdmin: boolean;
   signInWithGoogle: (credential: string) => Promise<void>;
+  signInWithPassword: (username: string, password: string) => Promise<void>;
+  signUpWithPassword: (username: string, password: string) => Promise<void>;
   refreshUser: () => Promise<void>;
   logout: () => void;
   isReady: boolean;
@@ -105,6 +109,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applyAuthResponse],
   );
 
+  const signInWithPassword = useCallback(
+    async (username: string, password: string) => {
+      try {
+        const data = await exchangePasswordLogin(username, password);
+        await applyAuthResponse(data);
+      } catch (e) {
+        throw new Error(getDisplayErrorMessage(e, "Could not sign in."));
+      }
+    },
+    [applyAuthResponse],
+  );
+
+  const signUpWithPassword = useCallback(
+    async (username: string, password: string) => {
+      try {
+        const data = await exchangeRegister(username, password);
+        await applyAuthResponse(data);
+      } catch (e) {
+        throw new Error(getDisplayErrorMessage(e, "Could not create account."));
+      }
+    },
+    [applyAuthResponse],
+  );
+
   const refreshUser = useCallback(async () => {
     const session = loadSession();
     if (!session) return;
@@ -138,11 +166,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       isAdmin,
       signInWithGoogle,
+      signInWithPassword,
+      signUpWithPassword,
       refreshUser,
       logout,
       isReady,
     }),
-    [user, isAdmin, signInWithGoogle, refreshUser, logout, isReady],
+    [
+      user,
+      isAdmin,
+      signInWithGoogle,
+      signInWithPassword,
+      signUpWithPassword,
+      refreshUser,
+      logout,
+      isReady,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

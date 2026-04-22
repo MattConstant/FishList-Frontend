@@ -9,12 +9,14 @@ import legal from "./fr/legal";
 import login from "./fr/login";
 import nav from "./fr/nav";
 import profile from "./fr/profile";
+import register from "./fr/register";
 import users from "./fr/users";
 
 const fr = {
   ...nav,
   ...catchDict,
   ...login,
+  ...register,
   ...about,
   ...legal,
   ...friends,
