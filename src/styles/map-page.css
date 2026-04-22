@@ -159,7 +159,7 @@
 }
 
 .map-page__bottom-sheet-handle {
-  @apply flex w-full items-center justify-center py-2;
+  @apply flex w-full cursor-grab touch-none select-none items-center justify-center py-2 active:cursor-grabbing;
 }
 
 .map-page__bottom-sheet-handle-bar {

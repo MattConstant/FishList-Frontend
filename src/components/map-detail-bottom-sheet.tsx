@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LakeFishTab } from "@/components/lake-fish-tab";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
@@ -14,10 +14,10 @@ type Props = {
   lat: number;
   lng: number;
   lake?: WaterbodyGroup;
-  /** Map-click forecast: reverse-geocoded place name (optional). */
+  defaultLakeTab?: MapLakeTab;
+  /** Reverse-geocoded area line for forecast mode (from map page). */
   forecastAreaLabel?: string | null;
   forecastAreaLabelLoading?: boolean;
-  defaultLakeTab?: MapLakeTab;
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
   onClose: () => void;
@@ -38,9 +38,9 @@ export function MapDetailBottomSheet({
   lat,
   lng,
   lake,
+  defaultLakeTab = "fish",
   forecastAreaLabel = null,
   forecastAreaLabelLoading = false,
-  defaultLakeTab = "fish",
   expanded,
   onExpandedChange,
   onClose,
@@ -48,6 +48,12 @@ export function MapDetailBottomSheet({
 }: Props) {
   const { t } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>(defaultLakeTab);
+  /** Handle bar: drag up/down to expand/collapse; small movement = tap toggle. */
+  const handleDragRef = useRef<{ y: number; pointerId: number } | null>(null);
+
+  useEffect(() => {
+    setLakeTab(defaultLakeTab);
+  }, [defaultLakeTab, lake?.waterbody, mode, lat, lng]);
 
   const peekSubtitle =
     mode === "lake" && lake
@@ -55,11 +61,41 @@ export function MapDetailBottomSheet({
           species: lake.speciesSet.size,
           total: lake.totalFish.toLocaleString(),
         })
-      : t("forecast.mapForecastPeek");
+      : mode === "forecast" && forecastAreaLabelLoading
+        ? t("forecast.loading")
+        : mode === "forecast" && forecastAreaLabel
+          ? forecastAreaLabel
+          : t("forecast.mapForecastPeek");
 
-  const googleMapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${lat},${lng}`,
-  )}`;
+  const DRAG_PX = 40;
+
+  function onHandlePointerDown(e: React.PointerEvent<HTMLButtonElement>) {
+    handleDragRef.current = { y: e.clientY, pointerId: e.pointerId };
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onHandlePointerUp(e: React.PointerEvent<HTMLButtonElement>) {
+    const start = handleDragRef.current;
+    handleDragRef.current = null;
+    if (!start || start.pointerId !== e.pointerId) return;
+    try {
+      e.currentTarget.releasePointerCapture(e.pointerId);
+    } catch {
+      /* already released */
+    }
+    const dy = e.clientY - start.y;
+    if (dy < -DRAG_PX) {
+      onExpandedChange(true);
+    } else if (dy > DRAG_PX) {
+      onExpandedChange(false);
+    } else {
+      onExpandedChange(!expanded);
+    }
+  }
+
+  function onHandlePointerCancel() {
+    handleDragRef.current = null;
+  }
 
   return (
     <div className="map-page__bottom-sheet">
@@ -68,7 +104,10 @@ export function MapDetailBottomSheet({
           type="button"
           className="map-page__bottom-sheet-handle"
           aria-expanded={expanded}
-          onClick={() => onExpandedChange(!expanded)}
+          aria-label={expanded ? t("forecast.mapSheetCollapse") : t("forecast.mapSheetExpand")}
+          onPointerDown={onHandlePointerDown}
+          onPointerUp={onHandlePointerUp}
+          onPointerCancel={onHandlePointerCancel}
         >
           <span className="map-page__bottom-sheet-handle-bar" />
         </button>
@@ -76,11 +115,7 @@ export function MapDetailBottomSheet({
         <div className="map-page__bottom-sheet-head">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">
-              {mode === "lake" && lake
-                ? lake.waterbody
-                : forecastAreaLabelLoading
-                  ? t("forecast.areaNameLoading")
-                  : forecastAreaLabel ?? t("forecast.popupTitle")}
+              {mode === "lake" && lake ? lake.waterbody : t("forecast.popupTitle")}
             </h2>
             <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
               {peekSubtitle}
@@ -88,26 +123,6 @@ export function MapDetailBottomSheet({
             <p className="mt-1 font-mono text-[0.65rem] text-zinc-400 dark:text-zinc-500">
               {lat.toFixed(4)}, {lng.toFixed(4)}
             </p>
-            <a
-              href={googleMapsHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2 inline-flex max-w-full items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2.5 py-1.5 text-xs font-semibold text-sky-700 transition hover:border-sky-300 hover:bg-sky-50 dark:border-zinc-600 dark:bg-zinc-800/80 dark:text-sky-300 dark:hover:border-sky-600 dark:hover:bg-zinc-800"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-3.5 w-3.5 shrink-0 opacity-90"
-                aria-hidden
-              >
-                <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" />
-              </svg>
-              <span className="min-w-0 truncate">{t("forecast.openInGoogleMaps")}</span>
-            </a>
           </div>
           <div className="flex shrink-0 items-start gap-1">
             <button
@@ -119,7 +134,7 @@ export function MapDetailBottomSheet({
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className={`h-5 w-5 transition-transform ${expanded ? "rotate-180" : ""}`}
+                className={`h-5 w-5 transition-transform ${expanded ? "" : "rotate-180"}`}
                 aria-hidden
               >
                 <path
@@ -146,7 +161,7 @@ export function MapDetailBottomSheet({
           </div>
         </div>
 
-        {mode === "lake" && lake && expanded ? (
+        {mode === "lake" && lake ? (
           <div
             className="map-page__bottom-sheet-tabs"
             role="tablist"
