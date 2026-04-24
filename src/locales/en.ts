@@ -5,6 +5,7 @@ import errors from "./en/errors";
 import forecast from "./en/forecast";
 import friends from "./en/friends";
 import home from "./en/home";
+import map from "./en/map";
 import legal from "./en/legal";
 import login from "./en/login";
 import nav from "./en/nav";
@@ -22,6 +23,7 @@ const en = {
   ...friends,
   ...profile,
   ...home,
+  ...map,
   ...users,
   ...admin,
   ...errors,

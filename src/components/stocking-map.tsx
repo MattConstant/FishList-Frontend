@@ -9,6 +9,7 @@ import "leaflet.markercluster";
 import type { FishEntryPayload } from "@/lib/api";
 import { waterbodyGroupKey, type WaterbodyGroup } from "@/lib/geohub";
 import { refineLakePin } from "@/lib/lake-geocode";
+import type { AraMapPoint, AraViewport } from "@/lib/ara-fish";
 
 const ONTARIO_CENTER: [number, number] = [49.5, -85.0];
 const DEFAULT_ZOOM = 5;
@@ -28,6 +29,8 @@ function fishMarkerDataUrl(bodyFill: string): string {
 
 /** Stocking lakes — sky blue (original inline asset). */
 const FISH_SVG_STOCKING = fishMarkerDataUrl("#0369a1");
+/** ARA (species presence) — emerald, distinct from stocking. */
+const FISH_SVG_ARA = fishMarkerDataUrl("#059669");
 
 function fishIcon(): L.Icon {
   return L.icon({
@@ -35,6 +38,15 @@ function fishIcon(): L.Icon {
     iconSize: [28, 28],
     iconAnchor: [14, 14],
     popupAnchor: [0, -14],
+  });
+}
+
+function araFishIcon(): L.Icon {
+  return L.icon({
+    iconUrl: FISH_SVG_ARA,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -10],
   });
 }
 
@@ -96,8 +108,12 @@ type StockingMapProps = {
     lat: number;
     lng: number;
   }) => void;
-  /** When the bottom sheet opens for a place, pan/zoom here (id must change per new selection). */
-  selectionFocus?: { lat: number; lng: number; id: string } | null;
+  /** ARA (MNRF aquatic resource) species presence — not stocking events. */
+  araMarkers?: AraMapPoint[];
+  /** Fires when the map is ready or the user stops panning/zooming (for viewport loading). */
+  onViewportChange?: (bounds: AraViewport) => void;
+  /** Aerial (Esri World Imagery) vs default street map. */
+  satelliteImagery?: boolean;
 };
 
 export default function StockingMap({
@@ -111,12 +127,19 @@ export default function StockingMap({
   friendIds = new Set<number>(),
   currentUserId,
   onStockingLakeClick,
-  selectionFocus = null,
+  araMarkers = [],
+  onViewportChange,
+  satelliteImagery = false,
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
+  const osmTileRef = useRef<L.TileLayer | null>(null);
+  const satTileRef = useRef<L.TileLayer | null>(null);
   const forecastMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
+  const araLayerRef = useRef<L.LayerGroup | null>(null);
+  const onViewportChangeRef = useRef(onViewportChange);
+  onViewportChangeRef.current = onViewportChange;
   /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster). */
   const stockingMarkerByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const userLayerRef = useRef<L.LayerGroup | null>(null);
@@ -138,21 +161,54 @@ export default function StockingMap({
     }
     window.addEventListener("resize", onResize);
 
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
+    });
+    const sat = L.tileLayer(
+      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+      {
+        maxZoom: 19,
+        attribution:
+          'Tiles &copy; <a href="https://www.esri.com/">Esri</a>, ' +
+            "Source: Esri, Maxar, Earthstar Geographics, and the GIS User Community",
+      },
+    );
+    osmTileRef.current = osm;
+    satTileRef.current = sat;
+    if (satelliteImagery) {
+      sat.addTo(map);
+    } else {
+      osm.addTo(map);
+    }
 
     mapRef.current = map;
 
     return () => {
       window.removeEventListener("resize", onResize);
+      osmTileRef.current = null;
+      satTileRef.current = null;
       map.remove();
       mapRef.current = null;
       clusterRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- only initial basemap; toggles use effect below
   }, []);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    const osm = osmTileRef.current;
+    const sat = satTileRef.current;
+    if (!map || !osm || !sat) return;
+    if (satelliteImagery) {
+      if (map.hasLayer(osm)) map.removeLayer(osm);
+      if (!map.hasLayer(sat)) map.addLayer(sat);
+    } else {
+      if (map.hasLayer(sat)) map.removeLayer(sat);
+      if (!map.hasLayer(osm)) map.addLayer(osm);
+    }
+  }, [satelliteImagery]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -167,6 +223,37 @@ export default function StockingMap({
       map.off("click", handleClick);
     };
   }, [onMapClick]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (!onViewportChange) return;
+
+    let t: ReturnType<typeof setTimeout> | undefined;
+    function fire() {
+      const inst = mapRef.current;
+      if (!inst) return;
+      const b = inst.getBounds();
+      onViewportChangeRef.current?.({
+        south: b.getSouth(),
+        west: b.getWest(),
+        north: b.getNorth(),
+        east: b.getEast(),
+      });
+    }
+    function debounced() {
+      clearTimeout(t);
+      t = setTimeout(fire, 420);
+    }
+    map.on("moveend", debounced);
+    map.on("zoomend", debounced);
+    queueMicrotask(fire);
+    return () => {
+      map.off("moveend", debounced);
+      map.off("zoomend", debounced);
+      clearTimeout(t);
+    };
+  }, [onViewportChange]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -214,31 +301,6 @@ export default function StockingMap({
       }
     };
   }, [forecastPin]);
-
-  useEffect(() => {
-    const mapInstance = mapRef.current;
-    if (!mapInstance || !selectionFocus) return;
-    const { lat, lng } = selectionFocus;
-    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-    /**
-     * One animation: fit a tiny box around the point with extra bottom padding so the
-     * pin sits above the bottom sheet (avoids flyTo + panBy “double move”).
-     */
-    const padDeg = 0.00012;
-    const bounds = L.latLngBounds(
-      [lat - padDeg, lng - padDeg],
-      [lat + padDeg, lng + padDeg],
-    );
-
-    mapInstance.flyToBounds(bounds, {
-      paddingTopLeft: L.point(12, 12),
-      paddingBottomRight: L.point(12, 260),
-      maxZoom: 14,
-      duration: 0.75,
-      easeLinearity: 0.22,
-    });
-  }, [selectionFocus?.id, selectionFocus?.lat, selectionFocus?.lng]);
 
   const filteredGroups = useMemo(() => {
     if (activeSpecies.size === 0) return [];
@@ -356,6 +418,12 @@ export default function StockingMap({
       const gPopup: WaterbodyGroup = o ? { ...g, lat: o.lat, lng: o.lng } : g;
 
       const marker = L.marker([lat, lng], { icon });
+      marker.bindTooltip(g.waterbody, {
+        direction: "top",
+        offset: L.point(0, -10),
+        opacity: 1,
+        className: "map-page__stocking-tooltip",
+      });
       marker.on("click", () => {
         const hint = hintsByKey.get(key);
         if (hint) {
@@ -383,6 +451,42 @@ export default function StockingMap({
       }
     }
   }, [positionOverrides]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (araLayerRef.current) {
+      map.removeLayer(araLayerRef.current);
+      araLayerRef.current = null;
+    }
+
+    if (araMarkers.length === 0) return;
+
+    const layer = L.layerGroup();
+    const icon = araFishIcon();
+    for (const a of araMarkers) {
+      const m = L.marker([a.lat, a.lng], { icon, zIndexOffset: -200 });
+      m.bindTooltip(a.name || "Waterbody", {
+        direction: "top",
+        offset: L.point(0, -8),
+        opacity: 1,
+        className: "map-page__stocking-tooltip",
+      });
+      if (a.species) {
+        const s =
+          a.species.length > 200 ? a.species.slice(0, 200) + "…" : a.species;
+        m.bindPopup(
+          `<div style="font-size:12px;line-height:1.4;max-width:280px">` +
+            `<strong style="font-size:13px">${(a.name || "—").replace(/</g, "&lt;")}</strong><br/>` +
+            `<span style="color:#3f3f46">${s.replace(/</g, "&lt;")}</span></div>`,
+        );
+      }
+      layer.addLayer(m);
+    }
+    layer.addTo(map);
+    araLayerRef.current = layer;
+  }, [araMarkers]);
 
   useEffect(() => {
     const map = mapRef.current;

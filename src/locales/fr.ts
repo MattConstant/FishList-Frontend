@@ -5,6 +5,7 @@ import errors from "./fr/errors";
 import forecast from "./fr/forecast";
 import friends from "./fr/friends";
 import home from "./fr/home";
+import map from "./fr/map";
 import legal from "./fr/legal";
 import login from "./fr/login";
 import nav from "./fr/nav";
@@ -22,6 +23,7 @@ const fr = {
   ...friends,
   ...profile,
   ...home,
+  ...map,
   ...users,
   ...admin,
   ...errors,

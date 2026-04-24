@@ -4,7 +4,7 @@
  */
 
 /** Bump when server geocode logic changes — avoids stale bad pins in-session. */
-const CLIENT_CACHE_VER = 3;
+const CLIENT_CACHE_VER = 4;
 const mem = new Map<string, { lat: number; lng: number } | "miss">();
 
 export async function refineLakePin(

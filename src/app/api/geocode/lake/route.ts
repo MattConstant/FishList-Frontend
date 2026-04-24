@@ -14,7 +14,7 @@ type NominatimHit = {
 };
 
 /** Bump when scoring/query logic changes (invalidates in-process cache entries). */
-const CACHE_VERSION = 3;
+const CACHE_VERSION = 4;
 
 /** Names that imply we want a waterbody polygon, not a stream/river along it. */
 function isLakeLikeQuery(q: string): boolean {
@@ -52,6 +52,7 @@ function isWaterbodyPolygonHit(hit: NominatimHit): boolean {
 
 function isUnwantedLandPoi(hit: NominatimHit): boolean {
   const cls = (hit.class ?? "").toLowerCase();
+  if (cls === "boundary") return true;
   if (
     cls === "highway" ||
     cls === "railway" ||
@@ -75,6 +76,24 @@ function isUnwantedLandPoi(hit: NominatimHit): boolean {
   if (cls === "office") return true;
   return false;
 }
+
+/** Nominatim "place" hits (cities, towns) are a common false positive for "… Lake" OSM name collisions. */
+function isPopulationCenterPlace(hit: NominatimHit): boolean {
+  const cls = (hit.class ?? "").toLowerCase();
+  if (cls !== "place") return false;
+  const typ = (hit.type ?? "").toLowerCase();
+  return /city|town|village|municipality|suburb|hamlet|locality|county|region|state|province/.test(
+    typ,
+  );
+}
+
+/**
+ * Nominatim is biased toward the GeoHub point — a province-wide name search can
+ * still return a high-importance result far away (e.g. Ottawa) even when the
+ * stocking data references another part of the province. Keep a tight radius.
+ */
+const MAX_CANDIDATE_M = 90_000;
+const MAX_REFINEMENT_M = 50_000;
 
 function dedupeHits(hits: NominatimHit[]): NominatimHit[] {
   const seen = new Set<string>();
@@ -124,7 +143,8 @@ function scoreHit(
   const lng = Number.parseFloat(hit.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   const d = haversineM(hintLat, hintLng, lat, lng);
-  if (d > 160_000) return null;
+  if (d > MAX_CANDIDATE_M) return null;
+  if (isPopulationCenterPlace(hit)) return null;
 
   if (lakeLike && isStreamRiverWaterway(hit)) {
     return null;
@@ -166,7 +186,8 @@ function scoreWaterbodyCandidate(
   const lng = Number.parseFloat(hit.lon);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
   const d = haversineM(hintLat, hintLng, lat, lng);
-  if (d > 160_000) return null;
+  if (d > MAX_CANDIDATE_M) return null;
+  if (isPopulationCenterPlace(hit)) return null;
 
   const cls = (hit.class ?? "").toLowerCase();
   const typ = (hit.type ?? "").toLowerCase();
@@ -237,7 +258,8 @@ function pickLakePin(
     if (lakeLike && isStreamRiverWaterway(h)) continue;
     if (lakeLike && isUnwantedLandPoi(h)) continue;
     const d = haversineM(hintLat, hintLng, lat, lng);
-    if (d > 160_000) continue;
+    if (d > MAX_CANDIDATE_M) continue;
+    if (isPopulationCenterPlace(h)) continue;
     if (!fallback || d < fallback.d) {
       fallback = { lat, lng, d };
     }
@@ -278,7 +300,7 @@ export async function GET(req: NextRequest) {
   }
 
   const lakeLike = isLakeLikeQuery(qRaw);
-  const cacheKey = `v${CACHE_VERSION}|${qRaw}|${hintLat.toFixed(3)}|${hintLng.toFixed(3)}`;
+  const cacheKey = `v${CACHE_VERSION}|${qRaw}|${hintLat.toFixed(5)}|${hintLng.toFixed(5)}`;
   const now = Date.now();
   const hit = cache.get(cacheKey);
   if (hit && now - hit.at < CACHE_MS) {
@@ -286,12 +308,12 @@ export async function GET(req: NextRequest) {
   }
 
   const q = `${qRaw}, Ontario, Canada`;
-  const pad = 0.35;
-  const viewbox = [
-    hintLng - pad,
-    hintLat + pad,
-    hintLng + pad,
-    hintLat - pad,
+  const padTight = 0.4;
+  const viewboxTight = [
+    hintLng - padTight,
+    hintLat + padTight,
+    hintLng + padTight,
+    hintLat - padTight,
   ].join(",");
 
   const base = new URLSearchParams({
@@ -304,14 +326,23 @@ export async function GET(req: NextRequest) {
 
   try {
     const nearHint = new URLSearchParams(base);
-    nearHint.set("viewbox", viewbox);
+    nearHint.set("viewbox", viewboxTight);
     nearHint.set("bounded", "0");
 
     let merged = await fetchNominatim(nearHint);
     if (lakeLike && !merged.some(isWaterbodyPolygonHit)) {
-      const wide = new URLSearchParams(base);
-      wide.set("limit", "35");
-      const extra = await fetchNominatim(wide);
+      const padLoose = 1.25;
+      const viewboxLoose = [
+        hintLng - padLoose,
+        hintLat + padLoose,
+        hintLng + padLoose,
+        hintLat - padLoose,
+      ].join(",");
+      const second = new URLSearchParams(base);
+      second.set("viewbox", viewboxLoose);
+      second.set("bounded", "0");
+      second.set("limit", "40");
+      const extra = await fetchNominatim(second);
       merged = dedupeHits([...merged, ...extra]);
     }
 
@@ -321,6 +352,11 @@ export async function GET(req: NextRequest) {
 
     const picked = pickLakePin(merged, hintLat, hintLng, lakeLike);
     if (!picked) {
+      return NextResponse.json({ notFound: true }, { status: 200 });
+    }
+
+    const dRefine = haversineM(hintLat, hintLng, picked.lat, picked.lng);
+    if (dRefine > MAX_REFINEMENT_M) {
       return NextResponse.json({ notFound: true }, { status: 200 });
     }
 

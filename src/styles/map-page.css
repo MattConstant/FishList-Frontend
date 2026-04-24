@@ -64,7 +64,7 @@
 }
 
 .map-page__filter-bar {
-  @apply flex items-center gap-3 px-4 py-2.5 sm:px-6;
+  @apply flex items-center gap-2 px-3 py-2 sm:px-4;
 }
 
 .map-page__filter-bar--expanded {
@@ -84,16 +84,86 @@
 }
 
 .map-page__filter-chevron-btn {
-  @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-sm transition;
+  @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-sm transition;
   @apply hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-700 dark:hover:text-sky-300;
 }
 
 .map-page__filter-panel {
-  @apply flex max-h-[min(50vh,28rem)] flex-wrap items-center gap-x-2 gap-y-2 overflow-y-auto px-4 pb-4 pt-3 sm:px-6;
+  @apply max-h-[min(48vh,28rem)] flex-col gap-2.5 overflow-y-auto px-3 pb-3 pt-1.5 sm:px-4;
+}
+
+/* Stacked, sectioned filter layout (map page) */
+.map-page__filter-section {
+  @apply rounded-xl border border-zinc-200/70 bg-zinc-50/70 p-2.5 shadow-sm dark:border-zinc-600/50 dark:bg-zinc-800/40;
+}
+
+.map-page__filter-section--plain {
+  @apply border-0 bg-transparent p-0 shadow-none dark:bg-transparent;
+}
+
+.map-page__filter-section-title {
+  @apply text-[0.65rem] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400/95;
+}
+
+.map-page__filter-toggle-block {
+  @apply mt-2 space-y-1.5;
+}
+
+.map-page__filter-substack {
+  @apply ml-0.5 border-l border-sky-200/70 pl-2.5 dark:border-sky-800/50;
+  margin-top: 0.125rem;
+}
+
+.map-page__filter-substack .map-page__filter-toggle-block {
+  @apply mt-0;
+}
+
+.map-page__filter-toggle-row {
+  @apply flex items-start gap-2 rounded-lg p-0 transition;
+}
+
+.map-page__filter-toggle-row:focus-within {
+  @apply ring-1 ring-sky-500/20;
+}
+
+.map-page__filter-toggle-text {
+  @apply flex min-w-0 flex-1 flex-col gap-0;
+}
+
+.map-page__filter-toggle-name {
+  @apply text-[0.8rem] font-medium leading-tight text-zinc-800 dark:text-zinc-100;
+}
+
+.map-page__filter-toggle-blurb {
+  @apply text-[0.7rem] leading-snug text-zinc-500 dark:text-zinc-500;
+}
+
+.map-page__filter-ara-status {
+  @apply mt-1.5 pl-0.5 text-[0.7rem] leading-tight text-zinc-500 dark:text-zinc-500;
+}
+
+.map-page__filter-stock-hint {
+  @apply text-xs text-zinc-500 dark:text-zinc-400;
+}
+
+.map-page__filter-species-row {
+  @apply flex flex-wrap items-center gap-1.5;
+}
+
+.map-page__filter-form-grid {
+  @apply grid grid-cols-1 gap-2 sm:grid-cols-2;
+}
+
+.map-page__filter-field {
+  @apply flex min-w-0 flex-col gap-0.5;
+}
+
+.map-page__filter-field--span2 {
+  @apply sm:col-span-2;
 }
 
 .map-page__species-pill {
-  @apply rounded-full border px-3 py-1.5 text-xs font-medium transition;
+  @apply rounded-full border px-2 py-1 text-[0.7rem] font-medium transition;
   @apply border-zinc-200 bg-zinc-50/90 text-zinc-700 hover:border-sky-400 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800/55 dark:text-zinc-300 dark:hover:border-sky-500/70 dark:hover:bg-zinc-700/80 dark:hover:text-zinc-50;
 }
 
@@ -114,8 +184,22 @@
   @apply ml-1 sm:ml-3;
 }
 
+.map-page__filter-label--field {
+  @apply text-xs font-medium normal-case tracking-normal text-zinc-600 dark:text-zinc-300;
+}
+
+.map-page__filter-check {
+  @apply h-3.5 w-3.5 shrink-0 rounded border border-zinc-300 text-sky-600 focus:ring-sky-500/30 dark:border-zinc-500 dark:focus:ring-sky-400/30;
+  accent-color: #0284c7;
+  margin-top: 2px;
+}
+
+.map-page__filter-check-label {
+  @apply flex w-full min-w-0 items-start gap-2 text-xs leading-snug text-zinc-700 sm:w-auto sm:min-w-0 sm:inline-flex sm:max-w-full dark:text-zinc-200;
+}
+
 .map-page__field {
-  @apply min-w-0 rounded-xl border border-zinc-200 bg-zinc-50/90 px-3 py-2 text-sm text-zinc-800 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-zinc-600 dark:bg-zinc-800/75 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-sky-400 dark:focus:ring-sky-400/25;
+  @apply min-w-0 rounded-lg border border-zinc-200 bg-zinc-50/90 px-2.5 py-1.5 text-sm text-zinc-800 shadow-sm outline-none transition placeholder:text-zinc-400 focus:border-sky-500 focus:ring-2 focus:ring-sky-500/20 dark:border-zinc-600 dark:bg-zinc-800/75 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-sky-400 dark:focus:ring-sky-400/25;
 }
 
 .map-page__field--waterbody {
@@ -128,6 +212,39 @@
 
 .map-page__map-area--placing {
   cursor: crosshair;
+}
+
+/* Basemap (satellite) — always on top of the map, below the bottom sheet. */
+.map-page__map-basemap {
+  @apply pointer-events-auto absolute right-2 top-2 z-[1200] sm:right-3 sm:top-3;
+}
+
+.map-page__map-basemap-label {
+  @apply flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-200/90 bg-white/95 px-2.5 py-1.5 text-sm font-medium text-zinc-800 shadow-md backdrop-blur-sm dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-100;
+}
+
+.map-page__map-basemap-check {
+  @apply h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-2 focus:ring-sky-500/30 dark:border-zinc-500 dark:focus:ring-sky-400/30;
+}
+
+.map-page__map-basemap-text {
+  @apply select-none whitespace-nowrap;
+}
+
+/* Stocking fish markers — compact lake name on hover (Leaflet tooltip). */
+.map-page__stocking-tooltip.leaflet-tooltip {
+  @apply m-0 max-w-[15rem] border-0 bg-zinc-900/90 px-2.5 py-1 text-left text-[0.7rem] font-medium leading-tight text-zinc-100 shadow-sm;
+  @apply dark:bg-zinc-800/95;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.map-page__stocking-tooltip.leaflet-tooltip-top::before {
+  border-top-color: rgba(24, 24, 27, 0.92) !important;
+}
+.dark .map-page__stocking-tooltip.leaflet-tooltip-top::before {
+  border-top-color: rgba(39, 39, 42, 0.95) !important;
 }
 
 .map-page__loading-overlay {

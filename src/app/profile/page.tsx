@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
 import { LocationCard } from "@/components/fishing-cards";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -239,9 +240,7 @@ export default function ProfilePage() {
                       unoptimized
                     />
                   ) : (
-                    <span className="text-5xl" aria-hidden>
-                      🎣
-                    </span>
+                    <DefaultAvatarIcon className="h-1/2 w-1/2 max-h-[4.5rem] max-w-[4.5rem] text-zinc-500 dark:text-zinc-400" />
                   )}
                 </div>
                 {photoBusy && (

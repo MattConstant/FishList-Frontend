@@ -18,6 +18,11 @@ import {
   type StockingRecord,
   type WaterbodyGroup,
 } from "@/lib/geohub";
+import {
+  fetchAraInBounds,
+  type AraMapPoint,
+  type AraViewport,
+} from "@/lib/ara-fish";
 
 const StockingMap = dynamic(() => import("@/components/stocking-map"), {
   ssr: false,
@@ -73,9 +78,21 @@ export default function MapPage() {
   const [pendingCatch, setPendingCatch] = useState<PendingCatch | null>(null);
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
-  const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("all");
+  const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("mine");
   const [filtersExpanded, setFiltersExpanded] = useState(false);
   const skipFiltersExpandedSave = useRef(true);
+
+  const [showStocking, setShowStocking] = useState(true);
+  const [showAra, setShowAra] = useState(false);
+  const [satelliteImagery, setSatelliteImagery] = useState(false);
+  const [araBass, setAraBass] = useState(true);
+  const [araPike, setAraPike] = useState(true);
+  const [araWalleye, setAraWalleye] = useState(true);
+  const [araPoints, setAraPoints] = useState<AraMapPoint[]>([]);
+  const [araLoading, setAraLoading] = useState(false);
+  const [araTooWide, setAraTooWide] = useState(false);
+  const lastAraViewRef = useRef<AraViewport | null>(null);
+  const araFetchGen = useRef(0);
 
   useEffect(() => {
     try {
@@ -266,6 +283,62 @@ export default function MapPage() {
     selectedDevelopmentalStage,
   ]);
 
+  const displayStockingGroups = useMemo(
+    () => (showStocking ? filteredGroups : []),
+    [showStocking, filteredGroups],
+  );
+
+  const loadAra = useCallback(
+    (v: AraViewport) => {
+      lastAraViewRef.current = v;
+      if (!showAra) {
+        setAraPoints([]);
+        setAraTooWide(false);
+        setAraLoading(false);
+        return;
+      }
+      if (!araBass && !araPike && !araWalleye) {
+        setAraPoints([]);
+        setAraTooWide(false);
+        setAraLoading(false);
+        return;
+      }
+      const gen = ++araFetchGen.current;
+      setAraLoading(true);
+      setAraTooWide(false);
+      fetchAraInBounds(
+        v,
+        { bass: araBass, pike: araPike, walleye: araWalleye },
+      )
+        .then((r) => {
+          if (gen !== araFetchGen.current) return;
+          setAraPoints(r.features);
+          setAraTooWide(r.tooWide);
+        })
+        .catch(() => {
+          if (gen !== araFetchGen.current) return;
+          setAraPoints([]);
+        })
+        .finally(() => {
+          if (gen === araFetchGen.current) setAraLoading(false);
+        });
+    },
+    [showAra, araBass, araPike, araWalleye],
+  );
+
+  useEffect(() => {
+    if (!showAra) {
+      araFetchGen.current += 1;
+      setAraPoints([]);
+      setAraTooWide(false);
+      setAraLoading(false);
+      return;
+    }
+    if (lastAraViewRef.current) {
+      loadAra(lastAraViewRef.current);
+    }
+  }, [showAra, araBass, araPike, araWalleye, loadAra]);
+
   const filterSummaryLine = useMemo(() => {
     if (species.length === 0) return "";
     const spLabel =
@@ -274,12 +347,21 @@ export default function MapPage() {
         : `${activeSpecies.size} species`;
     const q = waterbodyQuery.trim();
     const tail = q ? ` · “${q}”` : "";
-    return `${filteredGroups.length} waterbodies · ${spLabel}${tail}`;
+    const stock =
+      showStocking && activeSpecies.size > 0
+        ? `${filteredGroups.length} lakes match`
+        : !showStocking
+          ? "Stocking off"
+          : "No species selected";
+    const ara = showAra ? " · ARA on" : "";
+    return `${stock} · ${spLabel}${ara}${tail}`;
   }, [
     species.length,
     filteredGroups.length,
     activeSpecies.size,
     waterbodyQuery,
+    showStocking,
+    showAra,
   ]);
 
   const handleMapClick = useCallback(
@@ -348,18 +430,6 @@ export default function MapPage() {
       cancelled = true;
     };
   }, [mapSheet]);
-
-  const selectionFocus = useMemo(() => {
-    if (!mapSheet || placing) return null;
-    return {
-      lat: mapSheet.lat,
-      lng: mapSheet.lng,
-      id:
-        mapSheet.mode === "lake"
-          ? `lake-${mapSheet.group.waterbody}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
-          : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`,
-    };
-  }, [mapSheet, placing]);
 
   const closeMapSheet = useCallback(() => {
     setMapSheet(null);
@@ -530,108 +600,261 @@ export default function MapPage() {
               aria-labelledby="map-filters-toggle"
               className="map-page__filter-panel"
             >
-          <button
-            type="button"
-            onClick={toggleAll}
-            className={speciesPillClass(activeSpecies.size === species.length)}
-          >
-            All
-          </button>
-          {species.map((sp) => (
-            <button
-              key={sp}
-              type="button"
-              onClick={() => toggleSpecies(sp)}
-              className={speciesPillClass(activeSpecies.has(sp))}
-            >
-              {sp}
-            </button>
-          ))}
+              <section
+                className="map-page__filter-section"
+                aria-label={t("map.mnrf.section")}
+              >
+                <h3 className="map-page__filter-section-title">
+                  {t("map.mnrf.section")}
+                </h3>
+                <div className="map-page__filter-toggle-block">
+                  <label className="map-page__filter-toggle-row cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="map-page__filter-check"
+                      checked={showStocking}
+                      onChange={(e) => setShowStocking(e.target.checked)}
+                    />
+                    <span className="map-page__filter-toggle-text">
+                      <span className="map-page__filter-toggle-name">
+                        {t("map.layer.showOnMap")}
+                      </span>
+                      <span className="map-page__filter-toggle-blurb">
+                        {t("map.mnrf.toggleBlurb")}
+                      </span>
+                    </span>
+                  </label>
+                </div>
 
-          <div className="map-page__filter-divider" />
+                {showStocking ? (
+                  <>
+                    <p className="map-page__filter-label--field mt-2 w-full">
+                      {t("map.sections.speciesPills")}
+                    </p>
+                    <div className="map-page__filter-species-row mt-1">
+                      <button
+                        type="button"
+                        onClick={toggleAll}
+                        className={speciesPillClass(activeSpecies.size === species.length)}
+                      >
+                        All
+                      </button>
+                      {species.map((sp) => (
+                        <button
+                          key={sp}
+                          type="button"
+                          onClick={() => toggleSpecies(sp)}
+                          className={speciesPillClass(activeSpecies.has(sp))}
+                        >
+                          {sp}
+                        </button>
+                      ))}
+                    </div>
 
-          <label className="map-page__filter-label">Waterbody</label>
-          <input
-            type="text"
-            value={waterbodyQuery}
-            onChange={(e) => setWaterbodyQuery(e.target.value)}
-            placeholder="Search lake or river name"
-            className="map-page__field map-page__field--waterbody"
-          />
+                    <div className="map-page__filter-field map-page__filter-field--span2 mt-2">
+                      <label
+                        className="map-page__filter-label--field"
+                        htmlFor="map-waterbody-filter"
+                      >
+                        {t("map.form.waterbody")}
+                      </label>
+                      <input
+                        id="map-waterbody-filter"
+                        type="text"
+                        value={waterbodyQuery}
+                        onChange={(e) => setWaterbodyQuery(e.target.value)}
+                        placeholder={t("map.form.waterbodyPh")}
+                        className="map-page__field map-page__field--waterbody w-full"
+                      />
+                    </div>
 
-          <label className="map-page__filter-label map-page__filter-label--spaced">
-            Recent
-          </label>
-          <select
-            value={recentYearsWindow}
-            onChange={(e) => setRecentYearsWindow(Number(e.target.value) as 1 | 2 | 5)}
-            className="map-page__field"
-          >
-            <option value={1}>Last 1 year</option>
-            <option value={2}>Last 2 years</option>
-            <option value={5}>Last 5 years</option>
-          </select>
+                    <div className="map-page__filter-form-grid mt-2">
+                      <div className="map-page__filter-field">
+                        <label
+                          className="map-page__filter-label--field"
+                          htmlFor="map-recent-years"
+                        >
+                          {t("map.form.recent")}
+                        </label>
+                        <select
+                          id="map-recent-years"
+                          value={recentYearsWindow}
+                          onChange={(e) =>
+                            setRecentYearsWindow(Number(e.target.value) as 1 | 2 | 5)
+                          }
+                          className="map-page__field w-full"
+                        >
+                          <option value={1}>Last 1 year</option>
+                          <option value={2}>Last 2 years</option>
+                          <option value={5}>Last 5 years</option>
+                        </select>
+                      </div>
+                      <div className="map-page__filter-field">
+                        <label
+                          className="map-page__filter-label--field"
+                          htmlFor="map-min-fish"
+                        >
+                          {t("map.form.minFish")}
+                        </label>
+                        <select
+                          id="map-min-fish"
+                          value={minTotalFish}
+                          onChange={(e) =>
+                            setMinTotalFish(
+                              Number(e.target.value) as 0 | 500 | 1000 | 5000,
+                            )
+                          }
+                          className="map-page__field w-full"
+                        >
+                          <option value={0}>Any</option>
+                          <option value={500}>500+</option>
+                          <option value={1000}>1,000+</option>
+                          <option value={5000}>5,000+</option>
+                        </select>
+                      </div>
+                      <div className="map-page__filter-field">
+                        <label
+                          className="map-page__filter-label--field"
+                          htmlFor="map-min-species"
+                        >
+                          {t("map.form.minSpecies")}
+                        </label>
+                        <select
+                          id="map-min-species"
+                          value={minSpeciesCount}
+                          onChange={(e) =>
+                            setMinSpeciesCount(Number(e.target.value) as 1 | 2 | 3)
+                          }
+                          className="map-page__field w-full"
+                        >
+                          <option value={1}>1+</option>
+                          <option value={2}>2+</option>
+                          <option value={3}>3+</option>
+                        </select>
+                      </div>
+                      <div className="map-page__filter-field">
+                        <label
+                          className="map-page__filter-label--field"
+                          htmlFor="map-district"
+                        >
+                          {t("map.form.district")}
+                        </label>
+                        <select
+                          id="map-district"
+                          value={selectedDistrict}
+                          onChange={(e) => setSelectedDistrict(e.target.value)}
+                          className="map-page__field w-full"
+                        >
+                          <option value="all">All districts</option>
+                          {districts.map((d) => (
+                            <option key={d} value={d}>
+                              {d}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="map-page__filter-field sm:col-span-2">
+                        <label
+                          className="map-page__filter-label--field"
+                          htmlFor="map-stage"
+                        >
+                          {t("map.form.stage")}
+                        </label>
+                        <select
+                          id="map-stage"
+                          value={selectedDevelopmentalStage}
+                          onChange={(e) => setSelectedDevelopmentalStage(e.target.value)}
+                          className="map-page__field w-full"
+                        >
+                          <option value="all">All stages</option>
+                          {developmentalStages.map((s) => (
+                            <option key={s} value={s}>
+                              {s}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
+              </section>
 
-          <label className="map-page__filter-label map-page__filter-label--spaced">
-            Min fish
-          </label>
-          <select
-            value={minTotalFish}
-            onChange={(e) =>
-              setMinTotalFish(Number(e.target.value) as 0 | 500 | 1000 | 5000)
-            }
-            className="map-page__field"
-          >
-            <option value={0}>Any</option>
-            <option value={500}>500+</option>
-            <option value={1000}>1,000+</option>
-            <option value={5000}>5,000+</option>
-          </select>
+              <section
+                className="map-page__filter-section"
+                aria-label={t("map.ara.section")}
+              >
+                <h3 className="map-page__filter-section-title">
+                  {t("map.ara.section")}
+                </h3>
+                <div className="map-page__filter-toggle-block">
+                  <label className="map-page__filter-toggle-row cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="map-page__filter-check"
+                      checked={showAra}
+                      onChange={(e) => setShowAra(e.target.checked)}
+                    />
+                    <span className="map-page__filter-toggle-text">
+                      <span className="map-page__filter-toggle-name">
+                        {t("map.layer.showOnMap")}
+                      </span>
+                      <span className="map-page__filter-toggle-blurb">
+                        {t("map.ara.toggleBlurb")}
+                      </span>
+                    </span>
+                  </label>
+                </div>
 
-          <label className="map-page__filter-label map-page__filter-label--spaced">
-            Species count
-          </label>
-          <select
-            value={minSpeciesCount}
-            onChange={(e) => setMinSpeciesCount(Number(e.target.value) as 1 | 2 | 3)}
-            className="map-page__field"
-          >
-            <option value={1}>1+</option>
-            <option value={2}>2+</option>
-            <option value={3}>3+</option>
-          </select>
-
-          <label className="map-page__filter-label map-page__filter-label--spaced">
-            District
-          </label>
-          <select
-            value={selectedDistrict}
-            onChange={(e) => setSelectedDistrict(e.target.value)}
-            className="map-page__field"
-          >
-            <option value="all">All districts</option>
-            {districts.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-
-          <label className="map-page__filter-label map-page__filter-label--spaced">
-            Stage
-          </label>
-          <select
-            value={selectedDevelopmentalStage}
-            onChange={(e) => setSelectedDevelopmentalStage(e.target.value)}
-            className="map-page__field"
-          >
-            <option value="all">All stages</option>
-            {developmentalStages.map((s) => (
-              <option key={s} value={s}>
-                {s}
-              </option>
-            ))}
-          </select>
+                {showAra ? (
+                  <div className="map-page__filter-substack" aria-live="polite">
+                    <p className="map-page__filter-label--field w-full pt-1 pl-0.5">
+                      {t("map.ara.pillHeading")}
+                    </p>
+                    <div className="map-page__filter-species-row">
+                      <button
+                        type="button"
+                        className={speciesPillClass(araBass)}
+                        aria-pressed={araBass}
+                        title={t("map.ara.bassBlurb")}
+                        onClick={() => setAraBass((v) => !v)}
+                      >
+                        {t("map.ara.bassName")}
+                      </button>
+                      <button
+                        type="button"
+                        className={speciesPillClass(araPike)}
+                        aria-pressed={araPike}
+                        title={t("map.ara.pikeBlurb")}
+                        onClick={() => setAraPike((v) => !v)}
+                      >
+                        {t("map.ara.pikeName")}
+                      </button>
+                      <button
+                        type="button"
+                        className={speciesPillClass(araWalleye)}
+                        aria-pressed={araWalleye}
+                        title={t("map.ara.walleyeBlurb")}
+                        onClick={() => setAraWalleye((v) => !v)}
+                      >
+                        {t("map.ara.walleyeName")}
+                      </button>
+                    </div>
+                    {araLoading || araTooWide ? (
+                      <div className="map-page__filter-ara-status">
+                        {araLoading ? (
+                          <span className="text-sky-600 dark:text-sky-400/90">
+                            {t("map.ara.loading")}
+                          </span>
+                        ) : (
+                          <span className="text-amber-800/95 dark:text-amber-300/90">
+                            {t("map.ara.tooWide")}
+                          </span>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+              </section>
             </div>
           ) : null}
         </div>
@@ -682,18 +905,39 @@ export default function MapPage() {
         )}
 
         <StockingMap
-          groups={filteredGroups}
+          groups={displayStockingGroups}
           activeSpecies={activeSpecies}
           onMapClick={handleMapClick}
           placing={placing}
           forecastPin={forecastPin}
-          selectionFocus={selectionFocus}
           onStockingLakeClick={handleStockingLakeClick}
           catchMarkers={catchMarkers}
           catchScope={catchScope}
           friendIds={friendIds}
           currentUserId={user?.id}
+          araMarkers={araPoints}
+          onViewportChange={loadAra}
+          satelliteImagery={satelliteImagery}
         />
+        <div
+          className="map-page__map-basemap"
+          role="group"
+          aria-label={t("map.basemap.section")}
+          title={t("map.basemap.satelliteBlurb")}
+        >
+          <label className="map-page__map-basemap-label" htmlFor="map-satellite-toggle">
+            <input
+              id="map-satellite-toggle"
+              type="checkbox"
+              className="map-page__map-basemap-check"
+              checked={satelliteImagery}
+              onChange={(e) => setSatelliteImagery(e.target.checked)}
+            />
+            <span className="map-page__map-basemap-text">
+              {t("map.basemap.satellite")}
+            </span>
+          </label>
+        </div>
         {mapSheet && !placing ? (
           <MapDetailBottomSheet
             key={
@@ -711,7 +955,6 @@ export default function MapPage() {
             forecastAreaLabelLoading={
               mapSheet.mode === "forecast" ? forecastAreaLabelLoading : false
             }
-            defaultLakeTab="fish"
             expanded={sheetExpanded}
             onExpandedChange={setSheetExpanded}
             onClose={closeMapSheet}

@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
 import { useLocale } from "@/contexts/locale-context";
 
 type PreviewSlide = {
@@ -116,10 +117,10 @@ function InstaPostCard({
     >
       <div className="flex items-center gap-3 px-3.5 py-3 sm:px-4 sm:py-3.5">
         <div
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-lg text-white shadow-inner sm:h-11 sm:w-11"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-inner sm:h-11 sm:w-11"
           aria-hidden
         >
-          🎣
+          <DefaultAvatarIcon className="h-[55%] w-[55%] text-white" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{handle}</p>

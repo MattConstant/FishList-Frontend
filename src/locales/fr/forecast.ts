@@ -70,7 +70,6 @@ export default {
   "forecast.attributionTitle": "Données et crédits",
   "forecast.linkOpenMeteo": "Open-Meteo",
   "forecast.timezone": "Fuseau horaire : {{tz}}",
-  "forecast.mapTabFish": "Poissons",
   "forecast.mapTabStocking": "Ensemencement",
   "forecast.mapTabForecast": "Prévision",
   "forecast.mapSheetExpand": "Déployer le panneau",
@@ -80,9 +79,6 @@ export default {
   "forecast.mapLakeSummary":
     "{{species}} espèces · {{total}} poissons stockés (enregistrements récents)",
   "forecast.mapForecastPeek": "Prévision de pêche — déployer pour les détails",
-  "forecast.mapFishIntro":
-    "Espèces stockées sur ce plan d’eau (totaux cumulés selon les enregistrements récents).",
-  "forecast.mapFishEmpty": "Aucune donnée d’espèces pour ce repère.",
   "forecast.mapGeohubNote":
     "Les coordonnées GeoHub sont souvent approximatives ; nous essayons d’ancrer l’épingle sur le lac via OpenStreetMap.",
   "forecast.mapDistrict": "District :",

@@ -185,7 +185,6 @@ export async function GET(request: Request) {
       } catch {
         // ignore
       }
-      const reasonLc = reason.toLowerCase();
       const looksLikeDateRange =
         omRes.status === 400 ||
         /\b(date|range|start_date|end_date|forecast|available|future)\b/i.test(

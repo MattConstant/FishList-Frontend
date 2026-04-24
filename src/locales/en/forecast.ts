@@ -69,7 +69,6 @@ export default {
   "forecast.attributionTitle": "Data & credits",
   "forecast.linkOpenMeteo": "Open-Meteo",
   "forecast.timezone": "Time zone: {{tz}}",
-  "forecast.mapTabFish": "Fish",
   "forecast.mapTabStocking": "Stocking",
   "forecast.mapTabForecast": "Forecast",
   "forecast.mapSheetExpand": "Expand panel",
@@ -78,8 +77,6 @@ export default {
   "forecast.mapSheetTabsAria": "Lake details",
   "forecast.mapLakeSummary": "{{species}} species · {{total}} fish stocked (recent records)",
   "forecast.mapForecastPeek": "Fishing forecast — expand for details",
-  "forecast.mapFishIntro": "Species stocked at this waterbody (totals summed across recent records).",
-  "forecast.mapFishEmpty": "No species data for this marker.",
   "forecast.mapGeohubNote":
     "GeoHub coordinates are often approximate; we try to snap the pin onto the lake using OpenStreetMap search.",
   "forecast.mapDistrict": "District:",

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { getImageUrl } from "@/lib/api";
 import { getAccountWithAvatarCache } from "@/lib/account-cache";
+import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
 
 const sizeClass = {
   sm: "h-8 w-8 text-base",
@@ -95,9 +96,7 @@ export function UserAvatar({
         />
       ) : (
         <>
-          <span className="select-none leading-none" aria-hidden>
-            🎣
-          </span>
+          <DefaultAvatarIcon className="h-[55%] w-[55%] shrink-0 text-zinc-500 dark:text-zinc-400" />
           <span className="sr-only">{label}</span>
         </>
       )}

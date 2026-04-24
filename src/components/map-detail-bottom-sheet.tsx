@@ -1,20 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { LakeFishTab } from "@/components/lake-fish-tab";
+import { useRef, useState } from "react";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
 
-export type MapLakeTab = "fish" | "stocking" | "forecast";
+type MapLakeTab = "stocking" | "forecast";
 
 type Props = {
   mode: "forecast" | "lake";
   lat: number;
   lng: number;
   lake?: WaterbodyGroup;
-  defaultLakeTab?: MapLakeTab;
   /** Reverse-geocoded area line for forecast mode (from map page). */
   forecastAreaLabel?: string | null;
   forecastAreaLabelLoading?: boolean;
@@ -38,7 +36,6 @@ export function MapDetailBottomSheet({
   lat,
   lng,
   lake,
-  defaultLakeTab = "fish",
   forecastAreaLabel = null,
   forecastAreaLabelLoading = false,
   expanded,
@@ -47,13 +44,9 @@ export function MapDetailBottomSheet({
   canUseAi,
 }: Props) {
   const { t } = useLocale();
-  const [lakeTab, setLakeTab] = useState<MapLakeTab>(defaultLakeTab);
+  const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
   /** Handle bar: drag up/down to expand/collapse; small movement = tap toggle. */
   const handleDragRef = useRef<{ y: number; pointerId: number } | null>(null);
-
-  useEffect(() => {
-    setLakeTab(defaultLakeTab);
-  }, [defaultLakeTab, lake?.waterbody, mode, lat, lng]);
 
   const peekSubtitle =
     mode === "lake" && lake
@@ -68,6 +61,10 @@ export function MapDetailBottomSheet({
           : t("forecast.mapForecastPeek");
 
   const DRAG_PX = 40;
+
+  const googleMapsHref = `https://www.google.com/maps?q=${encodeURIComponent(
+    `${lat},${lng}`,
+  )}`;
 
   function onHandlePointerDown(e: React.PointerEvent<HTMLButtonElement>) {
     handleDragRef.current = { y: e.clientY, pointerId: e.pointerId };
@@ -144,6 +141,27 @@ export function MapDetailBottomSheet({
                 />
               </svg>
             </button>
+            <a
+              href={googleMapsHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="map-page__bottom-sheet-icon-btn"
+              title={t("forecast.openInGoogleMaps")}
+              aria-label={t("forecast.openInGoogleMaps")}
+            >
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className="h-5 w-5"
+                aria-hidden
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.05 4.05a7 7 0 109.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </a>
             <button
               type="button"
               onClick={onClose}
@@ -170,18 +188,12 @@ export function MapDetailBottomSheet({
             <button
               type="button"
               role="tab"
-              aria-selected={lakeTab === "fish"}
-              className={tabBtnClass(lakeTab === "fish")}
-              onClick={() => setLakeTab("fish")}
-            >
-              {t("forecast.mapTabFish")}
-            </button>
-            <button
-              type="button"
-              role="tab"
               aria-selected={lakeTab === "stocking"}
               className={tabBtnClass(lakeTab === "stocking")}
-              onClick={() => setLakeTab("stocking")}
+              onClick={() => {
+                setLakeTab("stocking");
+                onExpandedChange(true);
+              }}
             >
               {t("forecast.mapTabStocking")}
             </button>
@@ -190,7 +202,10 @@ export function MapDetailBottomSheet({
               role="tab"
               aria-selected={lakeTab === "forecast"}
               className={tabBtnClass(lakeTab === "forecast")}
-              onClick={() => setLakeTab("forecast")}
+              onClick={() => {
+                setLakeTab("forecast");
+                onExpandedChange(true);
+              }}
             >
               {t("forecast.mapTabForecast")}
             </button>
@@ -212,9 +227,6 @@ export function MapDetailBottomSheet({
               lng={lng}
               omitOuterHeader
             />
-          ) : null}
-          {mode === "lake" && lake && lakeTab === "fish" ? (
-            <LakeFishTab group={lake} />
           ) : null}
           {mode === "lake" && lake && lakeTab === "stocking" ? (
             <LakeStockingTab group={lake} canUseAi={canUseAi} />
