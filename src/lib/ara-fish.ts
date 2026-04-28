@@ -13,9 +13,26 @@ export type AraViewport = {
   east: number;
 };
 
+export const ARA_SPECIES_FILTERS = [
+  "smallmouth_bass",
+  "largemouth_bass",
+  "rock_bass",
+  "northern_pike",
+  "walleye",
+  "muskellunge",
+  "yellow_perch",
+  "brook_trout",
+  "lake_trout",
+  "rainbow_trout",
+  "brown_trout",
+  "black_crappie",
+] as const;
+
+export type AraSpeciesFilter = (typeof ARA_SPECIES_FILTERS)[number];
+
 export async function fetchAraInBounds(
   v: AraViewport,
-  opt: { bass: boolean; pike: boolean; walleye: boolean },
+  opt: { species: AraSpeciesFilter[] },
   signal?: AbortSignal,
 ): Promise<{ features: AraMapPoint[]; tooWide: boolean }> {
   const q = new URLSearchParams();
@@ -23,9 +40,7 @@ export async function fetchAraInBounds(
   q.set("west", String(v.west));
   q.set("north", String(v.north));
   q.set("east", String(v.east));
-  q.set("bass", opt.bass ? "1" : "0");
-  q.set("pike", opt.pike ? "1" : "0");
-  q.set("walleye", opt.walleye ? "1" : "0");
+  q.set("species", opt.species.join(","));
 
   const res = await fetch(`/api/geohub/ara?${q.toString()}`, { signal });
   if (!res.ok) {

@@ -77,6 +77,23 @@ function forecastPinIcon(): L.Icon {
   });
 }
 
+const SEARCH_PIN_SVG =
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="38">` +
+    `<path d="M12 0C5.4 0 0 5.2 0 11.6 0 20.4 12 36 12 36s12-15.6 12-24.4C24 5.2 18.6 0 12 0z" fill="#7c3aed" stroke="#fff" stroke-width="1.5"/>` +
+    `<circle cx="12" cy="11.5" r="4.5" fill="#fff"/>` +
+    `</svg>`,
+  )}`;
+
+function searchPinIcon(): L.Icon {
+  return L.icon({
+    iconUrl: SEARCH_PIN_SVG,
+    iconSize: [32, 38],
+    iconAnchor: [16, 38],
+    popupAnchor: [0, -36],
+  });
+}
+
 export type CatchMapMarker = {
   lat: number;
   lng: number;
@@ -110,10 +127,14 @@ type StockingMapProps = {
   }) => void;
   /** ARA (MNRF aquatic resource) species presence — not stocking events. */
   araMarkers?: AraMapPoint[];
+  /** Species-presence (green fish) marker clicked — open presence detail in parent UI. */
+  onAraMarkerClick?: (payload: AraMapPoint) => void;
   /** Fires when the map is ready or the user stops panning/zooming (for viewport loading). */
   onViewportChange?: (bounds: AraViewport) => void;
   /** Aerial (Esri World Imagery) vs default street map. */
   satelliteImagery?: boolean;
+  /** User-searched waterbody pin (independent from stocking layers). */
+  searchPin?: { lat: number; lng: number; label?: string } | null;
 };
 
 export default function StockingMap({
@@ -128,14 +149,17 @@ export default function StockingMap({
   currentUserId,
   onStockingLakeClick,
   araMarkers = [],
+  onAraMarkerClick,
   onViewportChange,
   satelliteImagery = false,
+  searchPin = null,
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
   const osmTileRef = useRef<L.TileLayer | null>(null);
   const satTileRef = useRef<L.TileLayer | null>(null);
   const forecastMarkerRef = useRef<L.Marker | null>(null);
+  const searchMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const araLayerRef = useRef<L.LayerGroup | null>(null);
   const onViewportChangeRef = useRef(onViewportChange);
@@ -145,6 +169,8 @@ export default function StockingMap({
   const userLayerRef = useRef<L.LayerGroup | null>(null);
   const onStockingLakeClickRef = useRef(onStockingLakeClick);
   onStockingLakeClickRef.current = onStockingLakeClick;
+  const onAraMarkerClickRef = useRef(onAraMarkerClick);
+  onAraMarkerClickRef.current = onAraMarkerClick;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -301,6 +327,54 @@ export default function StockingMap({
       }
     };
   }, [forecastPin]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const lat = searchPin?.lat;
+    const lng = searchPin?.lng;
+
+    if (
+      searchPin == null ||
+      lat == null ||
+      lng == null ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
+      if (searchMarkerRef.current) {
+        map.removeLayer(searchMarkerRef.current);
+        searchMarkerRef.current = null;
+      }
+      return;
+    }
+
+    if (searchMarkerRef.current) {
+      map.removeLayer(searchMarkerRef.current);
+      searchMarkerRef.current = null;
+    }
+
+    const marker = L.marker([lat, lng], {
+      icon: searchPinIcon(),
+      zIndexOffset: 1250,
+    });
+    marker.bindTooltip(searchPin.label || "Searched waterbody", {
+      direction: "top",
+      offset: L.point(0, -12),
+      opacity: 1,
+      className: "map-page__stocking-tooltip",
+    });
+    marker.addTo(map);
+    searchMarkerRef.current = marker;
+    map.flyTo([lat, lng], Math.max(map.getZoom(), 9), { animate: true, duration: 0.7 });
+
+    return () => {
+      if (searchMarkerRef.current) {
+        map.removeLayer(searchMarkerRef.current);
+        searchMarkerRef.current = null;
+      }
+    };
+  }, [searchPin]);
 
   const filteredGroups = useMemo(() => {
     if (activeSpecies.size === 0) return [];
@@ -473,15 +547,9 @@ export default function StockingMap({
         opacity: 1,
         className: "map-page__stocking-tooltip",
       });
-      if (a.species) {
-        const s =
-          a.species.length > 200 ? a.species.slice(0, 200) + "…" : a.species;
-        m.bindPopup(
-          `<div style="font-size:12px;line-height:1.4;max-width:280px">` +
-            `<strong style="font-size:13px">${(a.name || "—").replace(/</g, "&lt;")}</strong><br/>` +
-            `<span style="color:#3f3f46">${s.replace(/</g, "&lt;")}</span></div>`,
-        );
-      }
+      m.on("click", () => {
+        onAraMarkerClickRef.current?.(a);
+      });
       layer.addLayer(m);
     }
     layer.addTo(map);

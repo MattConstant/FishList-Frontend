@@ -1,4 +1,4 @@
-import type { BiteWindow } from "@/lib/solunar";
+import type { BiteWindow, MoonPhaseKey } from "@/lib/solunar";
 
 /** Aggregates from hourly series for the selected calendar day (fishing-relevant context). */
 export type FishingDayWeatherSummary = {
@@ -41,6 +41,12 @@ export type FishingForecastPayload = {
     sunset: string | null;
     moonrise: string | null;
     moonset: string | null;
+    /** Phase value: 0 = new, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter. */
+    moonPhase: number;
+    /** Closest named phase, used for icon + label. */
+    moonPhaseKey: MoonPhaseKey;
+    /** Illuminated fraction of moon disk (0–1). */
+    moonIllumination: number;
   };
   attribution: {
     weather: string;

@@ -23,6 +23,7 @@ export default {
   "home.scope.mine": "My posts",
   "home.loadMore": "Load more posts",
   "home.loadingMore": "Loading more...",
+  "home.reachedBottom": "You hit the bottom.",
   "home.deletePost": "Delete post",
   "home.deletingPost": "Deleting...",
   "home.deletePostConfirm": "Delete this post? This cannot be undone.",

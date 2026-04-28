@@ -4,8 +4,13 @@ import { useMemo } from "react";
 import { FishingConditionStars } from "@/components/fishing-condition-stars";
 import { FishingPressureChart } from "@/components/fishing-pressure-chart";
 import { useLocale } from "@/contexts/locale-context";
-import { computeConditionStars } from "@/lib/fishing-forecast-rating";
+import {
+  computeConditionStars,
+  pressureQualityFromHpa,
+  type PressureQuality,
+} from "@/lib/fishing-forecast-rating";
 import type { FishingForecastPayload } from "@/lib/fishing-forecast-types";
+import type { MoonPhaseKey } from "@/lib/solunar";
 
 const FORECAST_RATING_LEVEL_KEYS = [
   "forecast.rating.level.1",
@@ -14,6 +19,42 @@ const FORECAST_RATING_LEVEL_KEYS = [
   "forecast.rating.level.4",
   "forecast.rating.level.5",
 ] as const;
+
+const TREND_PILL_CLASS: Record<
+  FishingForecastPayload["pressureTrend"],
+  string
+> = {
+  falling:
+    "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700/70 dark:bg-emerald-950/40 dark:text-emerald-300",
+  rising:
+    "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/40 dark:text-amber-300",
+  steady:
+    "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-700/70 dark:bg-sky-950/40 dark:text-sky-300",
+  unknown:
+    "border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300",
+};
+
+const PRESSURE_QUALITY_CLASS: Record<PressureQuality, string> = {
+  good:
+    "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-700/70 dark:bg-emerald-950/40 dark:text-emerald-300",
+  fair:
+    "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-700/70 dark:bg-amber-950/40 dark:text-amber-300",
+  poor:
+    "border-rose-300 bg-rose-50 text-rose-800 dark:border-rose-700/70 dark:bg-rose-950/40 dark:text-rose-300",
+  unknown:
+    "border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300",
+};
+
+const MOON_PHASE_GLYPH: Record<MoonPhaseKey, string> = {
+  new: "🌑",
+  waxing_crescent: "🌒",
+  first_quarter: "🌓",
+  waxing_gibbous: "🌔",
+  full: "🌕",
+  waning_gibbous: "🌖",
+  last_quarter: "🌗",
+  waning_crescent: "🌘",
+};
 
 function formatTime(
   iso: string,
@@ -56,6 +97,21 @@ export function FishingForecastPanel({ data, compact }: Props) {
   const conditionStars = useMemo(
     () => computeConditionStars(data),
     [data],
+  );
+
+  const pressureQualityLast = useMemo(
+    () => pressureQualityFromHpa(data.pressureHpaLast),
+    [data.pressureHpaLast],
+  );
+  const pressureQualityLabelKey =
+    `forecast.pressureQuality.${pressureQualityLast}` as const;
+  const pressureQualityClass = PRESSURE_QUALITY_CLASS[pressureQualityLast];
+
+  const trendPillClass = TREND_PILL_CLASS[data.pressureTrend];
+  const moonPhaseLabelKey =
+    `forecast.moonPhase.${data.sunMoon.moonPhaseKey}` as const;
+  const moonIlluminationPct = Math.round(
+    Math.max(0, Math.min(1, data.sunMoon.moonIllumination)) * 100,
   );
 
   const pressureRangeLabel = useMemo(() => {
@@ -229,15 +285,45 @@ export function FishingForecastPanel({ data, compact }: Props) {
           >
             {t("forecast.pressureTitle")}
           </h2>
-          <p
+          <div
             className={
               compact
-                ? "mt-0.5 text-xs text-zinc-600 dark:text-zinc-400"
-                : "mt-1 text-sm text-zinc-600 dark:text-zinc-400"
+                ? "mt-1 flex flex-wrap items-center gap-1.5"
+                : "mt-2 flex flex-wrap items-center gap-2"
             }
           >
-            {t("forecast.pressureTrend")}: {trendLabel}
-          </p>
+            <span
+              className={[
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5",
+                compact ? "text-[0.65rem]" : "text-xs",
+                trendPillClass,
+              ].join(" ")}
+              title={t("forecast.pressureTrend")}
+            >
+              <span aria-hidden>
+                {data.pressureTrend === "rising"
+                  ? "↗"
+                  : data.pressureTrend === "falling"
+                    ? "↘"
+                    : data.pressureTrend === "steady"
+                      ? "→"
+                      : "·"}
+              </span>
+              <span className="font-medium">{trendLabel}</span>
+            </span>
+            {pressureQualityLast !== "unknown" ? (
+              <span
+                className={[
+                  "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium",
+                  compact ? "text-[0.65rem]" : "text-xs",
+                  pressureQualityClass,
+                ].join(" ")}
+                title={t("forecast.pressureQualityHint")}
+              >
+                {t(pressureQualityLabelKey)}
+              </span>
+            ) : null}
+          </div>
           {data.pressureHpaFirst != null && data.pressureHpaLast != null && (
             <p
               className={
@@ -274,6 +360,7 @@ export function FishingForecastPanel({ data, compact }: Props) {
                 pressureHpa={data.hourly.pressureMsl}
                 timeZone={data.timezone}
                 intlLocale={intlLocale}
+                trend={data.pressureTrend}
                 aria-label={t("forecast.chart.aria", {
                   min: pressureRangeLabel.min.toFixed(0),
                   max: pressureRangeLabel.max.toFixed(0),
@@ -350,6 +437,29 @@ export function FishingForecastPanel({ data, compact }: Props) {
           >
             {t("forecast.sunMoon")}
           </h3>
+          <div
+            className={
+              compact
+                ? "mt-1 flex items-center justify-between gap-2 rounded border border-zinc-200 bg-white px-2 py-1 text-[0.6875rem] dark:border-zinc-700 dark:bg-zinc-950/50"
+                : "mt-2 flex items-center justify-between gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-950/50"
+            }
+            title={t("forecast.moonPhaseHint")}
+          >
+            <span className="flex min-w-0 items-center gap-2">
+              <span
+                className={compact ? "text-base leading-none" : "text-xl leading-none"}
+                aria-hidden
+              >
+                {MOON_PHASE_GLYPH[data.sunMoon.moonPhaseKey]}
+              </span>
+              <span className="min-w-0 truncate font-medium text-zinc-800 dark:text-zinc-100">
+                {t(moonPhaseLabelKey)}
+              </span>
+            </span>
+            <span className="font-mono tabular-nums text-zinc-600 dark:text-zinc-400">
+              {moonIlluminationPct}%
+            </span>
+          </div>
           <dl
             className={
               compact

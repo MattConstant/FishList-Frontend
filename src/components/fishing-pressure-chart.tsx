@@ -2,13 +2,44 @@
 
 import { useId, useMemo } from "react";
 
+type Trend = "rising" | "falling" | "steady" | "unknown";
+
 type Props = {
   timeIso: string[];
   pressureHpa: (number | null)[];
   timeZone: string;
   intlLocale: string;
+  /** Color line/area to reflect day trend (rising = good, falling = poor). */
+  trend?: Trend;
   /** Accessible description, e.g. pressure range */
   "aria-label": string;
+};
+
+const TREND_COLOR: Record<Trend, { stroke: string; fillTop: string; fillBottom: string; pointFill: string }> = {
+  falling: {
+    stroke: "rgb(16 185 129)",
+    fillTop: "#10b981",
+    fillBottom: "#10b981",
+    pointFill: "rgb(5 150 105)",
+  },
+  rising: {
+    stroke: "rgb(245 158 11)",
+    fillTop: "#f59e0b",
+    fillBottom: "#f59e0b",
+    pointFill: "rgb(217 119 6)",
+  },
+  steady: {
+    stroke: "rgb(14 165 233)",
+    fillTop: "#0ea5e9",
+    fillBottom: "#0ea5e9",
+    pointFill: "rgb(2 132 199)",
+  },
+  unknown: {
+    stroke: "rgb(14 165 233)",
+    fillTop: "#0ea5e9",
+    fillBottom: "#0ea5e9",
+    pointFill: "rgb(2 132 199)",
+  },
 };
 
 function formatHourLabel(iso: string, timeZone: string, intlLocale: string) {
@@ -28,8 +59,10 @@ export function FishingPressureChart({
   pressureHpa,
   timeZone,
   intlLocale,
+  trend = "unknown",
   "aria-label": ariaLabel,
 }: Props) {
+  const palette = TREND_COLOR[trend];
   const gradId = useId().replace(/:/g, "");
   const model = useMemo(() => {
     const series: { time: string; p: number }[] = [];
@@ -100,8 +133,8 @@ export function FishingPressureChart({
     >
       <defs>
         <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#0ea5e9" stopOpacity={0.35} />
-          <stop offset="100%" stopColor="#0ea5e9" stopOpacity={0.04} />
+          <stop offset="0%" stopColor={palette.fillTop} stopOpacity={0.35} />
+          <stop offset="100%" stopColor={palette.fillBottom} stopOpacity={0.04} />
         </linearGradient>
       </defs>
 
@@ -150,20 +183,18 @@ export function FishingPressureChart({
           x2={xAt(0) + 24}
           y1={yAt(series[0]!.p)}
           y2={yAt(series[0]!.p)}
-          stroke="rgb(14 165 233)"
+          stroke={palette.stroke}
           strokeWidth={2.5}
           strokeLinecap="round"
-          className="dark:stroke-sky-400"
         />
       ) : (
         <polyline
           fill="none"
-          stroke="rgb(14 165 233)"
+          stroke={palette.stroke}
           strokeWidth={2.25}
           strokeLinejoin="round"
           strokeLinecap="round"
           points={lineD}
-          className="dark:stroke-sky-400"
         />
       )}
 
@@ -174,7 +205,7 @@ export function FishingPressureChart({
           cx={xAt(i)}
           cy={yAt(s.p)}
           r={3.5}
-          className="fill-sky-600 dark:fill-sky-400"
+          fill={palette.pointFill}
         >
           <title>{`${formatHourLabel(s.time, timeZone, intlLocale)} — ${s.p.toFixed(0)} hPa`}</title>
         </circle>

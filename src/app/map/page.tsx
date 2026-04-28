@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
 import { MapDetailBottomSheet } from "@/components/map-detail-bottom-sheet";
@@ -19,10 +19,13 @@ import {
   type WaterbodyGroup,
 } from "@/lib/geohub";
 import {
+  ARA_SPECIES_FILTERS,
   fetchAraInBounds,
+  type AraSpeciesFilter,
   type AraMapPoint,
   type AraViewport,
 } from "@/lib/ara-fish";
+import { translateStockingSpecies } from "@/lib/species-i18n";
 
 const StockingMap = dynamic(() => import("@/components/stocking-map"), {
   ssr: false,
@@ -49,7 +52,7 @@ function speciesPillClass(active: boolean) {
 
 export default function MapPage() {
   const { user } = useAuth();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [records, setRecords] = useState<StockingRecord[]>([]);
   const [groups, setGroups] = useState<WaterbodyGroup[]>([]);
   const [species, setSpecies] = useState<string[]>([]);
@@ -60,6 +63,26 @@ export default function MapPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [waterbodyQuery, setWaterbodyQuery] = useState("");
+  const [lakePinQuery, setLakePinQuery] = useState("");
+  const [lakePinError, setLakePinError] = useState("");
+  const [lakePinSearching, setLakePinSearching] = useState(false);
+  const [lakeSearchPin, setLakeSearchPin] = useState<{
+    lat: number;
+    lng: number;
+    label: string;
+  } | null>(null);
+  type LakeSuggestion = {
+    id: number;
+    name: string;
+    latitude: number;
+    longitude: number;
+    admin1?: string | null;
+    country?: string;
+  };
+  const [lakeSuggestions, setLakeSuggestions] = useState<LakeSuggestion[]>([]);
+  const [lakeSuggestionsOpen, setLakeSuggestionsOpen] = useState(false);
+  const [lakeSuggestionIndex, setLakeSuggestionIndex] = useState(-1);
+  const lakeSearchAbortRef = useRef<AbortController | null>(null);
   const [selectedDistrict, setSelectedDistrict] = useState("all");
   const [selectedDevelopmentalStage, setSelectedDevelopmentalStage] = useState("all");
   const [recentYearsWindow, setRecentYearsWindow] = useState<1 | 2 | 5>(5);
@@ -71,6 +94,13 @@ export default function MapPage() {
     | null
     | { mode: "forecast"; lat: number; lng: number }
     | { mode: "lake"; group: WaterbodyGroup; lat: number; lng: number }
+    | {
+        mode: "presence";
+        lat: number;
+        lng: number;
+        name: string;
+        speciesSummary: string;
+      }
   >(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [forecastAreaLabel, setForecastAreaLabel] = useState<string | null>(null);
@@ -85,9 +115,9 @@ export default function MapPage() {
   const [showStocking, setShowStocking] = useState(true);
   const [showAra, setShowAra] = useState(false);
   const [satelliteImagery, setSatelliteImagery] = useState(false);
-  const [araBass, setAraBass] = useState(true);
-  const [araPike, setAraPike] = useState(true);
-  const [araWalleye, setAraWalleye] = useState(true);
+  const [presenceSpecies, setPresenceSpecies] = useState<Set<AraSpeciesFilter>>(
+    () => new Set(ARA_SPECIES_FILTERS),
+  );
   const [araPoints, setAraPoints] = useState<AraMapPoint[]>([]);
   const [araLoading, setAraLoading] = useState(false);
   const [araTooWide, setAraTooWide] = useState(false);
@@ -297,7 +327,8 @@ export default function MapPage() {
         setAraLoading(false);
         return;
       }
-      if (!araBass && !araPike && !araWalleye) {
+      const speciesList = Array.from(presenceSpecies);
+      if (speciesList.length === 0) {
         setAraPoints([]);
         setAraTooWide(false);
         setAraLoading(false);
@@ -306,10 +337,7 @@ export default function MapPage() {
       const gen = ++araFetchGen.current;
       setAraLoading(true);
       setAraTooWide(false);
-      fetchAraInBounds(
-        v,
-        { bass: araBass, pike: araPike, walleye: araWalleye },
-      )
+      fetchAraInBounds(v, { species: speciesList })
         .then((r) => {
           if (gen !== araFetchGen.current) return;
           setAraPoints(r.features);
@@ -323,7 +351,7 @@ export default function MapPage() {
           if (gen === araFetchGen.current) setAraLoading(false);
         });
     },
-    [showAra, araBass, araPike, araWalleye],
+    [showAra, presenceSpecies],
   );
 
   useEffect(() => {
@@ -337,23 +365,45 @@ export default function MapPage() {
     if (lastAraViewRef.current) {
       loadAra(lastAraViewRef.current);
     }
-  }, [showAra, araBass, araPike, araWalleye, loadAra]);
+  }, [showAra, presenceSpecies, loadAra]);
+
+  const togglePresenceSpecies = useCallback((speciesKey: AraSpeciesFilter) => {
+    setPresenceSpecies((prev) => {
+      const next = new Set(prev);
+      if (next.has(speciesKey)) {
+        next.delete(speciesKey);
+      } else {
+        next.add(speciesKey);
+      }
+      return next;
+    });
+  }, []);
+
+  const toggleAllPresenceSpecies = useCallback(() => {
+    setPresenceSpecies((prev) =>
+      prev.size === ARA_SPECIES_FILTERS.length
+        ? new Set<AraSpeciesFilter>()
+        : new Set<AraSpeciesFilter>(ARA_SPECIES_FILTERS),
+    );
+  }, []);
 
   const filterSummaryLine = useMemo(() => {
     if (species.length === 0) return "";
     const spLabel =
       activeSpecies.size === species.length
-        ? "All species"
-        : `${activeSpecies.size} species`;
+        ? t("map.summary.allSpecies")
+        : t("map.summary.speciesCount", { count: activeSpecies.size });
     const q = waterbodyQuery.trim();
-    const tail = q ? ` · “${q}”` : "";
+    const quote = locale === "fr" ? "«" : "“";
+    const quoteEnd = locale === "fr" ? "»" : "”";
+    const tail = q ? ` · ${quote}${q}${quoteEnd}` : "";
     const stock =
       showStocking && activeSpecies.size > 0
-        ? `${filteredGroups.length} lakes match`
+        ? t("map.summary.lakesMatch", { count: filteredGroups.length })
         : !showStocking
-          ? "Stocking off"
-          : "No species selected";
-    const ara = showAra ? " · ARA on" : "";
+          ? t("map.summary.stockingOff")
+          : t("map.summary.noSpeciesSelected");
+    const ara = showAra ? ` · ${t("map.summary.araOn")}` : "";
     return `${stock} · ${spLabel}${ara}${tail}`;
   }, [
     species.length,
@@ -362,6 +412,8 @@ export default function MapPage() {
     waterbodyQuery,
     showStocking,
     showAra,
+    locale,
+    t,
   ]);
 
   const handleMapClick = useCallback(
@@ -389,6 +441,17 @@ export default function MapPage() {
     },
     [],
   );
+
+  const handleAraMarkerClick = useCallback((payload: AraMapPoint) => {
+    setMapSheet({
+      mode: "presence",
+      lat: payload.lat,
+      lng: payload.lng,
+      name: payload.name,
+      speciesSummary: payload.species,
+    });
+    setSheetExpanded(true);
+  }, []);
 
   /** Forecast pin only for “tap map for forecast” — not when a stocking marker is selected (avoids covering the fish icon). */
   const forecastPin = useMemo(() => {
@@ -439,6 +502,97 @@ export default function MapPage() {
   function handleLogCatchClick() {
     if (!user) return;
     setPlacing(true);
+  }
+
+  useEffect(() => {
+    const q = lakePinQuery.trim();
+    if (q.length < 2) {
+      setLakeSuggestions([]);
+      setLakeSuggestionsOpen(false);
+      setLakeSuggestionIndex(-1);
+      lakeSearchAbortRef.current?.abort();
+      return;
+    }
+    const controller = new AbortController();
+    lakeSearchAbortRef.current?.abort();
+    lakeSearchAbortRef.current = controller;
+    setLakePinSearching(true);
+    setLakePinError("");
+    const handle = setTimeout(async () => {
+      try {
+        const url = new URL("/api/geocode-search", window.location.origin);
+        url.searchParams.set("q", q);
+        url.searchParams.set("lang", locale === "fr" ? "fr" : "en");
+        const res = await fetch(url.toString(), { signal: controller.signal });
+        const data = (await res.json()) as { results?: LakeSuggestion[] };
+        const hits = data.results ?? [];
+        const waterHint = /(lake|lac|river|rivière|pond|bay|reservoir|water)/i;
+        const sorted = [...hits].sort((a, b) => {
+          const aWater = waterHint.test(a.name) ? 1 : 0;
+          const bWater = waterHint.test(b.name) ? 1 : 0;
+          if (aWater !== bWater) return bWater - aWater;
+          const aCa = a.country?.toLowerCase() === "canada" ? 1 : 0;
+          const bCa = b.country?.toLowerCase() === "canada" ? 1 : 0;
+          return bCa - aCa;
+        });
+        setLakeSuggestions(sorted);
+        setLakeSuggestionsOpen(sorted.length > 0);
+        setLakeSuggestionIndex(sorted.length > 0 ? 0 : -1);
+      } catch (err) {
+        if ((err as { name?: string }).name === "AbortError") return;
+        setLakeSuggestions([]);
+        setLakeSuggestionsOpen(false);
+      } finally {
+        setLakePinSearching(false);
+      }
+    }, 250);
+    return () => {
+      clearTimeout(handle);
+      controller.abort();
+    };
+  }, [lakePinQuery, locale]);
+
+  function selectLakeSuggestion(s: LakeSuggestion) {
+    setLakeSearchPin({
+      lat: s.latitude,
+      lng: s.longitude,
+      label: s.admin1 ? `${s.name}, ${s.admin1}` : s.name,
+    });
+    setLakePinQuery(s.admin1 ? `${s.name}, ${s.admin1}` : s.name);
+    setLakeSuggestionsOpen(false);
+    setLakePinError("");
+  }
+
+  function handleLakePinSearch(e: FormEvent) {
+    e.preventDefault();
+    if (lakeSuggestionIndex >= 0 && lakeSuggestions[lakeSuggestionIndex]) {
+      selectLakeSuggestion(lakeSuggestions[lakeSuggestionIndex]);
+      return;
+    }
+    if (lakeSuggestions.length > 0) {
+      selectLakeSuggestion(lakeSuggestions[0]);
+      return;
+    }
+    if (lakePinQuery.trim().length < 2) {
+      setLakePinError(t("map.searchLake.minChars"));
+      return;
+    }
+    setLakePinError(t("map.searchLake.notFound"));
+  }
+
+  function handleLakeSearchKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!lakeSuggestionsOpen || lakeSuggestions.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setLakeSuggestionIndex((i) => (i + 1) % lakeSuggestions.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setLakeSuggestionIndex(
+        (i) => (i - 1 + lakeSuggestions.length) % lakeSuggestions.length,
+      );
+    } else if (e.key === "Escape") {
+      setLakeSuggestionsOpen(false);
+    }
   }
 
   return (
@@ -604,9 +758,167 @@ export default function MapPage() {
                 className="map-page__filter-section"
                 aria-label={t("map.mnrf.section")}
               >
-                <h3 className="map-page__filter-section-title">
-                  {t("map.mnrf.section")}
-                </h3>
+                <div className="map-page__filter-section-head">
+                  <h3 className="map-page__filter-section-title">
+                    {t("map.searchLake.section")}
+                  </h3>
+                  <span className="map-page__filter-info">
+                    <button
+                      type="button"
+                      className="map-page__filter-info-icon"
+                      aria-label={t("map.searchLake.info")}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-3.5 w-3.5">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9.25 9a.75.75 0 01.75-.75h.01a.75.75 0 01.74.84l-.46 4.13a.75.75 0 11-1.49-.16l.45-4.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                    <span className="map-page__filter-info-tooltip" role="tooltip">
+                      {t("map.searchLake.info")}
+                    </span>
+                  </span>
+                </div>
+                <form
+                  className="map-page__lake-pin-form"
+                  onSubmit={handleLakePinSearch}
+                  role="search"
+                >
+                  <div className="map-page__lake-pin-search">
+                    <span className="map-page__lake-pin-search-icon" aria-hidden>
+                      <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                        <path
+                          fillRule="evenodd"
+                          d="M9 3a6 6 0 104.472 10.03l3.249 3.249a1 1 0 001.414-1.414l-3.249-3.249A6 6 0 009 3zM5 9a4 4 0 118 0 4 4 0 01-8 0z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </span>
+                    <input
+                      id="map-waterbody-pin"
+                      type="text"
+                      value={lakePinQuery}
+                      onChange={(e) => setLakePinQuery(e.target.value)}
+                      onFocus={() => {
+                        if (lakeSuggestions.length > 0) setLakeSuggestionsOpen(true);
+                      }}
+                      onBlur={() => {
+                        window.setTimeout(() => setLakeSuggestionsOpen(false), 120);
+                      }}
+                      onKeyDown={handleLakeSearchKeyDown}
+                      placeholder={t("map.searchLake.placeholder")}
+                      className="map-page__field map-page__lake-pin-input w-full"
+                      autoComplete="off"
+                      role="combobox"
+                      aria-expanded={lakeSuggestionsOpen}
+                      aria-controls="map-waterbody-pin-list"
+                      aria-autocomplete="list"
+                    />
+                    {lakePinSearching && (
+                      <span className="map-page__lake-pin-spinner" aria-hidden>
+                        <svg viewBox="0 0 24 24" fill="none" className="h-4 w-4 animate-spin">
+                          <circle
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            className="opacity-25"
+                          />
+                          <path
+                            d="M12 2a10 10 0 019.95 9"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            className="opacity-75"
+                          />
+                        </svg>
+                      </span>
+                    )}
+                    {lakeSuggestionsOpen && lakeSuggestions.length > 0 && (
+                      <ul
+                        id="map-waterbody-pin-list"
+                        className="map-page__lake-pin-suggestions"
+                        role="listbox"
+                      >
+                        {lakeSuggestions.map((s, idx) => (
+                          <li
+                            key={`${s.id}-${s.latitude}-${s.longitude}`}
+                            role="option"
+                            aria-selected={idx === lakeSuggestionIndex}
+                            className={[
+                              "map-page__lake-pin-suggestion",
+                              idx === lakeSuggestionIndex
+                                ? "map-page__lake-pin-suggestion--active"
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              selectLakeSuggestion(s);
+                            }}
+                            onMouseEnter={() => setLakeSuggestionIndex(idx)}
+                          >
+                            <span className="map-page__lake-pin-suggestion-name">{s.name}</span>
+                            <span className="map-page__lake-pin-suggestion-meta">
+                              {[s.admin1, s.country].filter(Boolean).join(" · ")}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                  <button
+                    type="submit"
+                    className="map-page__lake-pin-btn"
+                    disabled={lakePinSearching || lakePinQuery.trim().length < 2}
+                    aria-label={t("map.searchLake.action")}
+                    title={t("map.searchLake.action")}
+                  >
+                    <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-4 w-4">
+                      <path
+                        fillRule="evenodd"
+                        d="M9 3a6 6 0 104.472 10.03l3.249 3.249a1 1 0 001.414-1.414l-3.249-3.249A6 6 0 009 3zM5 9a4 4 0 118 0 4 4 0 01-8 0z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </button>
+                </form>
+                {lakePinError ? (
+                  <p className="map-page__filter-ara-status">{lakePinError}</p>
+                ) : null}
+              </section>
+
+              <section
+                className="map-page__filter-section"
+                aria-label={t("map.mnrf.section")}
+              >
+                <div className="map-page__filter-section-head">
+                  <h3 className="map-page__filter-section-title">
+                    {t("map.mnrf.section")}
+                  </h3>
+                  <span className="map-page__filter-info">
+                    <button
+                      type="button"
+                      className="map-page__filter-info-icon"
+                      aria-label={t("map.mnrf.info")}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-3.5 w-3.5">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9.25 9a.75.75 0 01.75-.75h.01a.75.75 0 01.74.84l-.46 4.13a.75.75 0 11-1.49-.16l.45-4.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                    <span className="map-page__filter-info-tooltip" role="tooltip">
+                      {t("map.mnrf.info")}
+                    </span>
+                  </span>
+                </div>
                 <div className="map-page__filter-toggle-block">
                   <label className="map-page__filter-toggle-row cursor-pointer">
                     <input
@@ -637,7 +949,7 @@ export default function MapPage() {
                         onClick={toggleAll}
                         className={speciesPillClass(activeSpecies.size === species.length)}
                       >
-                        All
+                        {t("map.species.all")}
                       </button>
                       {species.map((sp) => (
                         <button
@@ -645,8 +957,13 @@ export default function MapPage() {
                           type="button"
                           onClick={() => toggleSpecies(sp)}
                           className={speciesPillClass(activeSpecies.has(sp))}
+                          title={
+                            translateStockingSpecies(sp, locale) !== sp
+                              ? sp
+                              : undefined
+                          }
                         >
-                          {sp}
+                          {translateStockingSpecies(sp, locale)}
                         </button>
                       ))}
                     </div>
@@ -676,18 +993,20 @@ export default function MapPage() {
                         >
                           {t("map.form.recent")}
                         </label>
-                        <select
-                          id="map-recent-years"
-                          value={recentYearsWindow}
-                          onChange={(e) =>
-                            setRecentYearsWindow(Number(e.target.value) as 1 | 2 | 5)
-                          }
-                          className="map-page__field w-full"
-                        >
-                          <option value={1}>Last 1 year</option>
-                          <option value={2}>Last 2 years</option>
-                          <option value={5}>Last 5 years</option>
-                        </select>
+                        <div className="map-page__field-wrap">
+                          <select
+                            id="map-recent-years"
+                            value={recentYearsWindow}
+                            onChange={(e) =>
+                              setRecentYearsWindow(Number(e.target.value) as 1 | 2 | 5)
+                            }
+                            className="map-page__field w-full"
+                          >
+                            <option value={1}>Last 1 year</option>
+                            <option value={2}>Last 2 years</option>
+                            <option value={5}>Last 5 years</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="map-page__filter-field">
                         <label
@@ -696,21 +1015,23 @@ export default function MapPage() {
                         >
                           {t("map.form.minFish")}
                         </label>
-                        <select
-                          id="map-min-fish"
-                          value={minTotalFish}
-                          onChange={(e) =>
-                            setMinTotalFish(
-                              Number(e.target.value) as 0 | 500 | 1000 | 5000,
-                            )
-                          }
-                          className="map-page__field w-full"
-                        >
-                          <option value={0}>Any</option>
-                          <option value={500}>500+</option>
-                          <option value={1000}>1,000+</option>
-                          <option value={5000}>5,000+</option>
-                        </select>
+                        <div className="map-page__field-wrap">
+                          <select
+                            id="map-min-fish"
+                            value={minTotalFish}
+                            onChange={(e) =>
+                              setMinTotalFish(
+                                Number(e.target.value) as 0 | 500 | 1000 | 5000,
+                              )
+                            }
+                            className="map-page__field w-full"
+                          >
+                            <option value={0}>Any</option>
+                            <option value={500}>500+</option>
+                            <option value={1000}>1,000+</option>
+                            <option value={5000}>5,000+</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="map-page__filter-field">
                         <label
@@ -719,18 +1040,20 @@ export default function MapPage() {
                         >
                           {t("map.form.minSpecies")}
                         </label>
-                        <select
-                          id="map-min-species"
-                          value={minSpeciesCount}
-                          onChange={(e) =>
-                            setMinSpeciesCount(Number(e.target.value) as 1 | 2 | 3)
-                          }
-                          className="map-page__field w-full"
-                        >
-                          <option value={1}>1+</option>
-                          <option value={2}>2+</option>
-                          <option value={3}>3+</option>
-                        </select>
+                        <div className="map-page__field-wrap">
+                          <select
+                            id="map-min-species"
+                            value={minSpeciesCount}
+                            onChange={(e) =>
+                              setMinSpeciesCount(Number(e.target.value) as 1 | 2 | 3)
+                            }
+                            className="map-page__field w-full"
+                          >
+                            <option value={1}>1+</option>
+                            <option value={2}>2+</option>
+                            <option value={3}>3+</option>
+                          </select>
+                        </div>
                       </div>
                       <div className="map-page__filter-field">
                         <label
@@ -739,19 +1062,21 @@ export default function MapPage() {
                         >
                           {t("map.form.district")}
                         </label>
-                        <select
-                          id="map-district"
-                          value={selectedDistrict}
-                          onChange={(e) => setSelectedDistrict(e.target.value)}
-                          className="map-page__field w-full"
-                        >
-                          <option value="all">All districts</option>
-                          {districts.map((d) => (
-                            <option key={d} value={d}>
-                              {d}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="map-page__field-wrap">
+                          <select
+                            id="map-district"
+                            value={selectedDistrict}
+                            onChange={(e) => setSelectedDistrict(e.target.value)}
+                            className="map-page__field w-full"
+                          >
+                            <option value="all">All districts</option>
+                            {districts.map((d) => (
+                              <option key={d} value={d}>
+                                {d}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                       <div className="map-page__filter-field sm:col-span-2">
                         <label
@@ -760,19 +1085,21 @@ export default function MapPage() {
                         >
                           {t("map.form.stage")}
                         </label>
-                        <select
-                          id="map-stage"
-                          value={selectedDevelopmentalStage}
-                          onChange={(e) => setSelectedDevelopmentalStage(e.target.value)}
-                          className="map-page__field w-full"
-                        >
-                          <option value="all">All stages</option>
-                          {developmentalStages.map((s) => (
-                            <option key={s} value={s}>
-                              {s}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="map-page__field-wrap">
+                          <select
+                            id="map-stage"
+                            value={selectedDevelopmentalStage}
+                            onChange={(e) => setSelectedDevelopmentalStage(e.target.value)}
+                            className="map-page__field w-full"
+                          >
+                            <option value="all">All stages</option>
+                            {developmentalStages.map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
                     </div>
                   </>
@@ -783,9 +1110,29 @@ export default function MapPage() {
                 className="map-page__filter-section"
                 aria-label={t("map.ara.section")}
               >
-                <h3 className="map-page__filter-section-title">
-                  {t("map.ara.section")}
-                </h3>
+                <div className="map-page__filter-section-head">
+                  <h3 className="map-page__filter-section-title">
+                    {t("map.ara.section")}
+                  </h3>
+                  <span className="map-page__filter-info">
+                    <button
+                      type="button"
+                      className="map-page__filter-info-icon"
+                      aria-label={t("map.ara.info")}
+                    >
+                      <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-3.5 w-3.5">
+                        <path
+                          fillRule="evenodd"
+                          d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9.25 9a.75.75 0 01.75-.75h.01a.75.75 0 01.74.84l-.46 4.13a.75.75 0 11-1.49-.16l.45-4.06z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                    </button>
+                    <span className="map-page__filter-info-tooltip" role="tooltip">
+                      {t("map.ara.info")}
+                    </span>
+                  </span>
+                </div>
                 <div className="map-page__filter-toggle-block">
                   <label className="map-page__filter-toggle-row cursor-pointer">
                     <input
@@ -813,31 +1160,24 @@ export default function MapPage() {
                     <div className="map-page__filter-species-row">
                       <button
                         type="button"
-                        className={speciesPillClass(araBass)}
-                        aria-pressed={araBass}
-                        title={t("map.ara.bassBlurb")}
-                        onClick={() => setAraBass((v) => !v)}
+                        className={speciesPillClass(
+                          presenceSpecies.size === ARA_SPECIES_FILTERS.length,
+                        )}
+                        onClick={toggleAllPresenceSpecies}
                       >
-                        {t("map.ara.bassName")}
+                        {t("map.species.all")}
                       </button>
-                      <button
-                        type="button"
-                        className={speciesPillClass(araPike)}
-                        aria-pressed={araPike}
-                        title={t("map.ara.pikeBlurb")}
-                        onClick={() => setAraPike((v) => !v)}
-                      >
-                        {t("map.ara.pikeName")}
-                      </button>
-                      <button
-                        type="button"
-                        className={speciesPillClass(araWalleye)}
-                        aria-pressed={araWalleye}
-                        title={t("map.ara.walleyeBlurb")}
-                        onClick={() => setAraWalleye((v) => !v)}
-                      >
-                        {t("map.ara.walleyeName")}
-                      </button>
+                      {ARA_SPECIES_FILTERS.map((speciesKey) => (
+                        <button
+                          key={speciesKey}
+                          type="button"
+                          className={speciesPillClass(presenceSpecies.has(speciesKey))}
+                          aria-pressed={presenceSpecies.has(speciesKey)}
+                          onClick={() => togglePresenceSpecies(speciesKey)}
+                        >
+                          {t(`map.ara.species.${speciesKey}`)}
+                        </button>
+                      ))}
                     </div>
                     {araLoading || araTooWide ? (
                       <div className="map-page__filter-ara-status">
@@ -916,8 +1256,10 @@ export default function MapPage() {
           friendIds={friendIds}
           currentUserId={user?.id}
           araMarkers={araPoints}
+          onAraMarkerClick={handleAraMarkerClick}
           onViewportChange={loadAra}
           satelliteImagery={satelliteImagery}
+          searchPin={lakeSearchPin}
         />
         <div
           className="map-page__map-basemap"
@@ -943,12 +1285,19 @@ export default function MapPage() {
             key={
               mapSheet.mode === "lake"
                 ? `lake-${mapSheet.group.waterbody}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
-                : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+                : mapSheet.mode === "presence"
+                  ? `presence-${mapSheet.name}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+                  : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
             }
             mode={mapSheet.mode}
             lat={mapSheet.lat}
             lng={mapSheet.lng}
             lake={mapSheet.mode === "lake" ? mapSheet.group : undefined}
+            presence={
+              mapSheet.mode === "presence"
+                ? { name: mapSheet.name, speciesSummary: mapSheet.speciesSummary }
+                : undefined
+            }
             forecastAreaLabel={
               mapSheet.mode === "forecast" ? forecastAreaLabel : null
             }
@@ -961,6 +1310,25 @@ export default function MapPage() {
             canUseAi={!!user}
           />
         ) : null}
+        <div className="map-page__legend" role="group" aria-label={t("map.legend.title")}>
+          <p className="map-page__legend-title">{t("map.legend.title")}</p>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--stocking" />
+            {t("map.legend.stocking")}
+          </div>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--presence" />
+            {t("map.legend.presence")}
+          </div>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--catch" />
+            {t("map.legend.catch")}
+          </div>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--search" />
+            {t("map.legend.search")}
+          </div>
+        </div>
       </div>
 
       {/* Catch registration form */}

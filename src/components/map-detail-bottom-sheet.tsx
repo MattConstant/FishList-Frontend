@@ -1,18 +1,26 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { LakePresenceTab } from "@/components/lake-presence-tab";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
 
 type MapLakeTab = "stocking" | "forecast";
+type MapPresenceTab = "species" | "forecast";
+
+export type PresenceLake = {
+  name: string;
+  speciesSummary: string;
+};
 
 type Props = {
-  mode: "forecast" | "lake";
+  mode: "forecast" | "lake" | "presence";
   lat: number;
   lng: number;
   lake?: WaterbodyGroup;
+  presence?: PresenceLake;
   /** Reverse-geocoded area line for forecast mode (from map page). */
   forecastAreaLabel?: string | null;
   forecastAreaLabelLoading?: boolean;
@@ -36,6 +44,7 @@ export function MapDetailBottomSheet({
   lat,
   lng,
   lake,
+  presence,
   forecastAreaLabel = null,
   forecastAreaLabelLoading = false,
   expanded,
@@ -45,6 +54,14 @@ export function MapDetailBottomSheet({
 }: Props) {
   const { t } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
+  const [presenceTab, setPresenceTab] = useState<MapPresenceTab>("species");
+  const presenceSpeciesCount =
+    mode === "presence" && presence
+      ? presence.speciesSummary
+          .split(/[,;\n]/)
+          .map((s) => s.trim())
+          .filter(Boolean).length
+      : 0;
   /** Handle bar: drag up/down to expand/collapse; small movement = tap toggle. */
   const handleDragRef = useRef<{ y: number; pointerId: number } | null>(null);
 
@@ -54,11 +71,13 @@ export function MapDetailBottomSheet({
           species: lake.speciesSet.size,
           total: lake.totalFish.toLocaleString(),
         })
-      : mode === "forecast" && forecastAreaLabelLoading
-        ? t("forecast.loading")
-        : mode === "forecast" && forecastAreaLabel
-          ? forecastAreaLabel
-          : t("forecast.mapForecastPeek");
+      : mode === "presence" && presence
+        ? t("forecast.mapPresenceCount", { count: presenceSpeciesCount })
+        : mode === "forecast" && forecastAreaLabelLoading
+          ? t("forecast.loading")
+          : mode === "forecast" && forecastAreaLabel
+            ? forecastAreaLabel
+            : t("forecast.mapForecastPeek");
 
   const DRAG_PX = 40;
 
@@ -112,7 +131,11 @@ export function MapDetailBottomSheet({
         <div className="map-page__bottom-sheet-head">
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-base font-semibold text-zinc-900 dark:text-zinc-50">
-              {mode === "lake" && lake ? lake.waterbody : t("forecast.popupTitle")}
+              {mode === "lake" && lake
+                ? lake.waterbody
+                : mode === "presence" && presence
+                  ? presence.name || t("forecast.mapPresenceUnknown")
+                  : t("forecast.popupTitle")}
             </h2>
             <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
               {peekSubtitle}
@@ -212,6 +235,39 @@ export function MapDetailBottomSheet({
           </div>
         ) : null}
 
+        {mode === "presence" && presence ? (
+          <div
+            className="map-page__bottom-sheet-tabs"
+            role="tablist"
+            aria-label={t("forecast.mapSheetTabsAria")}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={presenceTab === "species"}
+              className={tabBtnClass(presenceTab === "species")}
+              onClick={() => {
+                setPresenceTab("species");
+                onExpandedChange(true);
+              }}
+            >
+              {t("forecast.mapTabPresence")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={presenceTab === "forecast"}
+              className={tabBtnClass(presenceTab === "forecast")}
+              onClick={() => {
+                setPresenceTab("forecast");
+                onExpandedChange(true);
+              }}
+            >
+              {t("forecast.mapTabForecast")}
+            </button>
+          </div>
+        ) : null}
+
         <div
           className={[
             "map-page__bottom-sheet-body",
@@ -234,6 +290,20 @@ export function MapDetailBottomSheet({
           {mode === "lake" && lake && lakeTab === "forecast" ? (
             <MapForecastPopup
               key={`lake-fc-${lat.toFixed(5)}-${lng.toFixed(5)}`}
+              lat={lat}
+              lng={lng}
+              omitOuterHeader
+            />
+          ) : null}
+          {mode === "presence" && presence && presenceTab === "species" ? (
+            <LakePresenceTab
+              name={presence.name}
+              speciesSummary={presence.speciesSummary}
+            />
+          ) : null}
+          {mode === "presence" && presence && presenceTab === "forecast" ? (
+            <MapForecastPopup
+              key={`presence-fc-${lat.toFixed(5)}-${lng.toFixed(5)}`}
               lat={lat}
               lng={lng}
               omitOuterHeader

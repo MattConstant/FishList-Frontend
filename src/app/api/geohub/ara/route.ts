@@ -37,18 +37,30 @@ function geometryCentroid(geometry: EsriPolygon): { lat: number; lng: number } |
   return ringCentroid(geometry.rings[0]);
 }
 
-function buildWhere(bass: boolean, pike: boolean, walleye: boolean): string {
+const SPECIES_SQL_LIKE: Record<string, string[]> = {
+  smallmouth_bass: ["Smallmouth Bass"],
+  largemouth_bass: ["Largemouth Bass"],
+  rock_bass: ["Rock Bass"],
+  northern_pike: ["Northern Pike"],
+  walleye: ["Walleye", "Yellow Pickerel"],
+  muskellunge: ["Muskellunge", "Muskie"],
+  yellow_perch: ["Yellow Perch"],
+  brook_trout: ["Brook Trout"],
+  lake_trout: ["Lake Trout"],
+  rainbow_trout: ["Rainbow Trout"],
+  brown_trout: ["Brown Trout"],
+  black_crappie: ["Black Crappie"],
+};
+
+function buildWhere(speciesKeys: string[]): string {
   const parts: string[] = [];
-  if (bass) {
-    parts.push(
-      "(FISH_SPECIES_SUMMARY LIKE '%Smallmouth Bass%' OR FISH_SPECIES_SUMMARY LIKE '%Largemouth Bass%' OR FISH_SPECIES_SUMMARY LIKE '%Rock Bass%')",
-    );
-  }
-  if (pike) {
-    parts.push("FISH_SPECIES_SUMMARY LIKE '%Northern Pike%'");
-  }
-  if (walleye) {
-    parts.push("FISH_SPECIES_SUMMARY LIKE '%Walleye%'");
+  for (const key of speciesKeys) {
+    const names = SPECIES_SQL_LIKE[key];
+    if (!names || names.length === 0) continue;
+    const clause = names
+      .map((name) => `FISH_SPECIES_SUMMARY LIKE '%${name.replace(/'/g, "''")}%'`)
+      .join(" OR ");
+    parts.push(`(${clause})`);
   }
   if (parts.length === 0) {
     return "1=0";
@@ -85,10 +97,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const bass = p.get("bass") === "1";
-  const pike = p.get("pike") === "1";
-  const walleye = p.get("walleye") === "1";
-  const where = buildWhere(bass, pike, walleye);
+  const species = (p.get("species") ?? "")
+    .split(",")
+    .map((v) => v.trim())
+    .filter(Boolean);
+  const where = buildWhere(species);
 
   const geometry = {
     xmin: west,

@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
+import { translateStockingSpecies } from "@/lib/species-i18n";
 import { LakeAiTipsSection } from "@/components/lake-ai-tips";
 
 type Props = {
@@ -11,7 +12,7 @@ type Props = {
 };
 
 export function LakeStockingTab({ group, canUseAi }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
 
   const districts = useMemo(
     () => Array.from(group.districtSet).join(", "),
@@ -71,7 +72,16 @@ export function LakeStockingTab({ group, canUseAi }: Props) {
                 key={`${r.species}-${r.year}-${i}`}
                 className="border-b border-zinc-100 last:border-0 dark:border-zinc-700/80"
               >
-                <td className="px-2 py-1.5">{r.species}</td>
+                <td
+                  className="px-2 py-1.5"
+                  title={
+                    translateStockingSpecies(r.species, locale) !== r.species
+                      ? r.species
+                      : undefined
+                  }
+                >
+                  {translateStockingSpecies(r.species, locale)}
+                </td>
                 <td className="px-2 py-1.5 text-center tabular-nums">{r.year}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums">
                   {r.count.toLocaleString()}

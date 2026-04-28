@@ -83,6 +83,29 @@ export function computeSolunarForDay(
   return windows;
 }
 
+export type MoonPhaseKey =
+  | "new"
+  | "waxing_crescent"
+  | "first_quarter"
+  | "waxing_gibbous"
+  | "full"
+  | "waning_gibbous"
+  | "last_quarter"
+  | "waning_crescent";
+
+/** SunCalc phase: 0 = new, 0.25 = first quarter, 0.5 = full, 0.75 = last quarter. */
+function moonPhaseKeyFromValue(phase: number): MoonPhaseKey {
+  const p = ((phase % 1) + 1) % 1;
+  if (p < 0.03 || p >= 0.97) return "new";
+  if (p < 0.22) return "waxing_crescent";
+  if (p < 0.28) return "first_quarter";
+  if (p < 0.47) return "waxing_gibbous";
+  if (p < 0.53) return "full";
+  if (p < 0.72) return "waning_gibbous";
+  if (p < 0.78) return "last_quarter";
+  return "waning_crescent";
+}
+
 export function sunMoonSummary(
   dateStr: string,
   timeZone: string,
@@ -93,14 +116,21 @@ export function sunMoonSummary(
   sunset: string | null;
   moonrise: string | null;
   moonset: string | null;
+  moonPhase: number;
+  moonPhaseKey: MoonPhaseKey;
+  moonIllumination: number;
 } {
   const noon = fromZonedTime(`${dateStr} 12:00:00`, timeZone);
   const sun = SunCalc.getTimes(noon, lat, lon);
   const moon = SunCalc.getMoonTimes(noon, lat, lon);
+  const ill = SunCalc.getMoonIllumination(noon);
   return {
     sunrise: sun.sunrise ? sun.sunrise.toISOString() : null,
     sunset: sun.sunset ? sun.sunset.toISOString() : null,
     moonrise: moon.rise ? moon.rise.toISOString() : null,
     moonset: moon.set ? moon.set.toISOString() : null,
+    moonPhase: ill.phase,
+    moonPhaseKey: moonPhaseKeyFromValue(ill.phase),
+    moonIllumination: ill.fraction,
   };
 }

@@ -17,7 +17,7 @@ import {
 /** Limits how often we hit /api/accounts/search while typing (was firing every keystroke ≥2 chars). */
 const SEARCH_DEBOUNCE_MS = 320;
 
-const FRIENDS_PER_PAGE = 5;
+const FRIENDS_PER_PAGE = 6;
 
 export default function FriendsPage() {
   const { user, isReady } = useAuth();

@@ -25,6 +25,7 @@ export default {
   "home.scope.mine": "Mes publications",
   "home.loadMore": "Charger plus de publications",
   "home.loadingMore": "Chargement...",
+  "home.reachedBottom": "Vous etes au bas de la liste.",
   "home.deletePost": "Supprimer la publication",
   "home.deletingPost": "Suppression...",
   "home.deletePostConfirm":

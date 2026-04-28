@@ -37,18 +37,25 @@ export default {
     "Cette date n’est pas encore disponible. Les prévisions ne couvrent que les prochaines semaines — choisissez un jour plus proche.",
   "forecast.pressureTitle": "Pression barométrique",
   "forecast.pressureTrend": "Tendance du jour (surface)",
-  "forecast.trend.rising": "En hausse — souvent favorable avant une perturbation",
   "forecast.trend.falling":
-    "En baisse — peut ralentir les touches ; un changement peut quand même déclencher une activité",
-  "forecast.trend.steady": "Stable",
+    "En baisse — fenêtre d’activité pré-frontale, souvent les meilleures touches",
+  "forecast.trend.rising":
+    "En hausse — après le passage du front, les touches ralentissent généralement",
+  "forecast.trend.steady": "Stable — schéma d’alimentation régulier et prévisible",
   "forecast.trend.unknown": "Pas assez de données horaires",
   "forecast.pressureHpa": "{{first}} → {{last}} hPa",
+  "forecast.pressureQuality.good": "Bonne (haute)",
+  "forecast.pressureQuality.fair": "Moyenne",
+  "forecast.pressureQuality.poor": "Faible (basse)",
+  "forecast.pressureQuality.unknown": "Pression inconnue",
+  "forecast.pressureQualityHint":
+    "En général, une pression haute et stable (≥ 1018 hPa) favorise la pêche ; une pression très basse (< 1005 hPa) tend à ralentir les touches.",
   "forecast.hourlyChart": "Pression horaire (hPa)",
   "forecast.chart.aria":
     "Pression barométrique horaire de {{min}} à {{max}} hPa",
   "forecast.rating.title": "Note du jour",
   "forecast.rating.subtitle":
-    "Basée sur la pression, les fenêtres solunaires et la nébulosité — une indication, sans garantie.",
+    "Basée sur la tendance et le niveau de pression, la phase de la lune, les fenêtres solunaires et la nébulosité — une indication, sans garantie.",
   "forecast.rating.aria": "{{stars}} sur 5 : {{label}}",
   "forecast.rating.level.1": "Conditions difficiles",
   "forecast.rating.level.2": "Sous la moyenne",
@@ -65,6 +72,16 @@ export default {
   "forecast.moonrise": "Lever de la lune",
   "forecast.moonset": "Coucher de la lune",
   "forecast.noMoon": "—",
+  "forecast.moonPhase.new": "Nouvelle lune",
+  "forecast.moonPhase.waxing_crescent": "Premier croissant",
+  "forecast.moonPhase.first_quarter": "Premier quartier",
+  "forecast.moonPhase.waxing_gibbous": "Lune gibbeuse croissante",
+  "forecast.moonPhase.full": "Pleine lune",
+  "forecast.moonPhase.waning_gibbous": "Lune gibbeuse décroissante",
+  "forecast.moonPhase.last_quarter": "Dernier quartier",
+  "forecast.moonPhase.waning_crescent": "Dernier croissant",
+  "forecast.moonPhaseHint":
+    "Les pleines et nouvelles lunes produisent généralement les pics solunaires les plus forts ; les quartiers sont souvent plus faibles.",
   "forecast.disclaimer":
     "Les prévisions sont informatives, sans garantie. Vérifiez vent, sécurité, règlements et conditions avant de partir.",
   "forecast.attributionTitle": "Données et crédits",
@@ -72,6 +89,7 @@ export default {
   "forecast.timezone": "Fuseau horaire : {{tz}}",
   "forecast.mapTabStocking": "Ensemencement",
   "forecast.mapTabForecast": "Prévision",
+  "forecast.mapTabPresence": "Espèces",
   "forecast.mapSheetExpand": "Déployer le panneau",
   "forecast.mapSheetCollapse": "Réduire le panneau",
   "forecast.mapSheetClose": "Fermer le panneau",
@@ -79,6 +97,12 @@ export default {
   "forecast.mapLakeSummary":
     "{{species}} espèces · {{total}} poissons stockés (enregistrements récents)",
   "forecast.mapForecastPeek": "Prévision de pêche — déployer pour les détails",
+  "forecast.mapPresenceHeading": "Espèces signalées",
+  "forecast.mapPresenceNote":
+    "Espèces de poissons observées dans ce plan d’eau selon les données provinciales. Il s’agit d’une présence — non d’ensemencement ni d’une garantie de disponibilité.",
+  "forecast.mapPresenceCount": "{{count}} espèces signalées",
+  "forecast.mapPresenceUnknown": "Plan d’eau sans nom",
+  "forecast.mapPresenceEmpty": "Aucune donnée d’espèces pour ce plan d’eau.",
   "forecast.mapGeohubNote":
     "Les coordonnées GeoHub sont souvent approximatives ; nous essayons d’ancrer l’épingle sur le lac via OpenStreetMap.",
   "forecast.mapDistrict": "District :",

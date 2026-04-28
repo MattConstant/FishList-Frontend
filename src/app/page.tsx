@@ -65,7 +65,6 @@ const FeedCard = memo(function FeedCard({
   const cardRef = useRef<HTMLElement | null>(null);
   const [isActive, setIsActive] = useState(false);
   const isOwnPost = currentUserId != null && post.accountId === currentUserId;
-  const [mediaExpanded, setMediaExpanded] = useState(isOwnPost);
   const imageCandidates = useMemo(
     () =>
       post.catch.imageUrls && post.catch.imageUrls.length > 0
@@ -93,10 +92,6 @@ const FeedCard = memo(function FeedCard({
   const [deletingPost, setDeletingPost] = useState(false);
 
   useEffect(() => {
-    setMediaExpanded(isOwnPost);
-  }, [isOwnPost, post.id]);
-
-  useEffect(() => {
     if (!cardRef.current || isActive) return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -112,7 +107,6 @@ const FeedCard = memo(function FeedCard({
   }, [isActive]);
 
   useEffect(() => {
-    if (!mediaExpanded) return;
     if (!isActive) return;
     if (imageCandidates.length === 0) return;
     let cancelled = false;
@@ -131,7 +125,7 @@ const FeedCard = memo(function FeedCard({
     return () => {
       cancelled = true;
     };
-  }, [mediaExpanded, isActive, imageCandidates]);
+  }, [isActive, imageCandidates]);
 
   useEffect(() => {
     if (!isActive) return;
@@ -320,39 +314,27 @@ const FeedCard = memo(function FeedCard({
       </div>
 
       {imageCandidates.length > 0 ? (
-        mediaExpanded ? (
-          isActive && resolvedUrls.length > 0 && !imgError ? (
-            <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
-              {resolvedUrls.map((url) => (
-                <div key={url} className="relative aspect-square w-full">
-                  <Image
-                    src={url}
-                    alt={post.catch.species}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 768px) 100vw, 50vw"
-                    loading="lazy"
-                    unoptimized
-                    onError={() => setImgError(true)}
-                  />
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
-              <p className="text-sm text-zinc-400">Loading image…</p>
-            </div>
-          )
+        isActive && resolvedUrls.length > 0 && !imgError ? (
+          <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
+            {resolvedUrls.map((url) => (
+              <div key={url} className="relative aspect-square w-full">
+                <Image
+                  src={url}
+                  alt={post.catch.species}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                  loading="lazy"
+                  unoptimized
+                  onError={() => setImgError(true)}
+                />
+              </div>
+            ))}
+          </div>
         ) : (
-          <button
-            type="button"
-            onClick={() => setMediaExpanded(true)}
-            className="flex aspect-video w-full items-center justify-center bg-zinc-100 text-zinc-500 transition hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700"
-          >
-            <span className="text-sm font-medium">
-              Open {imageCandidates.length} photo{imageCandidates.length === 1 ? "" : "s"}
-            </span>
-          </button>
+          <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
+            <p className="text-sm text-zinc-400">Loading image…</p>
+          </div>
         )
       ) : (
         <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
@@ -536,6 +518,7 @@ export default function HomePage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState("");
+  const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -596,6 +579,24 @@ export default function HomePage() {
       cancelled = true;
     };
   }, [user]);
+
+  useEffect(() => {
+    const sentinel = loadMoreSentinelRef.current;
+    if (!sentinel) return;
+    if (!user || feedScope !== "all" || !hasMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        if (loading || loadingMore || !hasMore) return;
+        void loadMore();
+      },
+      { rootMargin: "300px 0px" },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [user, feedScope, hasMore, loading, loadingMore, loadMore]);
 
   const visiblePosts = useMemo(() => {
     if (!user) return posts;
@@ -717,15 +718,18 @@ export default function HomePage() {
       </div>
 
       {hasMore && feedScope === "all" && (
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={() => void loadMore()}
-            disabled={loadingMore || loading}
-            className="w-full rounded-xl border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
-          >
-            {loadingMore ? t("home.loadingMore") : t("home.loadMore")}
-          </button>
+        <div ref={loadMoreSentinelRef} className="pt-2 text-center">
+          {loadingMore ? (
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("home.loadingMore")}</p>
+          ) : (
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">{t("home.loadMore")}</p>
+          )}
+        </div>
+      )}
+
+      {!loading && !error && visiblePosts.length > 0 && (!hasMore || feedScope !== "all") && (
+        <div className="pt-2 text-center">
+          <p className="text-xs text-zinc-400 dark:text-zinc-500">{t("home.reachedBottom")}</p>
         </div>
       )}
     </div>
