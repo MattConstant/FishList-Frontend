@@ -3,7 +3,17 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "@/contexts/locale-context";
-import { getImageUrl, type CatchResponse, type LocationWithCatches } from "@/lib/api";
+import {
+  getImageUrl,
+  type CatchResponse,
+  type FishingType,
+  type LocationWithCatches,
+} from "@/lib/api";
+import { formatLengthFromCm, formatWeightFromKg } from "@/lib/units";
+
+function fishingTypeLabelKey(type: FishingType): string {
+  return `catch.fishingType.${type.toLowerCase()}`;
+}
 
 const CATCHES_PER_PAGE = 5;
 
@@ -123,12 +133,18 @@ export function CatchCard({ c }: { c: CatchResponse }) {
               ? `${c.fishDetails.length} fish in this post`
               : [
                     c.quantity && c.quantity > 1 ? `×${c.quantity}` : null,
-                    c.lengthCm ? `${c.lengthCm} cm` : null,
-                    c.weightKg ? `${c.weightKg} kg` : null,
+                    formatLengthFromCm(c.lengthCm),
+                    formatWeightFromKg(c.weightKg),
                   ]
                     .filter(Boolean)
                     .join(" · ") || "No measurements"}
           </p>
+          {c.fishingType && (
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+              <span aria-hidden>🎣</span>
+              {t(fishingTypeLabelKey(c.fishingType))}
+            </span>
+          )}
           {imageCandidates.length > 1 && (
             <p className="mt-1 text-[11px] font-medium text-sky-600 dark:text-sky-400">
               {t("profile.morePhotos", { n: imageCandidates.length - 1 })}
@@ -159,10 +175,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
                 >
                   <p className="font-medium text-zinc-900 dark:text-zinc-100">{f.species}</p>
                   <p className="text-xs text-zinc-500">
-                    {[
-                      f.lengthCm != null ? `${f.lengthCm} cm` : null,
-                      f.weightKg != null ? `${f.weightKg} kg` : null,
-                    ]
+                    {[formatLengthFromCm(f.lengthCm), formatWeightFromKg(f.weightKg)]
                       .filter(Boolean)
                       .join(" · ") || "—"}
                   </p>
@@ -185,13 +198,13 @@ export function CatchCard({ c }: { c: CatchResponse }) {
             {c.lengthCm != null && (
               <div>
                 <dt className="text-xs text-zinc-500">Length</dt>
-                <dd className="text-zinc-900 dark:text-zinc-100">{c.lengthCm} cm</dd>
+                <dd className="text-zinc-900 dark:text-zinc-100">{formatLengthFromCm(c.lengthCm)}</dd>
               </div>
             )}
             {c.weightKg != null && (
               <div>
                 <dt className="text-xs text-zinc-500">Weight</dt>
-                <dd className="text-zinc-900 dark:text-zinc-100">{c.weightKg} kg</dd>
+                <dd className="text-zinc-900 dark:text-zinc-100">{formatWeightFromKg(c.weightKg)}</dd>
               </div>
             )}
             {c.notes && (

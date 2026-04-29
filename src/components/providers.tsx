@@ -2,6 +2,7 @@
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AchievementToastProvider } from "@/contexts/achievement-toast-context";
 import { AuthProvider } from "@/contexts/auth-context";
 import { LocaleProvider } from "@/contexts/locale-context";
 
@@ -12,7 +13,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <GoogleOAuthProvider clientId={googleClientId}>
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
         <LocaleProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <AchievementToastProvider>{children}</AchievementToastProvider>
+          </AuthProvider>
         </LocaleProvider>
       </ThemeProvider>
     </GoogleOAuthProvider>

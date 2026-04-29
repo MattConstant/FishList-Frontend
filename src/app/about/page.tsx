@@ -97,7 +97,7 @@ export default function AboutPage() {
           </p>
           <div className="mt-4 flex flex-wrap gap-3">
             <a
-              href="https://discord.gg/your-server-invite"
+              href="https://discord.gg/pEqwRW5NF"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
@@ -109,7 +109,7 @@ export default function AboutPage() {
               {t("about.community.discord")}
             </a>
             <a
-              href="https://your-donation-page.example.com"
+              href="https://ko-fi.com/fishlist"
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center justify-center rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"

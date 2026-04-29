@@ -29,6 +29,7 @@ import {
   type CatchCommentResponse,
   type FeedPost,
 } from "@/lib/api";
+import { formatLengthFromCm, formatWeightFromKg } from "@/lib/units";
 
 const TOP_COMMENTS_LIMIT = 2;
 const COMMENTS_CHUNK_SIZE = 5;
@@ -346,12 +347,18 @@ const FeedCard = memo(function FeedCard({
         <p className="font-semibold text-zinc-900 dark:text-zinc-100">
           {post.catch.species}
         </p>
+        {post.catch.fishingType && (
+          <span className="inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+            <span aria-hidden>🎣</span>
+            {t(`catch.fishingType.${post.catch.fishingType.toLowerCase()}`)}
+          </span>
+        )}
         {post.catch.fishDetails && post.catch.fishDetails.length > 0 ? (
           <ul className="list-inside list-disc space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
             {post.catch.fishDetails.map((f, i) => {
               const measureBits = [
-                f.lengthCm != null ? `${f.lengthCm} cm` : null,
-                f.weightKg != null ? `${f.weightKg} kg` : null,
+                formatLengthFromCm(f.lengthCm),
+                formatWeightFromKg(f.weightKg),
               ].filter(Boolean);
               return (
                 <li key={i}>
@@ -373,8 +380,8 @@ const FeedCard = memo(function FeedCard({
                 post.catch.quantity && post.catch.quantity > 1
                   ? `×${post.catch.quantity}`
                   : null,
-                post.catch.lengthCm ? `${post.catch.lengthCm} cm` : null,
-                post.catch.weightKg ? `${post.catch.weightKg} kg` : null,
+                formatLengthFromCm(post.catch.lengthCm),
+                formatWeightFromKg(post.catch.weightKg),
               ]
                 .filter(Boolean)
                 .join(" · ") || "No measurements"}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { AchievementsPanel } from "@/components/achievements-panel";
 import { LocationCard } from "@/components/fishing-cards";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
@@ -243,6 +244,14 @@ export default function UserProfilePage() {
             </dl>
           </div>
         </div>
+      )}
+
+      {!invalidId && !error && !loading && account && (
+        <AchievementsPanel
+          accountId={account.id}
+          variant="public"
+          initialPreviewCount={6}
+        />
       )}
 
       {!invalidId && !error && !loading && account && (

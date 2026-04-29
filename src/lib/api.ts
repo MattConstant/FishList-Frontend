@@ -91,6 +91,113 @@ export type AccountResponse = {
   profileImageKey?: string | null;
 };
 
+// ── Achievements + roles ─────────────────────────────────────────────
+
+export type AchievementRarity = "COMMON" | "RARE" | "LEGENDARY";
+export type AchievementCategory = "CATCH" | "EXPLORATION" | "SOCIAL";
+
+/** Stable enum names from {@code AchievementCode.java}; used as React keys / locale lookups. */
+export type AchievementCode =
+  | "FIRST_CATCH"
+  | "TEN_CATCHES"
+  | "FIFTY_CATCHES"
+  | "HUNDRED_CATCHES"
+  | "FIVE_SPECIES"
+  | "TEN_SPECIES"
+  | "THREE_LOCATIONS"
+  | "TEN_LOCATIONS"
+  | "FIRST_PHOTO"
+  | "FIRST_LIKE_GIVEN"
+  | "FIRST_COMMENT"
+  | "FIRST_FRIEND"
+  | "POPULAR_CATCH"
+  | "TROPHY_FISH"
+  | "FIRST_FLY"
+  | "FLY_FISHING_PRO"
+  | "FIRST_TROLLING"
+  | "TROLLING_PRO"
+  | "FIRST_ICE"
+  | "ICE_FISHING_PRO"
+  | "VERSATILE_ANGLER"
+  | "TECHNIQUE_MASTER"
+  | "STOCKED_LAKE_CATCH"
+  | "RIVER_CATCH"
+  | "OCEAN_CATCH"
+  | "TRAILBLAZER"
+  | "RANGE_ROAMER";
+
+export type RoleTierName =
+  | "NEWCOMER"
+  | "ANGLER"
+  | "ADEPT"
+  | "VETERAN"
+  | "MASTER"
+  | "LEGEND";
+
+/** Inline notification when a mutation tripped a new achievement. */
+export type UnlockedAchievementSummary = {
+  code: AchievementCode;
+  titleKey: string;
+  descriptionKey: string;
+  xp: number;
+  rarity: AchievementRarity;
+};
+
+export type AchievementResponse = {
+  code: AchievementCode;
+  titleKey: string;
+  descriptionKey: string;
+  xp: number;
+  rarity: AchievementRarity;
+  category: AchievementCategory;
+  target: number;
+  progress: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
+};
+
+export type AchievementProgressResponse = {
+  accountId: number;
+  username: string;
+  profileImageKey?: string | null;
+  xp: number;
+  roleTier: RoleTierName;
+  roleTierLabelKey: string;
+  nextRoleTier?: RoleTierName | null;
+  nextRoleTierLabelKey?: string | null;
+  nextRoleTierMinXp?: number | null;
+  admin: boolean;
+  unlockedCount: number;
+  totalCount: number;
+  achievements: AchievementResponse[];
+};
+
+/**
+ * Module-level callback set by {@code AchievementToastProvider}; lets API helpers fire toasts
+ * without each call site needing to forward the unlock list manually.
+ */
+type AchievementToastDispatcher = (
+  list: UnlockedAchievementSummary[],
+) => void;
+let achievementToastDispatcher: AchievementToastDispatcher | null = null;
+
+/**
+ * Registers (or clears with {@code null}) the function that receives unlock notifications.
+ * Provider should call on mount and clear on unmount.
+ */
+export function setAchievementToastDispatcher(
+  fn: AchievementToastDispatcher | null,
+): void {
+  achievementToastDispatcher = fn;
+}
+
+function dispatchUnlocks(
+  list: UnlockedAchievementSummary[] | null | undefined,
+): void {
+  if (!list || list.length === 0) return;
+  achievementToastDispatcher?.(list);
+}
+
 export type AccountUpdateResponse = {
   account: AccountResponse;
   accessToken: string;
@@ -333,16 +440,36 @@ export async function fetchMyFriends(): Promise<AccountResponse[]> {
   return authJson<AccountResponse[]>("/api/accounts/me/friends");
 }
 
+type AddFriendApiResponse = {
+  friend: AccountResponse;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
 export async function addFriend(accountId: number): Promise<AccountResponse> {
-  return authJson<AccountResponse>(`/api/accounts/${accountId}/friends`, {
-    method: "POST",
-  });
+  const res = await authJson<AddFriendApiResponse>(
+    `/api/accounts/${accountId}/friends`,
+    { method: "POST" },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res.friend;
 }
 
 export async function removeFriend(accountId: number): Promise<void> {
   await authVoid(`/api/accounts/${accountId}/friends`, {
     method: "DELETE",
   });
+}
+
+export async function fetchMyAchievements(): Promise<AchievementProgressResponse> {
+  return authJson<AchievementProgressResponse>("/api/achievements/me");
+}
+
+export async function fetchAccountAchievements(
+  accountId: number,
+): Promise<AchievementProgressResponse> {
+  return authJson<AchievementProgressResponse>(
+    `/api/achievements/users/${accountId}`,
+  );
 }
 
 export async function fetchAdminMe(): Promise<AdminMeResponse> {
@@ -422,6 +549,33 @@ async function authVoid(path: string, init?: RequestInit): Promise<void> {
 /** Matches server `PostVisibility` (who can see the location / feed post). */
 export type PostVisibility = "PUBLIC" | "FRIENDS" | "PRIVATE";
 
+/**
+ * Body of water classification on a location. Mirrors the server
+ * {@code ca.consmatt.beans.WaterType} enum names; UI labels are looked up via the locale key
+ * {@code catch.waterType.<lowercase value>}.
+ */
+export type WaterType =
+  | "LAKE"
+  | "STOCKED_LAKE"
+  | "POND"
+  | "RIVER"
+  | "STREAM"
+  | "RESERVOIR"
+  | "OCEAN"
+  | "OTHER";
+
+/** Order in which water types are presented in the picker. */
+export const WATER_TYPE_OPTIONS: WaterType[] = [
+  "LAKE",
+  "STOCKED_LAKE",
+  "POND",
+  "RIVER",
+  "STREAM",
+  "RESERVOIR",
+  "OCEAN",
+  "OTHER",
+];
+
 export type LocationPayload = {
   locationName: string;
   latitude: string;
@@ -429,6 +583,8 @@ export type LocationPayload = {
   timeStamp: string;
   Details?: string;
   visibility?: PostVisibility;
+  /** Optional body of water classification (lake, river, ocean…). */
+  waterType?: WaterType;
 };
 
 export type LocationResponse = LocationPayload & {
@@ -444,6 +600,37 @@ export type FishEntryPayload = {
   notes?: string;
 };
 
+/**
+ * Fishing technique used for a catch. Mirrors the server {@code ca.consmatt.beans.FishingType}
+ * enum names; UI labels are looked up via the locale key
+ * {@code catch.fishingType.<lowercase value>}.
+ */
+export type FishingType =
+  | "FLY"
+  | "SPIN"
+  | "BAITCAST"
+  | "TROLLING"
+  | "ICE"
+  | "JIGGING"
+  | "BOTTOM"
+  | "FLOAT"
+  | "SURF"
+  | "OTHER";
+
+/** Order in which fishing types are presented in the picker. */
+export const FISHING_TYPE_OPTIONS: FishingType[] = [
+  "FLY",
+  "SPIN",
+  "BAITCAST",
+  "TROLLING",
+  "JIGGING",
+  "FLOAT",
+  "BOTTOM",
+  "SURF",
+  "ICE",
+  "OTHER",
+];
+
 /** Payload for POST /locations/{id}/catches — use `fish` for multiple fish in one post. */
 export type AddCatchPayload = {
   species?: string;
@@ -456,6 +643,8 @@ export type AddCatchPayload = {
   description?: string;
   imageUrl?: string;
   imageUrls?: string[];
+  /** Optional technique used for this post. */
+  fishingType?: FishingType;
 };
 
 export type CatchResponse = {
@@ -470,6 +659,7 @@ export type CatchResponse = {
   imageUrl?: string;
   imageUrls?: string[];
   fishDetails?: FishEntryPayload[] | null;
+  fishingType?: FishingType | null;
 };
 
 export async function createLocation(
@@ -484,6 +674,11 @@ export async function createLocation(
   return res.text();
 }
 
+type AddCatchApiResponse = {
+  catch: CatchResponse;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
 /** Adds one catch to an existing location (same trip / coordinates). */
 export async function addCatchToLocation(
   locationId: string,
@@ -495,7 +690,9 @@ export async function addCatchToLocation(
     body: JSON.stringify(catchData),
   });
   await throwIfNotOk(catchRes);
-  return catchRes.json() as Promise<CatchResponse>;
+  const data = (await catchRes.json()) as AddCatchApiResponse;
+  dispatchUnlocks(data.unlockedAchievements);
+  return data.catch;
 }
 
 export async function createLocationAndCatch(
@@ -519,7 +716,9 @@ export async function createLocationAndCatch(
     body: JSON.stringify(catchData),
   });
   await throwIfNotOk(catchRes);
-  return catchRes.json() as Promise<CatchResponse>;
+  const data = (await catchRes.json()) as AddCatchApiResponse;
+  dispatchUnlocks(data.unlockedAchievements);
+  return data.catch;
 }
 
 export type LocationWithCatches = {
@@ -590,6 +789,7 @@ type FeedPostResponse = {
   imageUrl?: string;
   imageUrls?: string;
   fishDetailsJson?: string | null;
+  fishingType?: FishingType | null;
 };
 
 function parseFishDetailsJson(
@@ -609,6 +809,7 @@ export type CatchLikeResponse = {
   catchId: number;
   likesCount: number;
   likedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
 };
 
 export type CatchCommentResponse = {
@@ -620,6 +821,7 @@ export type CatchCommentResponse = {
   message: string;
   createdAt: string;
   ownedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
 };
 
 export type CatchCommentsPageResponse = {
@@ -676,6 +878,7 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
           ? [row.imageUrl]
           : [],
       fishDetails: parseFishDetailsJson(row.fishDetailsJson),
+      fishingType: row.fishingType ?? null,
     },
   }));
 }
@@ -693,10 +896,12 @@ export async function likeCatch(
   locationId: number,
   catchId: number,
 ): Promise<CatchLikeResponse> {
-  return authJson<CatchLikeResponse>(
+  const res = await authJson<CatchLikeResponse>(
     `/api/locations/${locationId}/catches/${catchId}/like`,
     { method: "POST" },
   );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
 }
 
 export async function unlikeCatch(
@@ -725,7 +930,7 @@ export async function createCatchComment(
   catchId: number,
   message: string,
 ): Promise<CatchCommentResponse> {
-  return authJson<CatchCommentResponse>(
+  const res = await authJson<CatchCommentResponse>(
     `/api/locations/${locationId}/catches/${catchId}/comments`,
     {
       method: "POST",
@@ -733,6 +938,8 @@ export async function createCatchComment(
       body: JSON.stringify({ message }),
     },
   );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
 }
 
 export async function deleteCatchComment(

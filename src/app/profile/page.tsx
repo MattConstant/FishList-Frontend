@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AchievementsPanel } from "@/components/achievements-panel";
 import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
 import { LocationCard } from "@/components/fishing-cards";
 import { useAuth } from "@/contexts/auth-context";
@@ -419,6 +420,8 @@ export default function ProfilePage() {
         {refreshError && (
           <p className="text-sm text-red-600 dark:text-red-400">{refreshError}</p>
         )}
+
+        <AchievementsPanel variant="self" initialPreviewCount={6} />
 
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">

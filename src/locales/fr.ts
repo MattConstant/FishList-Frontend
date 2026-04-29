@@ -1,4 +1,5 @@
 import about from "./fr/about";
+import achievements from "./fr/achievements";
 import admin from "./fr/admin";
 import catchDict from "./fr/catch";
 import errors from "./fr/errors";
@@ -26,6 +27,7 @@ const fr = {
   ...map,
   ...users,
   ...admin,
+  ...achievements,
   ...errors,
   ...forecast,
 } as const;

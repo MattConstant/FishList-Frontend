@@ -6,21 +6,28 @@ import { useLocale } from "@/contexts/locale-context";
 import {
   ApiHttpError,
   createLocationAndCatch,
+  FISHING_TYPE_OPTIONS,
   getDisplayErrorMessage,
   identifyFishFromImage,
   MAX_IMAGE_UPLOAD_BYTES,
   uploadImage,
   validateImageFileForUpload,
+  WATER_TYPE_OPTIONS,
   type AddCatchPayload,
   type FishEntryPayload,
+  type FishingType,
   type PostVisibility,
+  type WaterType,
 } from "@/lib/api";
+import { inchesToCm, lbsToKg } from "@/lib/units";
 
 type FishRow = {
   id: string;
   species: string;
-  lengthCm: string;
-  weightKg: string;
+  /** Raw imperial input from the user; converted to cm before submission. */
+  lengthIn: string;
+  /** Raw imperial input from the user; converted to kg before submission. */
+  weightLbs: string;
   notes: string;
 };
 
@@ -31,8 +38,8 @@ function createEmptyFishRow(): FishRow {
         ? crypto.randomUUID()
         : `fish-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     species: "",
-    lengthCm: "",
-    weightKg: "",
+    lengthIn: "",
+    weightLbs: "",
     notes: "",
   };
 }
@@ -94,6 +101,8 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
   /** When every selected photo fails to upload — full detail; blocks save and keeps modal open. */
   const [photoUploadDetails, setPhotoUploadDetails] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
+  const [fishingType, setFishingType] = useState<FishingType | "">("");
+  const [waterType, setWaterType] = useState<WaterType | "">("");
   const fileRef = useRef<HTMLInputElement>(null);
   const photoUploadErrorRef = useRef<HTMLDivElement>(null);
 
@@ -215,10 +224,10 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
 
       const fish: FishEntryPayload[] = normalizedRows.map((row) => {
         const line: FishEntryPayload = { species: row.species };
-        const l = parseFloat(row.lengthCm);
-        if (!isNaN(l) && l > 0) line.lengthCm = l;
-        const w = parseFloat(row.weightKg);
-        if (!isNaN(w) && w > 0) line.weightKg = w;
+        const lIn = parseFloat(row.lengthIn);
+        if (!isNaN(lIn) && lIn > 0) line.lengthCm = inchesToCm(lIn);
+        const wLbs = parseFloat(row.weightLbs);
+        if (!isNaN(wLbs) && wLbs > 0) line.weightKg = lbsToKg(wLbs);
         if (row.notes.trim()) line.notes = row.notes.trim();
         return line;
       });
@@ -228,6 +237,9 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
         catchData.imageUrl = imageUrls[0];
         catchData.imageUrls = imageUrls;
       }
+      if (fishingType) {
+        catchData.fishingType = fishingType;
+      }
 
       await createLocationAndCatch(
         {
@@ -236,6 +248,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
           longitude: lng.toFixed(6),
           timeStamp: new Date().toISOString(),
           visibility,
+          ...(waterType ? { waterType } : {}),
         },
         catchData,
       );
@@ -351,6 +364,52 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
             </div>
           </div>
 
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div>
+              <label
+                htmlFor="catch-fishing-type"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                {t("catch.fishingType.label")}
+              </label>
+              <select
+                id="catch-fishing-type"
+                value={fishingType}
+                onChange={(e) => setFishingType(e.target.value as FishingType | "")}
+                className={inputClass}
+              >
+                <option value="">{t("catch.fishingType.placeholder")}</option>
+                {FISHING_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {t(`catch.fishingType.${opt.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="catch-water-type"
+                className="block text-xs font-medium text-zinc-700 dark:text-zinc-300"
+              >
+                {t("catch.waterType.label")}
+              </label>
+              <select
+                id="catch-water-type"
+                value={waterType}
+                onChange={(e) => setWaterType(e.target.value as WaterType | "")}
+                className={inputClass}
+              >
+                <option value="">{t("catch.waterType.placeholder")}</option>
+                {WATER_TYPE_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {t(`catch.waterType.${opt.toLowerCase()}`)}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -412,17 +471,17 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
 
                   <div>
                     <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      {t("catch.fish.lengthCm")}
+                      {t("catch.fish.lengthIn")}
                     </label>
                     <input
                       type="number"
                       min="0"
                       step="0.1"
-                      value={row.lengthCm}
+                      value={row.lengthIn}
                       onChange={(e) =>
                         setFishRows((prev) =>
                           prev.map((r) =>
-                            r.id === row.id ? { ...r, lengthCm: e.target.value } : r,
+                            r.id === row.id ? { ...r, lengthIn: e.target.value } : r,
                           ),
                         )
                       }
@@ -432,17 +491,17 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
 
                   <div>
                     <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                      {t("catch.fish.weightKg")}
+                      {t("catch.fish.weightLbs")}
                     </label>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      value={row.weightKg}
+                      value={row.weightLbs}
                       onChange={(e) =>
                         setFishRows((prev) =>
                           prev.map((r) =>
-                            r.id === row.id ? { ...r, weightKg: e.target.value } : r,
+                            r.id === row.id ? { ...r, weightLbs: e.target.value } : r,
                           ),
                         )
                       }
