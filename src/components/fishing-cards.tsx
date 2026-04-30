@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { useLocale } from "@/contexts/locale-context";
+import { formatAppShortDate } from "@/lib/format-app-locale";
 import {
   getImageUrl,
   type CatchResponse,
@@ -16,18 +17,6 @@ function fishingTypeLabelKey(type: FishingType): string {
 }
 
 const CATCHES_PER_PAGE = 5;
-
-function formatLocationDate(iso: string) {
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
 
 function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
@@ -257,7 +246,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
 }
 
 export function LocationCard({ loc }: { loc: LocationWithCatches }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [catchPage, setCatchPage] = useState(0);
   const totalCatches = loc.catches.length;
@@ -298,7 +287,7 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
             {loc.locationName}
           </p>
           <p className="text-xs text-zinc-500">
-            {formatLocationDate(loc.timeStamp)} · {totalCatches}{" "}
+            {formatAppShortDate(loc.timeStamp, locale)} · {totalCatches}{" "}
             {totalCatches === 1 ? "catch" : "catches"}
           </p>
         </div>

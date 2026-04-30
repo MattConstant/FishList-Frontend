@@ -12,12 +12,13 @@ import {
   type AdminAccountRowResponse,
   type AdminSummaryResponse,
 } from "@/lib/api";
+import { formatAppInteger } from "@/lib/format-app-locale";
 
 const MIN_ACCOUNT_SEARCH_LEN = 2;
 
 export default function AdminPage() {
   const { user, isReady } = useAuth();
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [isAdmin, setIsAdmin] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [error, setError] = useState("");
@@ -127,12 +128,12 @@ export default function AdminPage() {
 
       {summary && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-          <Stat label={t("admin.stats.accounts")} value={summary.totalAccounts} />
-          <Stat label={t("admin.stats.locations")} value={summary.totalLocations} />
-          <Stat label={t("admin.stats.catches")} value={summary.totalCatches} />
-          <Stat label={t("admin.stats.comments")} value={summary.totalComments} />
-          <Stat label={t("admin.stats.likes")} value={summary.totalLikes} />
-          <Stat label={t("admin.stats.friendships")} value={summary.totalFriendships} />
+          <Stat label={t("admin.stats.accounts")} value={summary.totalAccounts} locale={locale} />
+          <Stat label={t("admin.stats.locations")} value={summary.totalLocations} locale={locale} />
+          <Stat label={t("admin.stats.catches")} value={summary.totalCatches} locale={locale} />
+          <Stat label={t("admin.stats.comments")} value={summary.totalComments} locale={locale} />
+          <Stat label={t("admin.stats.likes")} value={summary.totalLikes} locale={locale} />
+          <Stat label={t("admin.stats.friendships")} value={summary.totalFriendships} locale={locale} />
         </div>
       )}
 
@@ -218,12 +219,12 @@ export default function AdminPage() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+function Stat({ label, value, locale }: { label: string; value: number; locale: string }) {
   return (
     <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
       <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
       <p className="mt-1 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
-        {value.toLocaleString()}
+        {formatAppInteger(value, locale)}
       </p>
     </div>
   );

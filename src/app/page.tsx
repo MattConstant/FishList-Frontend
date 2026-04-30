@@ -29,21 +29,12 @@ import {
   type CatchCommentResponse,
   type FeedPost,
 } from "@/lib/api";
+import { formatAppShortDate } from "@/lib/format-app-locale";
 import { formatLengthFromCm, formatWeightFromKg } from "@/lib/units";
 
 const TOP_COMMENTS_LIMIT = 2;
 const COMMENTS_CHUNK_SIZE = 5;
 const FEED_PAGE_SIZE = 24;
-
-function formatDate(iso: string) {
-  const parsed = Date.parse(iso);
-  if (Number.isNaN(parsed)) return iso;
-  return new Date(parsed).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
-}
 
 function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
@@ -62,7 +53,7 @@ const FeedCard = memo(function FeedCard({
   onDeletePost: (postId: string) => void;
   onDeleteError: (message: string) => void;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const cardRef = useRef<HTMLElement | null>(null);
   const [isActive, setIsActive] = useState(false);
   const isOwnPost = currentUserId != null && post.accountId === currentUserId;
@@ -296,7 +287,7 @@ const FeedCard = memo(function FeedCard({
             >
               @{post.username}
             </Link>
-            <p className="text-xs text-zinc-500">{formatDate(post.timeStamp)}</p>
+            <p className="text-xs text-zinc-500">{formatAppShortDate(post.timeStamp, locale)}</p>
           </div>
         </div>
         <div className="flex items-center gap-3">

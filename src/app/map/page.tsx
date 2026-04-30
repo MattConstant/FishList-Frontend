@@ -33,6 +33,7 @@ import {
   CLIENT_PREFS_UPDATED_EVENT,
 } from "@/lib/client-prefs-events";
 import { translateStockingSpecies } from "@/lib/species-i18n";
+import { formatAppInteger } from "@/lib/format-app-locale";
 import { LIO_BATHYMETRY_MIN_ZOOM } from "@/lib/lio-bathymetry";
 import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
 import {
@@ -819,10 +820,10 @@ export default function MapPage() {
           <h1 className="map-page__toolbar-title">Stocked Lakes Map</h1>
           <p className="map-page__toolbar-desc">
             {loading
-              ? `Loading Ontario fish stocking data… ${loaded.toLocaleString()} records`
+              ? `Loading Ontario fish stocking data… ${formatAppInteger(loaded, locale)} records`
               : error
                 ? error
-                : `${records.length.toLocaleString()} stocking records across ${groups.length.toLocaleString()} waterbodies (last 5 years)`}
+                : `${formatAppInteger(records.length, locale)} stocking records across ${formatAppInteger(groups.length, locale)} waterbodies (last 5 years)`}
             {!loading && !error && !placing ? (
               <>
                 {" "}
@@ -1417,7 +1418,7 @@ export default function MapPage() {
                 />
               </svg>
               <p className="map-page__loading-status">
-                {loaded.toLocaleString()} records loaded…
+                {formatAppInteger(loaded, locale)} records loaded…
               </p>
             </div>
           </div>

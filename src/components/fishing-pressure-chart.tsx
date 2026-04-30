@@ -50,7 +50,7 @@ function formatHourLabel(iso: string, timeZone: string, intlLocale: string) {
       minute: "2-digit",
     }).format(new Date(iso));
   } catch {
-    return new Date(iso).toLocaleString();
+    return new Date(iso).toLocaleString(intlLocale);
   }
 }
 

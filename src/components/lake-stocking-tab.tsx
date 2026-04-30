@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
+import { formatAppInteger } from "@/lib/format-app-locale";
 import { translateStockingSpecies } from "@/lib/species-i18n";
 import { LakeAiTipsSection } from "@/components/lake-ai-tips";
 
@@ -25,10 +26,11 @@ export function LakeStockingTab({ group, canUseAi }: Props) {
 
   const tableRows = useMemo(
     () =>
-      [...group.records].sort(
-        (a, b) => b.year - a.year || a.species.localeCompare(b.species),
+      [...group.records].sort((a, b) =>
+        b.year - a.year ||
+        a.species.localeCompare(b.species, locale === "fr" ? "fr" : "en"),
       ),
-    [group.records],
+    [group.records, locale],
   );
 
   return (
@@ -84,7 +86,7 @@ export function LakeStockingTab({ group, canUseAi }: Props) {
                 </td>
                 <td className="px-2 py-1.5 text-center tabular-nums">{r.year}</td>
                 <td className="px-2 py-1.5 text-right tabular-nums">
-                  {r.count.toLocaleString()}
+                  {formatAppInteger(r.count, locale)}
                 </td>
               </tr>
             ))}

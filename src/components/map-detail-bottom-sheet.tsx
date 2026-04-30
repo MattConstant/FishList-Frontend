@@ -6,6 +6,7 @@ import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
+import { formatAppInteger } from "@/lib/format-app-locale";
 
 type MapLakeTab = "stocking" | "forecast";
 type MapPresenceTab = "species" | "forecast";
@@ -56,7 +57,7 @@ export function MapDetailBottomSheet({
   isFavorite,
   onToggleFavorite,
 }: Props) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
   const [presenceTab, setPresenceTab] = useState<MapPresenceTab>("species");
   const presenceSpeciesCount =
@@ -73,7 +74,7 @@ export function MapDetailBottomSheet({
     mode === "lake" && lake
       ? t("forecast.mapLakeSummary", {
           species: lake.speciesSet.size,
-          total: lake.totalFish.toLocaleString(),
+          total: formatAppInteger(lake.totalFish, locale),
         })
       : mode === "presence" && presence
         ? t("forecast.mapPresenceCount", { count: presenceSpeciesCount })

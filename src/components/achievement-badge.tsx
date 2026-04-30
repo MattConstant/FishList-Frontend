@@ -7,6 +7,7 @@ import type {
   AchievementResponse,
 } from "@/lib/api";
 import { AchievementIcon } from "@/components/achievement-icon";
+import { formatAppShortDate } from "@/lib/format-app-locale";
 
 /**
  * Color/glow palette per rarity — applied to the badge frame, glyph, and (when unlocked) the
@@ -51,25 +52,12 @@ function rarityClasses(rarity: AchievementRarity, unlocked: boolean) {
   }
 }
 
-function formatUnlockedAt(iso: string | null | undefined): string {
-  if (!iso) return "";
-  try {
-    return new Date(iso).toLocaleDateString(undefined, {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  } catch {
-    return iso;
-  }
-}
-
 export function AchievementBadge({
   achievement,
 }: {
   achievement: AchievementResponse;
 }) {
-  const { t } = useLocale();
+  const { t, locale } = useLocale();
   const styles = rarityClasses(achievement.rarity, achievement.unlocked);
   const target = Math.max(1, achievement.target);
   const progressPct = Math.min(
@@ -131,7 +119,7 @@ export function AchievementBadge({
           <span className="font-semibold opacity-90">
             {achievement.unlockedAt
               ? t("achievements.unlockedAt", {
-                  date: formatUnlockedAt(achievement.unlockedAt),
+                  date: formatAppShortDate(achievement.unlockedAt, locale),
                 })
               : t("achievements.unlocked")}
           </span>
