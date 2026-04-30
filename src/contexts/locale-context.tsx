@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -25,6 +26,7 @@ type LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
+/** Read saved or browser locale (client only). */
 function getInitialLocale(): Locale {
   if (typeof window === "undefined") return "en";
   try {
@@ -42,17 +44,29 @@ function getInitialLocale(): Locale {
   return "en";
 }
 
+/**
+ * Use a fixed initial locale so server HTML === first client render (avoids hydration errors).
+ * Real preference is applied in `useEffect` on the client only.
+ */
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocale] = useState<Locale>(getInitialLocale);
+  const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
+    const next = getInitialLocale();
+    setLocaleState(next);
+    document.documentElement.lang = next;
+  }, []);
+
+  const setLocale = useCallback((next: Locale) => {
+    setLocaleState(next);
+    if (typeof window === "undefined") return;
     try {
-      localStorage.setItem(LOCALE_KEY, locale);
+      localStorage.setItem(LOCALE_KEY, next);
     } catch {
       // Ignore storage write errors.
     }
-    document.documentElement.lang = locale;
-  }, [locale]);
+    document.documentElement.lang = next;
+  }, []);
 
   const value = useMemo<LocaleContextValue>(() => {
     const dict = dictionaries[locale];
@@ -66,7 +80,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
       });
     };
     return { locale, setLocale, t };
-  }, [locale]);
+  }, [locale, setLocale]);
 
   return (
     <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>

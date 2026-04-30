@@ -35,4 +35,36 @@ export default {
   "profile.pageNext": "Next",
   "profile.pageStatus": "Page {{current}} of {{total}}",
   "profile.morePhotos": "+{{n}} more photos",
+  "profile.prefs.open": "Preferences",
+  "profile.prefs.close": "Close",
+  "profile.prefs.title": "Preferences",
+  "profile.prefs.appearance": "Appearance",
+  "profile.prefs.themeHelp": "Choose light, dark, or match your device.",
+  "profile.prefs.themeGroup": "Color theme",
+  "profile.prefs.themeSystem": "System",
+  "profile.prefs.themeLight": "Light",
+  "profile.prefs.themeDark": "Dark",
+  "profile.prefs.language": "Language",
+  "profile.prefs.languageGroup": "Interface language",
+  "profile.prefs.langEn": "English",
+  "profile.prefs.langFr": "Français",
+  "profile.prefs.mapFish": "Map — stocking fish",
+  "profile.prefs.mapFishHelp":
+    "Choose species you care about. You can start the stocking map with only those species selected.",
+  "profile.prefs.autoFilterLabel":
+    "When I open the map, pre-select only my favorite species (stocking filter)",
+  "profile.prefs.autoFilterHint":
+    "Select at least one species below, or turn this off to start with all species.",
+  "profile.prefs.favoriteSpecies": "Favorite species",
+  "profile.prefs.selectAllSpecies": "Select all",
+  "profile.prefs.clearSpecies": "Clear",
+  "profile.prefs.speciesLoadError": "Could not load species list. Try again later.",
+  "profile.prefs.araMapSection": "Species presence (green fish on map)",
+  "profile.prefs.araMapHelp":
+    "Choose which species show as presence markers when that map layer is on. This is separate from stocking (blue fish).",
+  "profile.prefs.araMapClear": "Clear map filters",
+  "profile.prefs.araTargetsSection": "Target species (presence)",
+  "profile.prefs.araTargetsHelp":
+    "At a waterbody, these species appear first under “Your target species” in the green-fish panel. Leave all off to show a single list.",
+  "profile.prefs.araTargetsClear": "Clear target species",
 } as const;

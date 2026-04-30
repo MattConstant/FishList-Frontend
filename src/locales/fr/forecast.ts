@@ -102,7 +102,11 @@ export default {
     "Espèces de poissons observées dans ce plan d’eau selon les données provinciales. Il s’agit d’une présence — non d’ensemencement ni d’une garantie de disponibilité.",
   "forecast.mapPresenceCount": "{{count}} espèces signalées",
   "forecast.mapPresenceUnknown": "Plan d’eau sans nom",
-  "forecast.mapPresenceEmpty": "Aucune donnée d’espèces pour ce plan d’eau.",
+  "forecast.mapPresenceEmpty": "Aucune donnée d'espèces pour ce plan d'eau.",
+  "forecast.mapPresenceFavHeading": "Vos especes cibles",
+  "forecast.mapPresenceFavNone":
+    "Aucune de vos especes cibles n'apparait dans les donnees pour ce plan d'eau.",
+  "forecast.mapPresenceOtherHeading": "Autres especes signalees",
   "forecast.mapGeohubNote":
     "Les coordonnées GeoHub sont souvent approximatives ; nous essayons d’ancrer l’épingle sur le lac via OpenStreetMap.",
   "forecast.mapDistrict": "District :",
@@ -118,4 +122,5 @@ export default {
     "Les conseils sont généraux — vérifiez toujours la réglementation, les limites et l’accès avant de pêcher.",
   "forecast.areaNameLoading": "Recherche du lieu…",
   "forecast.openInGoogleMaps": "Ouvrir dans Google Maps",
+  "forecast.mapLinkAria": "Voir ce lieu dans Google Maps (nouvel onglet)",
 } as const;

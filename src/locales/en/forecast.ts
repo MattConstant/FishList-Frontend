@@ -100,6 +100,10 @@ export default {
   "forecast.mapPresenceCount": "{{count}} species on record",
   "forecast.mapPresenceUnknown": "Unnamed waterbody",
   "forecast.mapPresenceEmpty": "No species data available for this waterbody.",
+  "forecast.mapPresenceFavHeading": "Your target species",
+  "forecast.mapPresenceFavNone":
+    "None of your target species are listed for this waterbody.",
+  "forecast.mapPresenceOtherHeading": "Other species on record",
   "forecast.mapGeohubNote":
     "GeoHub coordinates are often approximate; we try to snap the pin onto the lake using OpenStreetMap search.",
   "forecast.mapDistrict": "District:",
@@ -115,4 +119,5 @@ export default {
     "Tips are general ideas only — always check Ontario regulations, limits, and access before fishing.",
   "forecast.areaNameLoading": "Finding place name…",
   "forecast.openInGoogleMaps": "Open in Google Maps",
+  "forecast.mapLinkAria": "View this location in Google Maps (opens in a new tab)",
 } as const;

@@ -35,4 +35,36 @@ export default {
   "profile.pageNext": "Suivant",
   "profile.pageStatus": "Page {{current}} sur {{total}}",
   "profile.morePhotos": "+{{n}} photos de plus",
+  "profile.prefs.open": "Reglages",
+  "profile.prefs.close": "Fermer",
+  "profile.prefs.title": "Reglages",
+  "profile.prefs.appearance": "Apparence",
+  "profile.prefs.themeHelp": "Clair, fonce, ou comme l'appareil.",
+  "profile.prefs.themeGroup": "Theme de couleur",
+  "profile.prefs.themeSystem": "Systeme",
+  "profile.prefs.themeLight": "Clair",
+  "profile.prefs.themeDark": "Fonce",
+  "profile.prefs.language": "Langue",
+  "profile.prefs.languageGroup": "Langue de l'interface",
+  "profile.prefs.langEn": "English",
+  "profile.prefs.langFr": "Français",
+  "profile.prefs.mapFish": "Carte — poissons stockes",
+  "profile.prefs.mapFishHelp":
+    "Choisissez les especes qui vous interessent. Vous pouvez ouvrir la carte avec seulement ces especes dans le filtre de stockage.",
+  "profile.prefs.autoFilterLabel":
+    "A l'ouverture de la carte, pre-selectionner seulement mes especes favorites (filtre de stockage)",
+  "profile.prefs.autoFilterHint":
+    "Selectionnez au moins une espece ci-dessous, ou desactivez pour commencer avec toutes les especes.",
+  "profile.prefs.favoriteSpecies": "Especes favorites",
+  "profile.prefs.selectAllSpecies": "Tout selectionner",
+  "profile.prefs.clearSpecies": "Effacer",
+  "profile.prefs.speciesLoadError": "Impossible de charger la liste d'especes. Reessayez plus tard.",
+  "profile.prefs.araMapSection": "Presence des especes (poissons verts sur la carte)",
+  "profile.prefs.araMapHelp":
+    "Choisissez quelles especes apparaissent comme marqueurs de presence quand la couche est active. Ce n'est pas le stockage (poissons bleus).",
+  "profile.prefs.araMapClear": "Effacer filtres carte",
+  "profile.prefs.araTargetsSection": "Especes cibles (presence)",
+  "profile.prefs.araTargetsHelp":
+    "Au bord de l'eau, ces especes s'affichent d'abord sous « Especes cibles » dans le panneau vert. Tout desactiver pour une seule liste.",
+  "profile.prefs.araTargetsClear": "Effacer especes cibles",
 } as const;

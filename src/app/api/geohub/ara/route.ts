@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ARA_FILTER_SUMMARY_NAMES, type AraSpeciesFilter } from "@/lib/ara-fish";
 
 export const runtime = "nodejs";
 
@@ -37,26 +38,12 @@ function geometryCentroid(geometry: EsriPolygon): { lat: number; lng: number } |
   return ringCentroid(geometry.rings[0]);
 }
 
-const SPECIES_SQL_LIKE: Record<string, string[]> = {
-  smallmouth_bass: ["Smallmouth Bass"],
-  largemouth_bass: ["Largemouth Bass"],
-  rock_bass: ["Rock Bass"],
-  northern_pike: ["Northern Pike"],
-  walleye: ["Walleye", "Yellow Pickerel"],
-  muskellunge: ["Muskellunge", "Muskie"],
-  yellow_perch: ["Yellow Perch"],
-  brook_trout: ["Brook Trout"],
-  lake_trout: ["Lake Trout"],
-  rainbow_trout: ["Rainbow Trout"],
-  brown_trout: ["Brown Trout"],
-  black_crappie: ["Black Crappie"],
-};
-
 function buildWhere(speciesKeys: string[]): string {
   const parts: string[] = [];
   for (const key of speciesKeys) {
-    const names = SPECIES_SQL_LIKE[key];
-    if (!names || names.length === 0) continue;
+    if (!(key in ARA_FILTER_SUMMARY_NAMES)) continue;
+    const names = ARA_FILTER_SUMMARY_NAMES[key as AraSpeciesFilter];
+    if (!names.length) continue;
     const clause = names
       .map((name) => `FISH_SPECIES_SUMMARY LIKE '%${name.replace(/'/g, "''")}%'`)
       .join(" OR ");

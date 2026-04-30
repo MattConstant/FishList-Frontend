@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AchievementsPanel } from "@/components/achievements-panel";
 import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
+import { ProfilePreferencesTrigger } from "@/components/profile-preferences-dialog";
 import { LocationCard } from "@/components/fishing-cards";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -271,13 +272,16 @@ export default function ProfilePage() {
               </div>
 
               <div className="flex w-full min-w-0 flex-1 flex-col gap-2.5 pt-3 sm:pt-1">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">
-                    {t("profile.title")}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                    {t("profile.tagline")}
-                  </p>
+                <div className="flex w-full min-w-0 items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-sky-600 dark:text-sky-400">
+                      {t("profile.title")}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+                      {t("profile.tagline")}
+                    </p>
+                  </div>
+                  <ProfilePreferencesTrigger className="self-start" />
                 </div>
 
                 {editingName ? (

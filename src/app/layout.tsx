@@ -49,7 +49,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full min-h-dvh antialiased`}
     >
-      <body className="flex min-h-dvh flex-col font-sans">
+      <body
+        className="flex min-h-dvh flex-col font-sans"
+        suppressHydrationWarning
+      >
         <Providers>
           {/* h-dvh gives main a real height so flex-1 children (e.g. map) don’t collapse to 0 */}
           <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden">

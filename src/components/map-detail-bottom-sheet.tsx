@@ -28,6 +28,8 @@ type Props = {
   onExpandedChange: (expanded: boolean) => void;
   onClose: () => void;
   canUseAi: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
 };
 
 function tabBtnClass(active: boolean) {
@@ -51,6 +53,8 @@ export function MapDetailBottomSheet({
   onExpandedChange,
   onClose,
   canUseAi,
+  isFavorite,
+  onToggleFavorite,
 }: Props) {
   const { t } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
@@ -144,7 +148,39 @@ export function MapDetailBottomSheet({
               {lat.toFixed(4)}, {lng.toFixed(4)}
             </p>
           </div>
-          <div className="flex shrink-0 items-start gap-1">
+          <div className="flex min-w-0 shrink-0 flex-wrap items-start justify-end gap-1">
+            <button
+              type="button"
+              onClick={onToggleFavorite}
+              className={[
+                "map-page__bottom-sheet-icon-btn",
+                isFavorite
+                  ? "map-page__bottom-sheet-favorite--on"
+                  : "text-zinc-400 dark:text-zinc-500",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+              title={
+                isFavorite
+                  ? t("map.favorite.toggleRemove")
+                  : t("map.favorite.toggleAdd")
+              }
+              aria-label={
+                isFavorite
+                  ? t("map.favorite.toggleRemove")
+                  : t("map.favorite.toggleAdd")
+              }
+              aria-pressed={isFavorite}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                className="h-5 w-5"
+                aria-hidden
+                fill="currentColor"
+              >
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+              </svg>
+            </button>
             <button
               type="button"
               onClick={() => onExpandedChange(!expanded)}
@@ -168,21 +204,22 @@ export function MapDetailBottomSheet({
               href={googleMapsHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="map-page__bottom-sheet-icon-btn"
+              className="map-page__bottom-sheet-icon-btn shrink-0 no-underline"
               title={t("forecast.openInGoogleMaps")}
-              aria-label={t("forecast.openInGoogleMaps")}
+              aria-label={t("forecast.mapLinkAria")}
             >
               <svg
-                viewBox="0 0 20 20"
-                fill="currentColor"
                 className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
                 aria-hidden
               >
-                <path
-                  fillRule="evenodd"
-                  d="M5.05 4.05a7 7 0 109.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                  clipRule="evenodd"
-                />
+                <path d="M15 3h4v4M20 2l-5.5 5.5" />
+                <rect x="3" y="9" width="10" height="10" rx="1.2" />
               </svg>
             </a>
             <button

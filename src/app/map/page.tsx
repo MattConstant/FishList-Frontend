@@ -25,7 +25,24 @@ import {
   type AraMapPoint,
   type AraViewport,
 } from "@/lib/ara-fish";
+import {
+  loadAraMapFilterSet,
+  saveAraMapFilterSet,
+} from "@/lib/ara-preferences";
+import {
+  CLIENT_PREFS_UPDATED_EVENT,
+} from "@/lib/client-prefs-events";
 import { translateStockingSpecies } from "@/lib/species-i18n";
+import { LIO_BATHYMETRY_MIN_ZOOM } from "@/lib/lio-bathymetry";
+import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
+import {
+  loadMapFavorites,
+  makeFavoriteSpotId,
+  removeMapFavoriteById,
+  saveMapFavorites,
+  toggleMapFavorite,
+  type FavoriteSpot,
+} from "@/lib/map-favorites";
 
 const StockingMap = dynamic(() => import("@/components/stocking-map"), {
   ssr: false,
@@ -37,6 +54,27 @@ const StockingMap = dynamic(() => import("@/components/stocking-map"), {
 type PendingCatch = { lat: number; lng: number };
 
 const MAP_FILTERS_EXPANDED_KEY = "fishlist-map-filters-expanded";
+const MAP_LAYERS_EXPANDED_KEY = "fishlist-map-layers-expanded";
+
+const EARTH_RADIUS_KM = 6371;
+/** Nearest lake / ARA point must be within this distance to open that sheet; otherwise treat as a plain map tap (forecast). */
+const FAVORITE_MATCH_MAX_KM = 2.5;
+
+function distKm(
+  aLat: number,
+  aLng: number,
+  bLat: number,
+  bLng: number,
+): number {
+  const t1 = (aLat * Math.PI) / 180;
+  const t2 = (bLat * Math.PI) / 180;
+  const dLat = ((bLat - aLat) * Math.PI) / 180;
+  const dLng = ((bLng - aLng) * Math.PI) / 180;
+  const x =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(t1) * Math.cos(t2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(x)));
+}
 
 function segmentBtnClass(on: boolean) {
   return ["map-page__segment-btn", on ? "map-page__segment-btn--active" : ""]
@@ -114,10 +152,16 @@ export default function MapPage() {
 
   const [showStocking, setShowStocking] = useState(true);
   const [showAra, setShowAra] = useState(false);
+  const [showCatches, setShowCatches] = useState(true);
+  const [showBathymetry, setShowBathymetry] = useState(false);
   const [satelliteImagery, setSatelliteImagery] = useState(false);
+  const [layersPanelExpanded, setLayersPanelExpanded] = useState(true);
+  const skipLayersExpandedSave = useRef(true);
+  const [favoriteSpots, setFavoriteSpots] = useState<FavoriteSpot[]>([]);
   const [presenceSpecies, setPresenceSpecies] = useState<Set<AraSpeciesFilter>>(
     () => new Set(ARA_SPECIES_FILTERS),
   );
+  const skipNextAraSave = useRef(false);
   const [araPoints, setAraPoints] = useState<AraMapPoint[]>([]);
   const [araLoading, setAraLoading] = useState(false);
   const [araTooWide, setAraTooWide] = useState(false);
@@ -128,6 +172,9 @@ export default function MapPage() {
     try {
       if (localStorage.getItem(MAP_FILTERS_EXPANDED_KEY) === "true") {
         setFiltersExpanded(true);
+      }
+      if (localStorage.getItem(MAP_LAYERS_EXPANDED_KEY) === "false") {
+        setLayersPanelExpanded(false);
       }
     } catch {
       /* ignore */
@@ -147,6 +194,44 @@ export default function MapPage() {
   }, [filtersExpanded]);
 
   useEffect(() => {
+    if (skipLayersExpandedSave.current) {
+      skipLayersExpandedSave.current = false;
+      return;
+    }
+    try {
+      localStorage.setItem(MAP_LAYERS_EXPANDED_KEY, String(layersPanelExpanded));
+    } catch {
+      /* ignore */
+    }
+  }, [layersPanelExpanded]);
+
+  useEffect(() => {
+    setFavoriteSpots(loadMapFavorites());
+  }, []);
+
+  useEffect(() => {
+    skipNextAraSave.current = true;
+    setPresenceSpecies(loadAraMapFilterSet());
+  }, []);
+
+  useEffect(() => {
+    if (skipNextAraSave.current) {
+      skipNextAraSave.current = false;
+      return;
+    }
+    saveAraMapFilterSet(presenceSpecies);
+  }, [presenceSpecies]);
+
+  useEffect(() => {
+    function onClientPrefs() {
+      skipNextAraSave.current = true;
+      setPresenceSpecies(loadAraMapFilterSet());
+    }
+    window.addEventListener(CLIENT_PREFS_UPDATED_EVENT, onClientPrefs);
+    return () => window.removeEventListener(CLIENT_PREFS_UPDATED_EVENT, onClientPrefs);
+  }, []);
+
+  useEffect(() => {
     let cancelled = false;
 
     async function load() {
@@ -161,7 +246,7 @@ export default function MapPage() {
         setSpecies(sp);
         setDistricts(allDistricts(data));
         setDevelopmentalStages(allDevelopmentalStages(data));
-        setActiveSpecies(new Set(sp));
+        setActiveSpecies(initialActiveSpeciesFromPreferences(sp));
       } catch (e) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to load data");
@@ -450,8 +535,98 @@ export default function MapPage() {
       name: payload.name,
       speciesSummary: payload.species,
     });
-    setSheetExpanded(true);
+    setSheetExpanded(false);
   }, []);
+
+  const handleFavoriteSpotClick = useCallback(
+    (f: FavoriteSpot) => {
+      let bestLake: { d: number; g: WaterbodyGroup } | null = null;
+      for (const g of groups) {
+        const d = distKm(f.lat, f.lng, g.lat, g.lng);
+        if (!bestLake || d < bestLake.d) bestLake = { d, g };
+      }
+      let bestAra: { d: number; a: AraMapPoint } | null = null;
+      for (const a of araPoints) {
+        const d = distKm(f.lat, f.lng, a.lat, a.lng);
+        if (!bestAra || d < bestAra.d) bestAra = { d, a };
+      }
+      const lakeOk = bestLake && bestLake.d <= FAVORITE_MATCH_MAX_KM;
+      const araOk = bestAra && bestAra.d <= FAVORITE_MATCH_MAX_KM;
+      if (lakeOk && araOk && bestLake && bestAra) {
+        if (bestLake.d <= bestAra.d) {
+          setMapSheet({
+            mode: "lake",
+            group: bestLake.g,
+            lat: f.lat,
+            lng: f.lng,
+          });
+        } else {
+          setMapSheet({
+            mode: "presence",
+            lat: f.lat,
+            lng: f.lng,
+            name: bestAra.a.name,
+            speciesSummary: bestAra.a.species,
+          });
+        }
+      } else if (lakeOk && bestLake) {
+        setMapSheet({
+          mode: "lake",
+          group: bestLake.g,
+          lat: f.lat,
+          lng: f.lng,
+        });
+      } else if (araOk && bestAra) {
+        setMapSheet({
+          mode: "presence",
+          lat: f.lat,
+          lng: f.lng,
+          name: bestAra.a.name,
+          speciesSummary: bestAra.a.species,
+        });
+      } else {
+        setMapSheet({ mode: "forecast", lat: f.lat, lng: f.lng });
+      }
+      setSheetExpanded(false);
+    },
+    [groups, araPoints],
+  );
+
+  const currentSheetFavoriteId = useMemo(() => {
+    if (!mapSheet) return null;
+    return makeFavoriteSpotId(mapSheet.lat, mapSheet.lng);
+  }, [mapSheet]);
+
+  const currentSheetIsFavorite = useMemo(
+    () =>
+      currentSheetFavoriteId != null &&
+      favoriteSpots.some((f) => f.id === currentSheetFavoriteId),
+    [favoriteSpots, currentSheetFavoriteId],
+  );
+
+  const currentSheetLabelForFavorite = useMemo(() => {
+    if (!mapSheet) return "";
+    if (mapSheet.mode === "lake") return mapSheet.group.waterbody;
+    if (mapSheet.mode === "presence")
+      return mapSheet.name.trim() || t("forecast.mapPresenceUnknown");
+    if (mapSheet.mode === "forecast" && forecastAreaLabel)
+      return forecastAreaLabel;
+    return t("map.favorite.forecastDefaultName");
+  }, [mapSheet, forecastAreaLabel, t]);
+
+  const handleToggleMapFavorite = useCallback(() => {
+    if (!mapSheet) return;
+    setFavoriteSpots((prev) => {
+      const next = toggleMapFavorite(
+        prev,
+        mapSheet.lat,
+        mapSheet.lng,
+        currentSheetLabelForFavorite,
+      );
+      saveMapFavorites(next);
+      return next;
+    });
+  }, [mapSheet, currentSheetLabelForFavorite]);
 
   /** Forecast pin only for “tap map for forecast” — not when a stocking marker is selected (avoids covering the fish icon). */
   const forecastPin = useMemo(() => {
@@ -498,6 +673,47 @@ export default function MapPage() {
     setMapSheet(null);
     setSheetExpanded(false);
   }, []);
+
+  const handleRemoveFavoriteFromList = useCallback((id: string) => {
+    setFavoriteSpots((prev) => {
+      const next = removeMapFavoriteById(prev, id);
+      saveMapFavorites(next);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (pendingCatch) {
+        setPendingCatch(null);
+        e.preventDefault();
+        return;
+      }
+      if (placing) {
+        setPlacing(false);
+        e.preventDefault();
+        return;
+      }
+      if (lakeSuggestionsOpen) {
+        setLakeSuggestionsOpen(false);
+        e.preventDefault();
+        return;
+      }
+      if (mapSheet) {
+        closeMapSheet();
+        e.preventDefault();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [
+    pendingCatch,
+    placing,
+    lakeSuggestionsOpen,
+    mapSheet,
+    closeMapSheet,
+  ]);
 
   function handleLogCatchClick() {
     if (!user) return;
@@ -919,24 +1135,9 @@ export default function MapPage() {
                     </span>
                   </span>
                 </div>
-                <div className="map-page__filter-toggle-block">
-                  <label className="map-page__filter-toggle-row cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="map-page__filter-check"
-                      checked={showStocking}
-                      onChange={(e) => setShowStocking(e.target.checked)}
-                    />
-                    <span className="map-page__filter-toggle-text">
-                      <span className="map-page__filter-toggle-name">
-                        {t("map.layer.showOnMap")}
-                      </span>
-                      <span className="map-page__filter-toggle-blurb">
-                        {t("map.mnrf.toggleBlurb")}
-                      </span>
-                    </span>
-                  </label>
-                </div>
+                {!showStocking ? (
+                  <p className="map-page__filter-layer-hint">{t("map.layers.hintEnableStocking")}</p>
+                ) : null}
 
                 {showStocking ? (
                   <>
@@ -1133,24 +1334,9 @@ export default function MapPage() {
                     </span>
                   </span>
                 </div>
-                <div className="map-page__filter-toggle-block">
-                  <label className="map-page__filter-toggle-row cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="map-page__filter-check"
-                      checked={showAra}
-                      onChange={(e) => setShowAra(e.target.checked)}
-                    />
-                    <span className="map-page__filter-toggle-text">
-                      <span className="map-page__filter-toggle-name">
-                        {t("map.layer.showOnMap")}
-                      </span>
-                      <span className="map-page__filter-toggle-blurb">
-                        {t("map.ara.toggleBlurb")}
-                      </span>
-                    </span>
-                  </label>
-                </div>
+                {!showAra ? (
+                  <p className="map-page__filter-layer-hint">{t("map.layers.hintEnablePresence")}</p>
+                ) : null}
 
                 {showAra ? (
                   <div className="map-page__filter-substack" aria-live="polite">
@@ -1251,7 +1437,7 @@ export default function MapPage() {
           placing={placing}
           forecastPin={forecastPin}
           onStockingLakeClick={handleStockingLakeClick}
-          catchMarkers={catchMarkers}
+          catchMarkers={showCatches ? catchMarkers : []}
           catchScope={catchScope}
           friendIds={friendIds}
           currentUserId={user?.id}
@@ -1260,25 +1446,156 @@ export default function MapPage() {
           onViewportChange={loadAra}
           satelliteImagery={satelliteImagery}
           searchPin={lakeSearchPin}
+          bathymetryEnabled={showBathymetry}
+          favoriteSpots={favoriteSpots}
+          onFavoriteSpotClick={handleFavoriteSpotClick}
         />
         <div
-          className="map-page__map-basemap"
-          role="group"
-          aria-label={t("map.basemap.section")}
-          title={t("map.basemap.satelliteBlurb")}
+          className="map-page__layers-panel"
+          role="region"
+          aria-label={t("map.layers.title")}
         >
-          <label className="map-page__map-basemap-label" htmlFor="map-satellite-toggle">
-            <input
-              id="map-satellite-toggle"
-              type="checkbox"
-              className="map-page__map-basemap-check"
-              checked={satelliteImagery}
-              onChange={(e) => setSatelliteImagery(e.target.checked)}
-            />
-            <span className="map-page__map-basemap-text">
-              {t("map.basemap.satellite")}
-            </span>
-          </label>
+          <div className="map-page__layers-panel-head">
+            <span className="map-page__layers-panel-title">{t("map.layers.title")}</span>
+            <button
+              type="button"
+              className="map-page__layers-chevron"
+              aria-expanded={layersPanelExpanded}
+              aria-controls="map-layers-panel-body"
+              onClick={() => setLayersPanelExpanded((v) => !v)}
+              title={
+                layersPanelExpanded ? t("map.layers.collapse") : t("map.layers.expand")
+              }
+            >
+              <svg
+                viewBox="0 0 20 20"
+                fill="currentColor"
+                className={`h-5 w-5 transition-transform ${layersPanelExpanded ? "" : "-rotate-90"}`}
+                aria-hidden
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+          {layersPanelExpanded ? (
+            <div className="map-page__layers-panel-body" id="map-layers-panel-body">
+              <label className="map-page__layers-row" htmlFor="map-layer-satellite">
+                <input
+                  id="map-layer-satellite"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={satelliteImagery}
+                  onChange={(e) => setSatelliteImagery(e.target.checked)}
+                  title={t("map.basemap.satelliteBlurb")}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">{t("map.layers.satellite")}</span>
+                  <span className="map-page__layers-blurb">{t("map.basemap.satelliteBlurb")}</span>
+                </span>
+              </label>
+              <label className="map-page__layers-row" htmlFor="map-layer-stocking">
+                <input
+                  id="map-layer-stocking"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={showStocking}
+                  onChange={(e) => setShowStocking(e.target.checked)}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">{t("map.layers.stocking")}</span>
+                  <span className="map-page__layers-blurb">{t("map.layers.stockingBlurb")}</span>
+                </span>
+              </label>
+              <label className="map-page__layers-row" htmlFor="map-layer-presence">
+                <input
+                  id="map-layer-presence"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={showAra}
+                  onChange={(e) => setShowAra(e.target.checked)}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">{t("map.layers.presence")}</span>
+                  <span className="map-page__layers-blurb">{t("map.layers.presenceBlurb")}</span>
+                </span>
+              </label>
+              <label className="map-page__layers-row" htmlFor="map-layer-catches">
+                <input
+                  id="map-layer-catches"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={showCatches}
+                  onChange={(e) => setShowCatches(e.target.checked)}
+                  disabled={!user}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">{t("map.layers.catches")}</span>
+                  <span className="map-page__layers-blurb">
+                    {!user ? t("map.layers.catchesLogin") : t("map.layers.catchesBlurb")}
+                  </span>
+                </span>
+              </label>
+              <div>
+                <label className="map-page__layers-row" htmlFor="map-layer-bathy">
+                  <input
+                    id="map-layer-bathy"
+                    type="checkbox"
+                    className="map-page__layers-check"
+                    checked={showBathymetry}
+                    onChange={(e) => setShowBathymetry(e.target.checked)}
+                  />
+                  <span className="map-page__layers-text">
+                    <span className="map-page__layers-name">{t("map.layers.bathymetry")}</span>
+                    <span className="map-page__layers-blurb">{t("map.layers.bathymetryBlurb")}</span>
+                  </span>
+                </label>
+                {showBathymetry ? (
+                  <p className="map-page__layers-note">
+                    {t("map.layers.bathymetryZoomNote", { zoom: LIO_BATHYMETRY_MIN_ZOOM })}
+                  </p>
+                ) : null}
+              </div>
+              {favoriteSpots.length > 0 ? (
+                <div className="map-page__favorites-list">
+                  <p className="map-page__favorites-list-title">
+                    {t("map.favorites.listHeading")}
+                  </p>
+                  <ul className="map-page__favorites-list-ul" role="list">
+                    {favoriteSpots.map((f) => (
+                      <li key={f.id} className="map-page__favorites-list-item">
+                        <span className="map-page__favorites-list-label" title={f.label}>
+                          {f.label}
+                        </span>
+                        <button
+                          type="button"
+                          className="map-page__favorites-list-remove"
+                          onClick={() => handleRemoveFavoriteFromList(f.id)}
+                          aria-label={t("map.favorites.removeFromList", { name: f.label })}
+                        >
+                          <svg
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="h-4 w-4"
+                            aria-hidden
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         {mapSheet && !placing ? (
           <MapDetailBottomSheet
@@ -1308,6 +1625,8 @@ export default function MapPage() {
             onExpandedChange={setSheetExpanded}
             onClose={closeMapSheet}
             canUseAi={!!user}
+            isFavorite={currentSheetIsFavorite}
+            onToggleFavorite={handleToggleMapFavorite}
           />
         ) : null}
         <div className="map-page__legend" role="group" aria-label={t("map.legend.title")}>
@@ -1327,6 +1646,14 @@ export default function MapPage() {
           <div className="map-page__legend-item">
             <span className="map-page__legend-icon map-page__legend-icon--search" />
             {t("map.legend.search")}
+          </div>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--favorite" />
+            {t("map.legend.favorite")}
+          </div>
+          <div className="map-page__legend-item">
+            <span className="map-page__legend-icon map-page__legend-icon--depth" />
+            {t("map.legend.depth")}
           </div>
         </div>
       </div>

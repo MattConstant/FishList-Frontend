@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLangThemeGroup } from "@/components/nav-lang-theme-group";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
@@ -32,11 +32,9 @@ export function NavBar() {
   const { user, isReady, isAdmin } = useAuth();
   const { t } = useLocale();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [pathnameForMenu, setPathnameForMenu] = useState(pathname);
-  if (pathname !== pathnameForMenu) {
-    setPathnameForMenu(pathname);
+  useEffect(() => {
     setMobileMenuOpen(false);
-  }
+  }, [pathname]);
 
   const linkClass = (href: string) => {
     const active = pathname === href;

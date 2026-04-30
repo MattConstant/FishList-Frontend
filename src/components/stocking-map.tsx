@@ -10,9 +10,91 @@ import type { FishEntryPayload } from "@/lib/api";
 import { waterbodyGroupKey, type WaterbodyGroup } from "@/lib/geohub";
 import { refineLakePin } from "@/lib/lake-geocode";
 import type { AraMapPoint, AraViewport } from "@/lib/ara-fish";
+import {
+  LIO_BATHYMETRY_FEATURE_LAYER_URL,
+  LIO_BATHYMETRY_MIN_ZOOM,
+} from "@/lib/lio-bathymetry";
+import type { FavoriteSpot } from "@/lib/map-favorites";
 
 const ONTARIO_CENTER: [number, number] = [49.5, -85.0];
 const DEFAULT_ZOOM = 5;
+
+/** GeoJSON-ish contour feature from esri-leaflet `createfeature` / `removefeature`. */
+type BathyContourFeature = {
+  id?: number | string;
+  properties?: { DEPTH?: number | string; OBJECTID?: number; [k: string]: unknown };
+  geometry?: {
+    type?: string;
+    coordinates?: unknown;
+  };
+};
+
+function bathyFeatureKey(f: BathyContourFeature): string | number | null {
+  if (f.id != null && f.id !== "") return f.id;
+  const oid = f.properties?.OBJECTID;
+  return oid != null ? oid : null;
+}
+
+function bathyLabelLatLng(f: BathyContourFeature): L.LatLng | null {
+  const g = f.geometry;
+  const coords = g?.coordinates;
+  if (!coords || !g?.type) return null;
+
+  if (g.type === "LineString" && Array.isArray(coords)) {
+    const c = coords as [number, number][];
+    if (c.length === 0) return null;
+    const mid = Math.floor(c.length / 2);
+    return L.latLng(c[mid][1], c[mid][0]);
+  }
+
+  if (g.type === "MultiLineString" && Array.isArray(coords)) {
+    const lines = coords as [number, number][][];
+    let best: [number, number][] | null = null;
+    let bestLen = 0;
+    for (const line of lines) {
+      if (line.length > bestLen) {
+        bestLen = line.length;
+        best = line;
+      }
+    }
+    if (!best?.length) return null;
+    const mid = Math.floor(best.length / 2);
+    return L.latLng(best[mid][1], best[mid][0]);
+  }
+
+  return null;
+}
+
+/** LIO `DEPTH` is in metres; labels show US feet. */
+const METERS_TO_FEET = 3.280839895013123;
+
+function bathyDepthLabelText(depth: unknown): string | null {
+  const meters =
+    typeof depth === "number"
+      ? depth
+      : typeof depth === "string"
+        ? parseFloat(depth)
+        : NaN;
+  if (!Number.isFinite(meters)) return null;
+  const ft = meters * METERS_TO_FEET;
+  const rounded = Math.round(ft * 10) / 10;
+  const s = Number.isInteger(rounded) ? String(Math.round(rounded)) : rounded.toFixed(1);
+  return `${s} ft`;
+}
+
+function bathyDepthDivIcon(text: string): L.DivIcon {
+  const safe = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+  return L.divIcon({
+    className: "map-page__bathy-depth",
+    html: `<span>${safe}</span>`,
+    iconSize: [1, 1],
+    iconAnchor: [0, 0],
+  });
+}
 
 /** Same fish silhouette as stocking markers; only {@link bodyFill} changes for catches vs stocking. */
 const FISH_BODY_PATH =
@@ -31,6 +113,17 @@ function fishMarkerDataUrl(bodyFill: string): string {
 const FISH_SVG_STOCKING = fishMarkerDataUrl("#0369a1");
 /** ARA (species presence) — emerald, distinct from stocking. */
 const FISH_SVG_ARA = fishMarkerDataUrl("#059669");
+
+const FAVORITE_HEART_ICON = L.icon({
+  iconUrl: `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28">` +
+      `<path fill="#f43f5e" stroke="#fff" stroke-width="1.2" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>` +
+      `</svg>`,
+  )}`,
+  iconSize: [28, 28],
+  iconAnchor: [14, 14],
+  popupAnchor: [0, -12],
+});
 
 function fishIcon(): L.Icon {
   return L.icon({
@@ -135,6 +228,12 @@ type StockingMapProps = {
   satelliteImagery?: boolean;
   /** User-searched waterbody pin (independent from stocking layers). */
   searchPin?: { lat: number; lng: number; label?: string } | null;
+  /** Ontario LIO bathymetry contours (ArcGIS dynamic layer); appears when zoomed in. */
+  bathymetryEnabled?: boolean;
+  /** Locally saved favorite spots (heart on map at rounded coords). */
+  favoriteSpots?: FavoriteSpot[];
+  /** Heart marker clicked — open the same detail flow as a lake/forecast tap at this spot. */
+  onFavoriteSpotClick?: (spot: FavoriteSpot) => void;
 };
 
 export default function StockingMap({
@@ -153,6 +252,9 @@ export default function StockingMap({
   onViewportChange,
   satelliteImagery = false,
   searchPin = null,
+  bathymetryEnabled = false,
+  favoriteSpots = [],
+  onFavoriteSpotClick,
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -162,6 +264,7 @@ export default function StockingMap({
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const araLayerRef = useRef<L.LayerGroup | null>(null);
+  const favoriteLayerRef = useRef<L.LayerGroup | null>(null);
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
   /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster). */
@@ -171,6 +274,8 @@ export default function StockingMap({
   onStockingLakeClickRef.current = onStockingLakeClick;
   const onAraMarkerClickRef = useRef(onAraMarkerClick);
   onAraMarkerClickRef.current = onAraMarkerClick;
+  const onFavoriteSpotClickRef = useRef(onFavoriteSpotClick);
+  onFavoriteSpotClickRef.current = onFavoriteSpotClick;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -235,6 +340,110 @@ export default function StockingMap({
       if (!map.hasLayer(osm)) map.addLayer(osm);
     }
   }, [satelliteImagery]);
+
+  const bathyLayerRef = useRef<L.Layer | null>(null);
+  const bathyZoomHandlerRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    function detachBathymetry() {
+      const m = mapRef.current;
+      const lyr = bathyLayerRef.current;
+      if (lyr && m?.hasLayer(lyr)) m.removeLayer(lyr);
+      bathyLayerRef.current = null;
+    }
+
+    function clearBathyZoomHandlers() {
+      const m = mapRef.current;
+      const h = bathyZoomHandlerRef.current;
+      if (h && m) {
+        m.off("zoomend", h);
+        m.off("zoom", h);
+      }
+      bathyZoomHandlerRef.current = null;
+    }
+
+    if (!bathymetryEnabled) {
+      clearBathyZoomHandlers();
+      detachBathymetry();
+      return;
+    }
+
+    let cancelled = false;
+
+    void import("esri-leaflet").then((esri) => {
+      if (cancelled || !mapRef.current) return;
+
+      const labelById = new Map<string | number, L.Marker>();
+      const labelsLayer = L.layerGroup();
+
+      const featureLayer = esri.featureLayer({
+        url: LIO_BATHYMETRY_FEATURE_LAYER_URL,
+        fields: ["OBJECTID", "DEPTH"],
+        style() {
+          return { color: "#ffaa00", weight: 1, opacity: 0.85 };
+        },
+      });
+
+      featureLayer.on("createfeature", (e: L.LeafletEvent) => {
+        if (cancelled) return;
+        const f = (e as unknown as { feature: BathyContourFeature }).feature;
+        const key = bathyFeatureKey(f);
+        const pos = bathyLabelLatLng(f);
+        const text = bathyDepthLabelText(f.properties?.DEPTH);
+        if (key == null || pos == null || text == null) return;
+        if (labelById.has(key)) return;
+
+        const marker = L.marker(pos, {
+          icon: bathyDepthDivIcon(text),
+          interactive: false,
+          zIndexOffset: 800,
+        });
+        marker.addTo(labelsLayer);
+        labelById.set(key, marker);
+      });
+
+      featureLayer.on("removefeature", (e: L.LeafletEvent) => {
+        const f = (e as unknown as { feature: BathyContourFeature }).feature;
+        const key = bathyFeatureKey(f);
+        if (key == null) return;
+        const marker = labelById.get(key);
+        if (marker) {
+          labelsLayer.removeLayer(marker);
+          labelById.delete(key);
+        }
+      });
+
+      const group = L.layerGroup([featureLayer, labelsLayer]);
+      if (cancelled || !mapRef.current) return;
+
+      bathyLayerRef.current = group;
+
+      const syncZoom = () => {
+        const m = mapRef.current;
+        const lyr = bathyLayerRef.current;
+        if (!m || !lyr) return;
+        if (m.getZoom() >= LIO_BATHYMETRY_MIN_ZOOM) {
+          if (!m.hasLayer(lyr)) lyr.addTo(m);
+        } else if (m.hasLayer(lyr)) {
+          m.removeLayer(lyr);
+        }
+      };
+
+      bathyZoomHandlerRef.current = syncZoom;
+      map.on("zoomend", syncZoom);
+      map.on("zoom", syncZoom);
+      syncZoom();
+    });
+
+    return () => {
+      cancelled = true;
+      clearBathyZoomHandlers();
+      detachBathymetry();
+    };
+  }, [bathymetryEnabled]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -555,6 +764,39 @@ export default function StockingMap({
     layer.addTo(map);
     araLayerRef.current = layer;
   }, [araMarkers]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (favoriteLayerRef.current) {
+      map.removeLayer(favoriteLayerRef.current);
+      favoriteLayerRef.current = null;
+    }
+    if (favoriteSpots.length === 0) return;
+
+    const layer = L.layerGroup();
+    for (const f of favoriteSpots) {
+      const m = L.marker([f.lat, f.lng], {
+        icon: FAVORITE_HEART_ICON,
+        zIndexOffset: 2000,
+        bubblingMouseEvents: false,
+      });
+      m.bindTooltip(f.label, {
+        direction: "top",
+        offset: L.point(0, -12),
+        opacity: 1,
+        className: "map-page__stocking-tooltip",
+      });
+      m.on("click", (e: L.LeafletMouseEvent) => {
+        L.DomEvent.stop(e);
+        onFavoriteSpotClickRef.current?.(f);
+      });
+      layer.addLayer(m);
+    }
+    layer.addTo(map);
+    favoriteLayerRef.current = layer;
+  }, [favoriteSpots]);
 
   useEffect(() => {
     const map = mapRef.current;

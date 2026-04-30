@@ -175,6 +175,10 @@
   @apply text-xs text-zinc-500 dark:text-zinc-400;
 }
 
+.map-page__filter-layer-hint {
+  @apply mt-1.5 text-[0.7rem] leading-snug text-sky-800/90 dark:text-sky-300/85;
+}
+
 .map-page__filter-species-row {
   @apply flex flex-wrap items-center gap-1.5;
 }
@@ -264,9 +268,50 @@
   cursor: crosshair;
 }
 
-/* Basemap (satellite) — always on top of the map, below the bottom sheet. */
-.map-page__map-basemap {
-  @apply pointer-events-auto absolute right-2 top-2 z-[1200] sm:right-3 sm:top-3;
+/* Map layers (basemap, vector overlays) — top-right on the map, below the bottom sheet. */
+.map-page__layers-panel {
+  @apply pointer-events-auto absolute right-2 top-2 z-[1200] flex max-w-[min(19rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white/95 text-sm shadow-md backdrop-blur-sm sm:right-3 sm:top-3 dark:border-zinc-600/90 dark:bg-zinc-900/95;
+}
+
+.map-page__layers-panel-head {
+  @apply flex items-center justify-between gap-2 border-b border-zinc-100/90 px-2.5 py-1.5 dark:border-zinc-800/80;
+}
+
+.map-page__layers-panel-title {
+  @apply pl-0.5 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+}
+
+.map-page__layers-chevron {
+  @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700;
+}
+
+.map-page__layers-panel-body {
+  @apply flex max-h-[min(60vh,22rem)] flex-col gap-2 overflow-y-auto px-2.5 py-2;
+}
+
+.map-page__layers-row {
+  @apply flex cursor-pointer items-start gap-2 rounded-lg px-0.5 py-0.5 transition hover:bg-zinc-50/80 dark:hover:bg-zinc-800/50;
+}
+
+.map-page__layers-check {
+  @apply mt-0.5 h-3.5 w-3.5 shrink-0 rounded border border-zinc-300 text-sky-600 focus:ring-sky-500/30 dark:border-zinc-500;
+  accent-color: #0284c7;
+}
+
+.map-page__layers-text {
+  @apply flex min-w-0 flex-1 flex-col gap-0;
+}
+
+.map-page__layers-name {
+  @apply text-[0.8rem] font-medium leading-tight text-zinc-800 dark:text-zinc-100;
+}
+
+.map-page__layers-blurb {
+  @apply text-[0.65rem] leading-snug text-zinc-500 dark:text-zinc-500;
+}
+
+.map-page__layers-note {
+  @apply pl-1 text-[0.6rem] leading-tight text-amber-800/90 dark:text-amber-300/85;
 }
 
 .map-page__lake-pin-form {
@@ -347,17 +392,16 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 36' width='32' height='38'%3E%3Cpath d='M12 0C5.4 0 0 5.2 0 11.6 0 20.4 12 36 12 36s12-15.6 12-24.4C24 5.2 18.6 0 12 0z' fill='%237c3aed' stroke='%23fff' stroke-width='1.5'/%3E%3Ccircle cx='12' cy='11.5' r='4.5' fill='%23fff'/%3E%3C/svg%3E");
 }
 
-.map-page__map-basemap-label {
-  @apply flex cursor-pointer items-center gap-2 rounded-xl border border-zinc-200/90 bg-white/95 px-2.5 py-1.5 text-sm font-medium text-zinc-800 shadow-md backdrop-blur-sm dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-100;
+.map-page__legend-icon--favorite {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f43f5e' stroke='%23fff' stroke-width='0.5' d='M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z'/%3E%3C/svg%3E");
+  @apply h-4 w-4;
 }
 
-.map-page__map-basemap-check {
-  @apply h-4 w-4 rounded border-zinc-300 text-sky-600 focus:ring-2 focus:ring-sky-500/30 dark:border-zinc-500 dark:focus:ring-sky-400/30;
+.map-page__legend-icon--depth {
+  @apply h-1 w-5 shrink-0 rounded-sm bg-amber-500;
+  background-image: none;
 }
 
-.map-page__map-basemap-text {
-  @apply select-none whitespace-nowrap;
-}
 
 /* Stocking fish markers — compact lake name on hover (Leaflet tooltip). */
 .map-page__stocking-tooltip.leaflet-tooltip {
@@ -373,6 +417,27 @@
 }
 .dark .map-page__stocking-tooltip.leaflet-tooltip-top::before {
   border-top-color: rgba(39, 39, 42, 0.95) !important;
+}
+
+/* Bathymetry depth labels (LIO FeatureLayer) */
+.map-page__bathy-depth {
+  @apply border-0 bg-transparent;
+  box-shadow: none;
+}
+.map-page__bathy-depth span {
+  @apply block -translate-x-1/2 -translate-y-1/2 text-[9px] font-bold leading-none text-amber-950;
+  text-shadow:
+    0 0 2px #fff,
+    0 0 4px #fff,
+    0 0 2px #fff;
+  white-space: nowrap;
+  pointer-events: none;
+}
+.dark .map-page__bathy-depth span {
+  @apply text-amber-200;
+  text-shadow:
+    0 0 2px #0a0a0a,
+    0 0 4px #0a0a0a;
 }
 
 .map-page__loading-overlay {
@@ -417,6 +482,34 @@
 
 .map-page__bottom-sheet-icon-btn {
   @apply flex h-9 w-9 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100;
+}
+
+.map-page__bottom-sheet-favorite--on {
+  @apply text-rose-500 hover:text-rose-600;
+}
+
+.map-page__favorites-list {
+  @apply mt-2 border-t border-zinc-100 pt-2 dark:border-zinc-800;
+}
+
+.map-page__favorites-list-title {
+  @apply mb-1.5 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400;
+}
+
+.map-page__favorites-list-ul {
+  @apply flex max-h-40 flex-col gap-1 overflow-y-auto pr-0.5;
+}
+
+.map-page__favorites-list-item {
+  @apply flex min-h-0 items-center gap-1.5;
+}
+
+.map-page__favorites-list-label {
+  @apply min-w-0 flex-1 truncate text-xs text-zinc-700 dark:text-zinc-200;
+}
+
+.map-page__favorites-list-remove {
+  @apply flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:text-zinc-500 dark:hover:bg-rose-950/50 dark:hover:text-rose-400;
 }
 
 .map-page__bottom-sheet-tabs {
