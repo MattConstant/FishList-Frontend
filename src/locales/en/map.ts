@@ -18,6 +18,9 @@ export default {
     "Ontario LIO bathymetry lines where surveyed — not for navigation.",
   "map.layers.bathymetryZoomNote":
     "Drawn when zoomed to level {{zoom}} or closer. Not every lake has data.",
+  "map.layers.legend": "Map legend",
+  "map.layers.legendBlurb":
+    "Show the corner key for pins, search, favorites, and depth lines.",
   "map.layers.hintEnableStocking":
     "Turn on “MNRF stocking” in Map layers (above the map) to show markers and use these filters.",
   "map.layers.hintEnablePresence":
@@ -71,6 +74,7 @@ export default {
   "map.favorite.forecastDefaultName": "Map location",
   "map.favorite.toggleAdd": "Save this spot to the map",
   "map.favorite.toggleRemove": "Remove from saved spots",
+  "map.favorite.loginRequiredShort": "Log in to add favorites.",
   "map.favorites.listHeading": "Your saved spots",
   "map.favorites.removeFromList": "Remove “{{name}}” from saved spots",
   "map.form.waterbody": "Waterbody name",

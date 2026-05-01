@@ -436,9 +436,64 @@ export async function searchAccounts(query: string): Promise<AccountResponse[]> 
   );
 }
 
+
+export type MapFavoriteSpotResponseDto = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  spotKey: string;
+  label: string;
+  createdAtEpochMs: number;
+};
+
+/** Normalizes backend map bookmark payload for UI + Leaflet markers. */
+export function mapFavoriteSpotDtoToFavorite(
+  row: MapFavoriteSpotResponseDto,
+): import("@/lib/map-favorites").FavoriteSpot {
+  type F = import("@/lib/map-favorites").FavoriteSpot;
+  return {
+    id: String(row.id),
+    lat: row.latitude,
+    lng: row.longitude,
+    label: row.label,
+    createdAt: Number.isFinite(row.createdAtEpochMs) ? row.createdAtEpochMs : Date.now(),
+  } satisfies F;
+}
+
+export async function fetchMyMapFavorites(): Promise<
+  import("@/lib/map-favorites").FavoriteSpot[]
+> {
+  const rows = await authJson<MapFavoriteSpotResponseDto[]>(
+    "/api/accounts/me/map-favorites",
+  );
+  return rows.map(mapFavoriteSpotDtoToFavorite);
+}
+
+export async function createMapFavorite(body: {
+  latitude: number;
+  longitude: number;
+  label: string;
+}): Promise<MapFavoriteSpotResponseDto> {
+  return authJson<MapFavoriteSpotResponseDto>(
+    "/api/accounts/me/map-favorites",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function deleteMapFavorite(serverId: number): Promise<void> {
+  await authVoid(`/api/accounts/me/map-favorites/${serverId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function fetchMyFriends(): Promise<AccountResponse[]> {
   return authJson<AccountResponse[]>("/api/accounts/me/friends");
 }
+
 
 type AddFriendApiResponse = {
   friend: AccountResponse;
@@ -480,15 +535,25 @@ export async function fetchAdminSummary(): Promise<AdminSummaryResponse> {
   return authJson<AdminSummaryResponse>("/api/admin/summary");
 }
 
-export async function fetchAdminAccounts(
-  query = "",
-  limit = 50,
-): Promise<AdminAccountRowResponse[]> {
+export type AdminAccountPageResponse = {
+  content: AdminAccountRowResponse[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+};
+
+export async function fetchAdminAccountsPage(
+  query: string,
+  page: number,
+  size: number,
+): Promise<AdminAccountPageResponse> {
   const params = new URLSearchParams({
     query,
-    limit: String(limit),
+    page: String(page),
+    size: String(size),
   });
-  return authJson<AdminAccountRowResponse[]>(
+  return authJson<AdminAccountPageResponse>(
     `/api/admin/accounts?${params.toString()}`,
   );
 }

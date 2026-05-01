@@ -1,5 +1,6 @@
 /**
- * Map “favorite spots” — stored locally (no account required).
+ * Map bookmark helpers — snapping matches the backend (five decimals).
+ * Logged-in users sync favorites via the API; local cache is migration-only.
  */
 const STORAGE_KEY = "fishlist-map-favorite-spots";
 

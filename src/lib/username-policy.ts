@@ -2,8 +2,8 @@
  * Client-side username checks (preview before API). Keep banned substring list aligned with
  * {@code FishList/.../UsernamePolicy.java} DEFAULT_BANNED_SUBSTRINGS.
  *
- * Set NEXT_PUBLIC_RESERVED_USERNAMES to the same comma-separated names as ADMIN_USERNAME on the API
- * so reserved admin names are rejected in the UI (server still enforces).
+ * Set NEXT_PUBLIC_ADMIN_USERNAME and/or NEXT_PUBLIC_RESERVED_USERNAMES (comma-separated) to match
+ * {@code app.admin.usernames} / {@code app.admin.reserved-usernames} on the API (server still enforces).
  */
 
 import { ApiHttpError } from "@/lib/api";
@@ -2738,12 +2738,17 @@ export const USERNAME_DEFAULT_BANNED_SUBSTRINGS = [
 ] as const;
 
 function reservedAdminNamesLowercase(): string[] {
+  const set = new Set<string>();
+  const adminSingle = process.env.NEXT_PUBLIC_ADMIN_USERNAME?.trim();
+  if (adminSingle) set.add(adminSingle.toLowerCase());
   const raw = process.env.NEXT_PUBLIC_RESERVED_USERNAMES?.trim();
-  if (!raw) return [];
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
+  if (raw) {
+    for (const part of raw.split(",")) {
+      const t = part.trim().toLowerCase();
+      if (t) set.add(t);
+    }
+  }
+  return [...set];
 }
 
 export type UsernameClientIssue = "reserved" | "inappropriate";

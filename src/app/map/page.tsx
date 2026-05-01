@@ -8,7 +8,16 @@ import CatchForm from "@/components/catch-form";
 import { MapDetailBottomSheet } from "@/components/map-detail-bottom-sheet";
 import { useLocale } from "@/contexts/locale-context";
 import type { CatchMapMarker } from "@/components/stocking-map";
-import { fetchLatestPosts, fetchMyFriends, getImageUrl, type FishEntryPayload } from "@/lib/api";
+import {
+  createMapFavorite,
+  deleteMapFavorite,
+  fetchLatestPosts,
+  fetchMyFriends,
+  fetchMyMapFavorites,
+  getImageUrl,
+  mapFavoriteSpotDtoToFavorite,
+  type FishEntryPayload,
+} from "@/lib/api";
 import {
   allDevelopmentalStages,
   allDistricts,
@@ -35,13 +44,13 @@ import {
 import { translateStockingSpecies } from "@/lib/species-i18n";
 import { formatAppInteger } from "@/lib/format-app-locale";
 import { LIO_BATHYMETRY_MIN_ZOOM } from "@/lib/lio-bathymetry";
+import { haversineDistanceKm } from "@/lib/geo-distance";
 import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
+import { useSyncedBooleanPref } from "@/lib/use-synced-boolean-pref";
 import {
   loadMapFavorites,
   makeFavoriteSpotId,
-  removeMapFavoriteById,
   saveMapFavorites,
-  toggleMapFavorite,
   type FavoriteSpot,
 } from "@/lib/map-favorites";
 
@@ -56,26 +65,10 @@ type PendingCatch = { lat: number; lng: number };
 
 const MAP_FILTERS_EXPANDED_KEY = "fishlist-map-filters-expanded";
 const MAP_LAYERS_EXPANDED_KEY = "fishlist-map-layers-expanded";
+const MAP_LEGEND_VISIBLE_KEY = "fishlist-map-show-legend";
 
-const EARTH_RADIUS_KM = 6371;
 /** Nearest lake / ARA point must be within this distance to open that sheet; otherwise treat as a plain map tap (forecast). */
 const FAVORITE_MATCH_MAX_KM = 2.5;
-
-function distKm(
-  aLat: number,
-  aLng: number,
-  bLat: number,
-  bLng: number,
-): number {
-  const t1 = (aLat * Math.PI) / 180;
-  const t2 = (bLat * Math.PI) / 180;
-  const dLat = ((bLat - aLat) * Math.PI) / 180;
-  const dLng = ((bLng - aLng) * Math.PI) / 180;
-  const x =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(t1) * Math.cos(t2) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
-  return 2 * EARTH_RADIUS_KM * Math.asin(Math.min(1, Math.sqrt(x)));
-}
 
 function segmentBtnClass(on: boolean) {
   return ["map-page__segment-btn", on ? "map-page__segment-btn--active" : ""]
@@ -148,16 +141,24 @@ export default function MapPage() {
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("mine");
-  const [filtersExpanded, setFiltersExpanded] = useState(false);
-  const skipFiltersExpandedSave = useRef(true);
+  const [filtersExpanded, setFiltersExpanded] = useSyncedBooleanPref(
+    MAP_FILTERS_EXPANDED_KEY,
+    "off-unless-true",
+  );
+  const [layersPanelExpanded, setLayersPanelExpanded] = useSyncedBooleanPref(
+    MAP_LAYERS_EXPANDED_KEY,
+    "on-unless-false",
+  );
+  const [showMapLegend, setShowMapLegend] = useSyncedBooleanPref(
+    MAP_LEGEND_VISIBLE_KEY,
+    "on-unless-false",
+  );
 
   const [showStocking, setShowStocking] = useState(true);
   const [showAra, setShowAra] = useState(false);
   const [showCatches, setShowCatches] = useState(true);
   const [showBathymetry, setShowBathymetry] = useState(false);
   const [satelliteImagery, setSatelliteImagery] = useState(false);
-  const [layersPanelExpanded, setLayersPanelExpanded] = useState(true);
-  const skipLayersExpandedSave = useRef(true);
   const [favoriteSpots, setFavoriteSpots] = useState<FavoriteSpot[]>([]);
   const [presenceSpecies, setPresenceSpecies] = useState<Set<AraSpeciesFilter>>(
     () => new Set(ARA_SPECIES_FILTERS),
@@ -170,45 +171,45 @@ export default function MapPage() {
   const araFetchGen = useRef(0);
 
   useEffect(() => {
-    try {
-      if (localStorage.getItem(MAP_FILTERS_EXPANDED_KEY) === "true") {
-        setFiltersExpanded(true);
-      }
-      if (localStorage.getItem(MAP_LAYERS_EXPANDED_KEY) === "false") {
-        setLayersPanelExpanded(false);
-      }
-    } catch {
-      /* ignore */
-    }
-  }, []);
-
-  useEffect(() => {
-    if (skipFiltersExpandedSave.current) {
-      skipFiltersExpandedSave.current = false;
+    if (!user) {
+      setFavoriteSpots([]);
       return;
     }
-    try {
-      localStorage.setItem(MAP_FILTERS_EXPANDED_KEY, String(filtersExpanded));
-    } catch {
-      /* ignore */
-    }
-  }, [filtersExpanded]);
 
-  useEffect(() => {
-    if (skipLayersExpandedSave.current) {
-      skipLayersExpandedSave.current = false;
-      return;
-    }
-    try {
-      localStorage.setItem(MAP_LAYERS_EXPANDED_KEY, String(layersPanelExpanded));
-    } catch {
-      /* ignore */
-    }
-  }, [layersPanelExpanded]);
+    let cancelled = false;
 
-  useEffect(() => {
-    setFavoriteSpots(loadMapFavorites());
-  }, []);
+    async function hydrateFavorites(): Promise<FavoriteSpot[]> {
+      try {
+        const legacy = loadMapFavorites();
+        if (legacy.length > 0) {
+          for (const spot of legacy) {
+            try {
+              await createMapFavorite({
+                latitude: spot.lat,
+                longitude: spot.lng,
+                label: spot.label,
+              });
+            } catch {
+              /* ignore single-spot failures */
+            }
+          }
+          saveMapFavorites([]);
+        }
+        return await fetchMyMapFavorites();
+      } catch {
+        return [];
+      }
+    }
+
+    void (async () => {
+      const list = await hydrateFavorites();
+      if (!cancelled) setFavoriteSpots(list);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   useEffect(() => {
     skipNextAraSave.current = true;
@@ -543,12 +544,12 @@ export default function MapPage() {
     (f: FavoriteSpot) => {
       let bestLake: { d: number; g: WaterbodyGroup } | null = null;
       for (const g of groups) {
-        const d = distKm(f.lat, f.lng, g.lat, g.lng);
+        const d = haversineDistanceKm(f.lat, f.lng, g.lat, g.lng);
         if (!bestLake || d < bestLake.d) bestLake = { d, g };
       }
       let bestAra: { d: number; a: AraMapPoint } | null = null;
       for (const a of araPoints) {
-        const d = distKm(f.lat, f.lng, a.lat, a.lng);
+        const d = haversineDistanceKm(f.lat, f.lng, a.lat, a.lng);
         if (!bestAra || d < bestAra.d) bestAra = { d, a };
       }
       const lakeOk = bestLake && bestLake.d <= FAVORITE_MATCH_MAX_KM;
@@ -601,7 +602,10 @@ export default function MapPage() {
   const currentSheetIsFavorite = useMemo(
     () =>
       currentSheetFavoriteId != null &&
-      favoriteSpots.some((f) => f.id === currentSheetFavoriteId),
+      favoriteSpots.some(
+        (f) =>
+          makeFavoriteSpotId(f.lat, f.lng) === currentSheetFavoriteId,
+      ),
     [favoriteSpots, currentSheetFavoriteId],
   );
 
@@ -616,18 +620,44 @@ export default function MapPage() {
   }, [mapSheet, forecastAreaLabel, t]);
 
   const handleToggleMapFavorite = useCallback(() => {
-    if (!mapSheet) return;
-    setFavoriteSpots((prev) => {
-      const next = toggleMapFavorite(
-        prev,
-        mapSheet.lat,
-        mapSheet.lng,
-        currentSheetLabelForFavorite,
-      );
-      saveMapFavorites(next);
-      return next;
-    });
-  }, [mapSheet, currentSheetLabelForFavorite]);
+    if (!mapSheet || !user) return;
+    const spotKey = makeFavoriteSpotId(mapSheet.lat, mapSheet.lng);
+    const snapshot = favoriteSpots;
+    const existing = snapshot.find(
+      (f) => makeFavoriteSpotId(f.lat, f.lng) === spotKey,
+    );
+
+    void (async () => {
+      try {
+        if (existing) {
+          await deleteMapFavorite(Number.parseInt(existing.id, 10));
+          setFavoriteSpots((prev) =>
+            prev.filter((f) => f.id !== existing.id),
+          );
+        } else {
+          const row = await createMapFavorite({
+            latitude: mapSheet.lat,
+            longitude: mapSheet.lng,
+            label: currentSheetLabelForFavorite,
+          });
+          const added = mapFavoriteSpotDtoToFavorite(row);
+          setFavoriteSpots((prev) => {
+            const withoutDup = prev.filter(
+              (f) => makeFavoriteSpotId(f.lat, f.lng) !== spotKey,
+            );
+            return [added, ...withoutDup];
+          });
+        }
+      } catch {
+        /* unauthorized / offline — silent */
+      }
+    })();
+  }, [
+    mapSheet,
+    user,
+    favoriteSpots,
+    currentSheetLabelForFavorite,
+  ]);
 
   /** Forecast pin only for “tap map for forecast” — not when a stocking marker is selected (avoids covering the fish icon). */
   const forecastPin = useMemo(() => {
@@ -675,13 +705,22 @@ export default function MapPage() {
     setSheetExpanded(false);
   }, []);
 
-  const handleRemoveFavoriteFromList = useCallback((id: string) => {
-    setFavoriteSpots((prev) => {
-      const next = removeMapFavoriteById(prev, id);
-      saveMapFavorites(next);
-      return next;
-    });
-  }, []);
+  const handleRemoveFavoriteFromList = useCallback(
+    (id: string) => {
+      if (!user) return;
+      const serverId = Number.parseInt(id, 10);
+      if (!Number.isFinite(serverId)) return;
+      void (async () => {
+        try {
+          await deleteMapFavorite(serverId);
+          setFavoriteSpots((prev) => prev.filter((f) => f.id !== id));
+        } catch {
+          /* ignore */
+        }
+      })();
+    },
+    [user],
+  );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -1471,7 +1510,7 @@ export default function MapPage() {
               <svg
                 viewBox="0 0 20 20"
                 fill="currentColor"
-                className={`h-5 w-5 transition-transform ${layersPanelExpanded ? "" : "-rotate-90"}`}
+                className={`h-5 w-5 transition-transform ${layersPanelExpanded ? "rotate-180" : ""}`}
                 aria-hidden
               >
                 <path
@@ -1560,6 +1599,19 @@ export default function MapPage() {
                   </p>
                 ) : null}
               </div>
+              <label className="map-page__layers-row" htmlFor="map-layer-legend">
+                <input
+                  id="map-layer-legend"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={showMapLegend}
+                  onChange={(e) => setShowMapLegend(e.target.checked)}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">{t("map.layers.legend")}</span>
+                  <span className="map-page__layers-blurb">{t("map.layers.legendBlurb")}</span>
+                </span>
+              </label>
               {favoriteSpots.length > 0 ? (
                 <div className="map-page__favorites-list">
                   <p className="map-page__favorites-list-title">
@@ -1626,37 +1678,40 @@ export default function MapPage() {
             onExpandedChange={setSheetExpanded}
             onClose={closeMapSheet}
             canUseAi={!!user}
+            favoriteEnabled={!!user}
             isFavorite={currentSheetIsFavorite}
             onToggleFavorite={handleToggleMapFavorite}
           />
         ) : null}
-        <div className="map-page__legend" role="group" aria-label={t("map.legend.title")}>
-          <p className="map-page__legend-title">{t("map.legend.title")}</p>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--stocking" />
-            {t("map.legend.stocking")}
+        {showMapLegend ? (
+          <div className="map-page__legend" role="group" aria-label={t("map.legend.title")}>
+            <p className="map-page__legend-title">{t("map.legend.title")}</p>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--stocking" />
+              {t("map.legend.stocking")}
+            </div>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--presence" />
+              {t("map.legend.presence")}
+            </div>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--catch" />
+              {t("map.legend.catch")}
+            </div>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--search" />
+              {t("map.legend.search")}
+            </div>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--favorite" />
+              {t("map.legend.favorite")}
+            </div>
+            <div className="map-page__legend-item">
+              <span className="map-page__legend-icon map-page__legend-icon--depth" />
+              {t("map.legend.depth")}
+            </div>
           </div>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--presence" />
-            {t("map.legend.presence")}
-          </div>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--catch" />
-            {t("map.legend.catch")}
-          </div>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--search" />
-            {t("map.legend.search")}
-          </div>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--favorite" />
-            {t("map.legend.favorite")}
-          </div>
-          <div className="map-page__legend-item">
-            <span className="map-page__legend-icon map-page__legend-icon--depth" />
-            {t("map.legend.depth")}
-          </div>
-        </div>
+        ) : null}
       </div>
 
       {/* Catch registration form */}

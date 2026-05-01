@@ -18,6 +18,9 @@ export default {
     "Lignes bathymétriques LIO de l’Ontario (lacs levés) — pas pour la navigation.",
   "map.layers.bathymetryZoomNote":
     "Affichage à partir du niveau de zoom {{zoom}}. Pas toutes les données pour tous les lacs.",
+  "map.layers.legend": "Légende",
+  "map.layers.legendBlurb":
+    "Afficher la légende (coins de la carte) pour les marqueurs et symboles.",
   "map.layers.hintEnableStocking":
     "Activez « Ensemencement MNRF » dans Couches (au-dessus de la carte) pour voir les marqueurs.",
   "map.layers.hintEnablePresence":
@@ -75,6 +78,7 @@ export default {
   "map.favorite.forecastDefaultName": "Emplacement sur la carte",
   "map.favorite.toggleAdd": "Enregistrer ce lieu sur la carte",
   "map.favorite.toggleRemove": "Retirer des lieux enregistres",
+  "map.favorite.loginRequiredShort": "Connectez-vous pour ajouter des favoris.",
   "map.favorites.listHeading": "Vos lieux enregistrés",
   "map.favorites.removeFromList": "Retirer «{{name}}» des lieux enregistrés",
   "map.form.waterbody": "Nom du plan d’eau",

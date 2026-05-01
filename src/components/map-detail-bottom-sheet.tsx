@@ -29,6 +29,7 @@ type Props = {
   onExpandedChange: (expanded: boolean) => void;
   onClose: () => void;
   canUseAi: boolean;
+  favoriteEnabled?: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
 };
@@ -54,6 +55,7 @@ export function MapDetailBottomSheet({
   onExpandedChange,
   onClose,
   canUseAi,
+  favoriteEnabled = true,
   isFavorite,
   onToggleFavorite,
 }: Props) {
@@ -150,38 +152,50 @@ export function MapDetailBottomSheet({
             </p>
           </div>
           <div className="flex min-w-0 shrink-0 flex-wrap items-start justify-end gap-1">
-            <button
-              type="button"
-              onClick={onToggleFavorite}
-              className={[
-                "map-page__bottom-sheet-icon-btn",
-                isFavorite
-                  ? "map-page__bottom-sheet-favorite--on"
-                  : "text-zinc-400 dark:text-zinc-500",
-              ]
-                .filter(Boolean)
-                .join(" ")}
+            <span
+              className="inline-flex shrink-0"
               title={
-                isFavorite
-                  ? t("map.favorite.toggleRemove")
-                  : t("map.favorite.toggleAdd")
+                !favoriteEnabled
+                  ? t("map.favorite.loginRequiredShort")
+                  : isFavorite
+                    ? t("map.favorite.toggleRemove")
+                    : t("map.favorite.toggleAdd")
               }
-              aria-label={
-                isFavorite
-                  ? t("map.favorite.toggleRemove")
-                  : t("map.favorite.toggleAdd")
-              }
-              aria-pressed={isFavorite}
             >
-              <svg
-                viewBox="0 0 24 24"
-                className="h-5 w-5"
-                aria-hidden
-                fill="currentColor"
+              <button
+                type="button"
+                disabled={!favoriteEnabled}
+                onClick={() => favoriteEnabled && onToggleFavorite()}
+                className={[
+                  "map-page__bottom-sheet-icon-btn",
+                  !favoriteEnabled
+                    ? "cursor-not-allowed opacity-35"
+                    : isFavorite
+                      ? "map-page__bottom-sheet-favorite--on"
+                      : "text-zinc-400 dark:text-zinc-500",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+                aria-label={
+                  !favoriteEnabled
+                    ? t("map.favorite.loginRequiredShort")
+                    : isFavorite
+                      ? t("map.favorite.toggleRemove")
+                      : t("map.favorite.toggleAdd")
+                }
+                aria-pressed={favoriteEnabled ? isFavorite : undefined}
+                aria-disabled={!favoriteEnabled}
               >
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
-              </svg>
-            </button>
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-5 w-5"
+                  aria-hidden
+                  fill="currentColor"
+                >
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              </button>
+            </span>
             <button
               type="button"
               onClick={() => onExpandedChange(!expanded)}
