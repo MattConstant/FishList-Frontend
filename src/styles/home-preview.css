@@ -1,5 +1,93 @@
-/* Home preview carousel — stacked “photos” (see HomePreviewCarousel) */
-@keyframes fishlist-preview-front-next {
+/* Home preview carousel - stacked “photos” (see HomePreviewCarousel) */
+
+/* Behind-the-front layers: transforms scale down on narrow widths so stacks stay tidy on resize. */
+.fishlist-preview-deck-layer {
+  pointer-events: none;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: min(92%, 24rem);
+  max-width: 100%;
+  transform-origin: center center;
+  transition:
+    transform 700ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fishlist-preview-deck-layer--back {
+  z-index: 0;
+  opacity: 0.76;
+  transform: translate(-50%, calc(-50% + 0.42rem)) rotate(-4deg) scale(0.91);
+}
+
+.fishlist-preview-deck-layer--mid {
+  z-index: 5;
+  opacity: 0.88;
+  width: min(96%, 25rem);
+  transform: translate(-50%, calc(-50% + 0.26rem)) rotate(4deg) scale(0.955);
+}
+
+@media (min-width: 480px) {
+  .fishlist-preview-deck-layer--back {
+    opacity: 0.78;
+    transform: translate(-50%, calc(-50% + 1rem)) rotate(-6deg) scale(0.9);
+  }
+
+  .fishlist-preview-deck-layer--mid {
+    opacity: 0.9;
+    transform: translate(-50%, calc(-50% + 0.55rem)) rotate(5deg) scale(0.945);
+  }
+}
+
+@media (min-width: 640px) {
+  .fishlist-preview-deck-layer--back {
+    transform: translate(-50%, calc(-50% + 1.35rem)) rotate(-7deg) scale(0.89);
+  }
+
+  .fishlist-preview-deck-layer--mid {
+    transform: translate(-50%, calc(-50% + 0.72rem)) rotate(6deg) scale(0.945);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fishlist-preview-deck-layer {
+    width: min(92%, 26rem);
+  }
+
+  .fishlist-preview-deck-layer--back {
+    transform: translate(-50%, calc(-50% + 1.65rem)) rotate(-7deg) scale(0.89);
+  }
+
+  .fishlist-preview-deck-layer--mid {
+    width: min(96%, 27rem);
+    transform: translate(-50%, calc(-50% + 0.85rem)) rotate(6deg) scale(0.945);
+  }
+}
+
+/* Smaller motion on narrow viewports; full motion from `sm` up. */
+@keyframes fishlist-preview-front-next-sm {
+  from {
+    opacity: 0;
+    transform: translate3d(16px, 18px, 0) rotate(4deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-0.35deg) scale(1);
+  }
+}
+
+@keyframes fishlist-preview-front-prev-sm {
+  from {
+    opacity: 0;
+    transform: translate3d(-16px, 18px, 0) rotate(-6deg) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(-0.35deg) scale(1);
+  }
+}
+
+@keyframes fishlist-preview-front-next-lg {
   from {
     opacity: 0;
     transform: translate3d(40px, 32px, 0) rotate(6deg) scale(0.86);
@@ -10,7 +98,7 @@
   }
 }
 
-@keyframes fishlist-preview-front-prev {
+@keyframes fishlist-preview-front-prev-lg {
   from {
     opacity: 0;
     transform: translate3d(-40px, 32px, 0) rotate(-10deg) scale(0.86);
@@ -22,16 +110,121 @@
 }
 
 .fishlist-preview-front-next {
-  animation: fishlist-preview-front-next 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fishlist-preview-front-next-sm 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .fishlist-preview-front-prev {
-  animation: fishlist-preview-front-prev 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: fishlist-preview-front-prev-sm 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  .fishlist-preview-front-next {
+    animation: fishlist-preview-front-next-lg 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .fishlist-preview-front-prev {
+    animation: fishlist-preview-front-prev-lg 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+/* Viewport for the stack: width-driven min-height (not vh) so resize/orientation changes stay balanced. */
+.fishlist-preview-stack {
+  --fishlist-preview-card-w: min(100%, 17.5rem);
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: min(100%, 28rem);
+  /* ~ card header/footer + 4:5 image at card width + room for deck offset */
+  min-height: calc(var(--fishlist-preview-card-w) * 1.22 + 2.75rem);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 0.75rem;
+  padding-bottom: 1.25rem;
+}
+
+@media (min-width: 480px) {
+  .fishlist-preview-stack {
+    --fishlist-preview-card-w: min(100%, 20rem);
+    padding-top: 1rem;
+    padding-bottom: 1.5rem;
+  }
+}
+
+@media (min-width: 640px) {
+  .fishlist-preview-stack {
+    --fishlist-preview-card-w: min(100%, 22.5rem);
+    min-height: calc(var(--fishlist-preview-card-w) * 1.2 + 3rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fishlist-preview-stack {
+    --fishlist-preview-card-w: min(100%, 24rem);
+  }
+}
+
+/* Left-align the deck block (landing page); keeps ~card-width column hugging the start edge. */
+.fishlist-preview-stack--align-start {
+  margin-left: 0;
+  margin-right: auto;
+  justify-content: flex-start;
+}
+
+/* Tighter when the carousel sits in the hero column */
+.fishlist-preview-stack--hero {
+  min-height: calc(var(--fishlist-preview-card-w) * 1.14 + 2.25rem);
+  padding-top: 0.5rem;
+  padding-bottom: 1rem;
+}
+
+@media (min-width: 640px) {
+  .fishlist-preview-stack--hero {
+    min-height: calc(var(--fishlist-preview-card-w) * 1.16 + 2.75rem);
+    padding-top: 0.75rem;
+    padding-bottom: 1.35rem;
+  }
+}
+
+/* Landing: larger cards + IG-style actions/likes - match widths to `CARD_LANDING_W_CLASS` in TS */
+.fishlist-preview-stack--rich {
+  --fishlist-preview-card-w: min(100%, 19rem);
+  max-width: min(100%, 34rem);
+  min-height: calc(var(--fishlist-preview-card-w) * 1.28 + 6.25rem);
+  padding-top: 0.75rem;
+  padding-bottom: 1.35rem;
+}
+
+@media (min-width: 480px) {
+  .fishlist-preview-stack--rich {
+    --fishlist-preview-card-w: min(100%, 22rem);
+  }
+}
+
+@media (min-width: 640px) {
+  .fishlist-preview-stack--rich {
+    --fishlist-preview-card-w: min(100%, 24rem);
+  }
+
+  .fishlist-preview-stack--rich.fishlist-preview-stack--hero {
+    min-height: calc(var(--fishlist-preview-card-w) * 1.26 + 6.75rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .fishlist-preview-stack--rich {
+    --fishlist-preview-card-w: min(100%, 26rem);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .fishlist-preview-front-next,
   .fishlist-preview-front-prev {
     animation: none !important;
+  }
+
+  .fishlist-preview-deck-layer {
+    transition: none !important;
   }
 }

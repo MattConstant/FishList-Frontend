@@ -18,7 +18,7 @@ export function UserAvatar({
   label,
   size = "md",
   className = "",
-  /** When true (default), wait until near the viewport before calling the API — avoids a flood of requests when many avatars mount (e.g. feed). */
+  /** When true (default), wait until near the viewport before calling the API - avoids a flood of requests when many avatars mount (e.g. feed). */
   loadWhenVisible = true,
 }: {
   accountId: number;

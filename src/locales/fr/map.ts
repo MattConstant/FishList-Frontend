@@ -7,15 +7,15 @@ export default {
   "map.layers.expand": "Développer la liste des couches",
   "map.layers.satellite": "Fond satellite",
   "map.layers.stocking": "Ensemencement MNRF",
-  "map.layers.stockingBlurb": "Épingles bleues — ensemencements.",
+  "map.layers.stockingBlurb": "Épingles bleues : ensemencements.",
   "map.layers.presence": "Présence des espèces",
-  "map.layers.presenceBlurb": "Épingles vertes — données provinciales (ARA).",
+  "map.layers.presenceBlurb": "Épingles vertes : données provinciales (ARA).",
   "map.layers.catches": "Prises publiées",
   "map.layers.catchesBlurb": "Photos et marqueurs du fil.",
   "map.layers.catchesLogin": "Connectez-vous pour charger les prises du fil.",
   "map.layers.bathymetry": "Courbes de profondeur",
   "map.layers.bathymetryBlurb":
-    "Lignes bathymétriques LIO de l’Ontario (lacs levés) — pas pour la navigation.",
+    "Lignes bathymétriques LIO de l’Ontario (lacs levés); pas pour la navigation.",
   "map.layers.bathymetryZoomNote":
     "Affichage à partir du niveau de zoom {{zoom}}. Pas toutes les données pour tous les lacs.",
   "map.layers.legend": "Légende",

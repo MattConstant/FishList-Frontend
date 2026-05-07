@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 
 const NOMINATIM_REVERSE = "https://nominatim.openstreetmap.org/reverse";
 const USER_AGENT =
-  "FishList/1.0 (https://github.com; map area label — contact via site)";
+  "FishList/1.0 (https://github.com; map area label, contact via site)";
 
 type NominatimAddress = {
   lake?: string;
@@ -51,7 +51,7 @@ function labelFromAddress(a: NominatimAddress, displayName: string | undefined):
   return (parts.join(" · ") + tail).slice(0, 140);
 }
 
-/** Reverse geocode for map picker — short label for the bottom sheet title. */
+/** Reverse geocode for map picker: short label for the bottom sheet title. */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const lat = Number(searchParams.get("lat"));

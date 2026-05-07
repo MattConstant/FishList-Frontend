@@ -1,4 +1,4 @@
-/* Login — full-bleed backdrop (shared signed-in + sign-in views). */
+/* Login - full-bleed backdrop (shared signed-in + sign-in views). */
 .login-page__backdrop {
   background-image:
     linear-gradient(rgba(15, 23, 42, 0.6), rgba(15, 23, 42, 0.6)),

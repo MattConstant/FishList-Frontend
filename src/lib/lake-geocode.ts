@@ -1,9 +1,9 @@
 /**
  * Refines GeoHub’s approximate stocking coordinates using OpenStreetMap Nominatim
- * (via same-origin proxy — see /api/geocode/lake).
+ * (via same-origin proxy - see /api/geocode/lake).
  */
 
-/** Bump when server geocode logic changes — avoids stale bad pins in-session. */
+/** Bump when server geocode logic changes - avoids stale bad pins in-session. */
 const CLIENT_CACHE_VER = 4;
 const mem = new Map<string, { lat: number; lng: number } | "miss">();
 

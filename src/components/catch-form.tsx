@@ -64,6 +64,65 @@ type CatchFormProps = {
 
 const ACCEPTED = ".jpg,.jpeg,.png,.gif,.webp,.heic";
 const MAX_FILES = 4;
+// If an image is “camera large”, optimize it client-side before upload so it reliably renders later.
+// This avoids common hosting/proxy issues where multi‑MB images time out or exceed response limits.
+const OPTIMIZE_MIN_BYTES = 2 * 1024 * 1024; // 2 MB
+const OPTIMIZE_MAX_DIM = 1920;
+const OPTIMIZE_JPEG_QUALITY = 0.82;
+
+function fileBaseName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) return "image";
+  const dot = trimmed.lastIndexOf(".");
+  return dot > 0 ? trimmed.slice(0, dot) : trimmed;
+}
+
+async function optimizeImageForUploadIfNeeded(file: File): Promise<File> {
+  if (file.size < OPTIMIZE_MIN_BYTES) return file;
+  const type = (file.type ?? "").toLowerCase();
+  // Keep GIFs as-is (re-encoding would break animation).
+  if (type === "image/gif") return file;
+
+  // Some formats (notably HEIC) may not be decodable in all browsers; fall back to original.
+  try {
+    // Prefer createImageBitmap when available (faster + avoids layout).
+    const bmp =
+      typeof createImageBitmap !== "undefined"
+        ? await createImageBitmap(file)
+        : null;
+
+    const srcW = bmp ? bmp.width : 0;
+    const srcH = bmp ? bmp.height : 0;
+    if (!bmp || !srcW || !srcH) return file;
+
+    const scale = Math.min(1, OPTIMIZE_MAX_DIM / Math.max(srcW, srcH));
+    const dstW = Math.max(1, Math.round(srcW * scale));
+    const dstH = Math.max(1, Math.round(srcH * scale));
+
+    const canvas = document.createElement("canvas");
+    canvas.width = dstW;
+    canvas.height = dstH;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return file;
+    ctx.drawImage(bmp, 0, 0, dstW, dstH);
+
+    const blob: Blob = await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (b) => (b ? resolve(b) : reject(new Error("Could not encode image"))),
+        "image/jpeg",
+        OPTIMIZE_JPEG_QUALITY,
+      );
+    });
+
+    // If optimization didn’t help, keep original.
+    if (blob.size >= file.size) return file;
+
+    const nextName = `${fileBaseName(file.name)}.jpg`;
+    return new File([blob], nextName, { type: "image/jpeg" });
+  } catch {
+    return file;
+  }
+}
 
 const VISIBILITY_OPTIONS: {
   value: PostVisibility;
@@ -98,7 +157,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
   const [status, setStatus] = useState("");
   const [error, setError] = useState("");
   const [uploadWarning, setUploadWarning] = useState("");
-  /** When every selected photo fails to upload — full detail; blocks save and keeps modal open. */
+  /** When every selected photo fails to upload: full detail; blocks save and keeps modal open. */
   const [photoUploadDetails, setPhotoUploadDetails] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [fishingType, setFishingType] = useState<FishingType | "">("");
@@ -135,7 +194,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
     if (rejected > 0 || ignoredByCount > 0) {
       const maxMb = Math.floor(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024));
       setUploadWarning(
-        `Some files were skipped. Allowed: JPG, PNG, GIF, WEBP, HEIC — up to ${maxMb} MB each, max ${MAX_FILES} photos.`,
+        `Some files were skipped. Allowed: JPG, PNG, GIF, WEBP, HEIC (up to ${maxMb} MB each, max ${MAX_FILES} photos).`,
       );
     } else {
       setUploadWarning("");
@@ -185,9 +244,15 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
         setStatus("Uploading photos…");
         const uploadFailures: string[] = [];
         for (let i = 0; i < selectedFiles.slice(0, MAX_FILES).length; i++) {
-          const file = selectedFiles[i];
-          const label = file.name?.trim() || `Photo ${i + 1}`;
+          const originalFile = selectedFiles[i];
+          const label = originalFile.name?.trim() || `Photo ${i + 1}`;
           try {
+            // Large photos are resized/recompressed before upload so they render reliably later.
+            if (originalFile.size >= OPTIMIZE_MIN_BYTES) {
+              setStatus(`Optimizing photo ${i + 1}…`);
+            }
+            const file = await optimizeImageForUploadIfNeeded(originalFile);
+            setStatus(`Uploading photo ${i + 1}…`);
             const uploadRes = await uploadImage(file);
             imageUrls.push(uploadRes.objectKey);
           } catch (err) {
@@ -334,7 +399,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
               value={locationName}
               onChange={(e) => setLocationName(e.target.value)}
               className={inputClass}
-              placeholder="e.g. Lake Simcoe — south shore"
+              placeholder="e.g. Lake Simcoe, south shore"
               required
             />
           </div>
@@ -629,7 +694,7 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
               <p className="mt-1 text-xs leading-relaxed opacity-95">
                 Your catch hasn’t been saved yet, so you can swap in different photos or tap Save again.
                 Very large files (often about 10 MB and up) are more likely to fail on a slow
-                connection — exporting or resizing the image first usually helps. Details are below.
+                connection. Exporting or resizing the image first usually helps. Details are below.
               </p>
               <pre className="mt-3 max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded-md bg-white/80 px-3 py-2 font-sans text-xs leading-relaxed text-red-900 dark:bg-black/30 dark:text-red-100">
                 {photoUploadDetails}

@@ -11,6 +11,13 @@ import {
 import en from "@/locales/en";
 import fr from "@/locales/fr";
 
+/**
+ * Locale + translation context for the UI.
+ *
+ * - Stores the user's preference in `localStorage` so it persists across reloads.
+ * - Uses a simple dictionary lookup (`t(key)`) with optional `{{var}}` interpolation.
+ * - Initializes on the client to avoid SSR/client mismatch when reading browser APIs.
+ */
 type Locale = "en" | "fr";
 type Dictionary = Record<string, string>;
 type Vars = Record<string, string | number>;
@@ -26,7 +33,7 @@ type LocaleContextValue = {
 
 const LocaleContext = createContext<LocaleContextValue | null>(null);
 
-/** Read saved or browser locale (client only). */
+/** Reads saved locale or a browser hint (client only). */
 function getInitialLocale(): Locale {
   if (typeof window === "undefined") return "en";
   try {
@@ -49,12 +56,16 @@ function getInitialLocale(): Locale {
  * Real preference is applied in `useEffect` on the client only.
  */
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
+  // Deliberately "en" on first render; we update to the actual preference after mount.
   const [locale, setLocaleState] = useState<Locale>("en");
 
   useEffect(() => {
-    const next = getInitialLocale();
-    setLocaleState(next);
-    document.documentElement.lang = next;
+    queueMicrotask(() => {
+      const next = getInitialLocale();
+      setLocaleState(next);
+      // Keep `<html lang="...">` aligned for accessibility and built-in browser behaviors.
+      document.documentElement.lang = next;
+    });
   }, []);
 
   const setLocale = useCallback((next: Locale) => {
@@ -74,6 +85,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
     const t = (key: string, vars?: Vars) => {
       const template = dict[key] ?? fallback[key] ?? key;
       if (!vars) return template;
+      // Lightweight mustache-style interpolation: "Hello {{name}}".
       return template.replace(/\{\{(\w+)\}\}/g, (_, varName: string) => {
         const value = vars[varName];
         return value == null ? "" : String(value);

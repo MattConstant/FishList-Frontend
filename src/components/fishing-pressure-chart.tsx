@@ -207,7 +207,7 @@ export function FishingPressureChart({
           r={3.5}
           fill={palette.pointFill}
         >
-          <title>{`${formatHourLabel(s.time, timeZone, intlLocale)} — ${s.p.toFixed(0)} hPa`}</title>
+          <title>{`${formatHourLabel(s.time, timeZone, intlLocale)} · ${s.p.toFixed(0)} hPa`}</title>
         </circle>
       ))}
 

@@ -30,7 +30,7 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files — secrets stay in .env.local (ignored); tracked templates set dev/prod defaults
+# env files - secrets stay in .env.local (ignored); tracked templates set dev/prod defaults
 .env*
 !.env.example
 !.env.development

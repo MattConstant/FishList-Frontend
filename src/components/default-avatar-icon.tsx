@@ -1,5 +1,5 @@
 /**
- * Placeholder for users without a profile photo — custom mark (not a platform-default emoji).
+ * Placeholder for users without a profile photo - custom mark (not a platform-default emoji).
  */
 export function DefaultAvatarIcon({
   className = "text-zinc-500 dark:text-zinc-400",

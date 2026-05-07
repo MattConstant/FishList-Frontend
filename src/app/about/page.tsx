@@ -5,18 +5,30 @@ import Image from "next/image";
 import { SiteFooter } from "@/components/site-footer";
 import { useLocale } from "@/contexts/locale-context";
 
+/**
+ * About page.
+ *
+ * Notes:
+ * - This is a client component because it reads the active locale via context (`useLocale()`).
+ * - All visible copy comes from translations via `t(...)` so the page can be fully localized.
+ * - The "hero" backgrounds are purely decorative layers (kept out of the accessibility tree).
+ */
 export default function AboutPage() {
+  // `t` is the translation function for the currently selected locale.
   const { t } = useLocale();
   return (
     <div className="relative flex w-full min-h-full flex-col px-4 py-10 sm:px-6 sm:py-16">
-      {/* Dark mode only: hero photo. Light mode uses the global body background. */}
+      {/* Decorative background layer (dark mode only). */}
       <div
         className="about-page__dark-hero pointer-events-none absolute inset-0 hidden dark:block"
         aria-hidden
       />
+      {/* Decorative gradient overlay (dark mode only). */}
       <div className="pointer-events-none absolute inset-0 hidden bg-[radial-gradient(circle_at_20%_18%,rgba(56,189,248,0.24),transparent_35%),radial-gradient(circle_at_80%_84%,rgba(34,197,94,0.16),transparent_35%)] dark:block" aria-hidden />
 
+      {/* Main content surface: centered card with readable contrast over the background layers. */}
       <article className="relative z-10 mx-auto w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
+        {/* "Kicker" pill: small label above the main title. */}
         <div className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/70 dark:bg-sky-900/30 dark:text-sky-300">
           <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
             <path d="M10 2a.75.75 0 01.706.497l1.23 3.445 3.664.13a.75.75 0 01.427 1.338l-2.88 2.203 1.008 3.524a.75.75 0 01-1.144.829L10 12.6l-3.011 1.366a.75.75 0 01-1.144-.829l1.008-3.524-2.88-2.203a.75.75 0 01.427-1.337l3.664-.131 1.23-3.445A.75.75 0 0110 2z" />
@@ -27,6 +39,7 @@ export default function AboutPage() {
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl dark:text-zinc-50">
           {t("about.title")}
         </h1>
+        {/* Brand mark for the page; `priority` keeps it snappy since it's above the fold. */}
         <div className="mt-4">
           <Image
             src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
@@ -39,11 +52,13 @@ export default function AboutPage() {
         </div>
 
         <div className="mt-6 space-y-5 text-zinc-700 dark:text-zinc-300">
+          {/* Intro paragraphs pulled from the locale dictionary. */}
           <p className="text-sm leading-7 md:text-base">{t("about.p1")}</p>
           <p className="text-sm leading-7 md:text-base">{t("about.p2")}</p>
           <p className="text-sm leading-7 md:text-base">{t("about.p3")}</p>
         </div>
 
+        {/* Feature/value props section: small cards with icon + copy. */}
         <section className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
           <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-sky-600 dark:text-sky-400">
@@ -76,6 +91,7 @@ export default function AboutPage() {
           </p>
         </section>
 
+        {/* Legal/disclaimer copy. */}
         <section className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
             {t("about.legal.title")}
@@ -85,6 +101,7 @@ export default function AboutPage() {
           </p>
         </section>
 
+        {/* Community links (external). */}
         <section className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-700">
           <h2 className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-100">
             <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 text-violet-600 dark:text-violet-400">
@@ -123,6 +140,7 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Primary navigation CTAs back into the app. */}
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/map"
@@ -139,6 +157,7 @@ export default function AboutPage() {
         </div>
       </article>
 
+      {/* Footer sits outside the card but stays aligned to the same max width. */}
       <div className="relative z-10 mx-auto mt-12 w-full max-w-4xl px-4 pb-[max(2.5rem,env(safe-area-inset-bottom))] sm:px-6">
         <SiteFooter className="border-zinc-200/90 text-zinc-600 [&_a]:text-sky-700 [&_a:hover]:text-sky-900 [&_p]:text-zinc-500 dark:border-white/25 dark:text-zinc-300 dark:[&_a]:text-sky-200 dark:[&_a:hover]:text-white dark:[&_p]:text-zinc-500" />
       </div>

@@ -1,5 +1,5 @@
 /**
- * Map route — toolbar, filters, and map chrome.
+ * Map route - toolbar, filters, and map chrome.
  * Imported from app/globals.css (Tailwind pipeline).
  */
 
@@ -268,7 +268,7 @@
   cursor: crosshair;
 }
 
-/* Map layers (basemap, vector overlays) — top-right on the map, below the bottom sheet. */
+/* Map layers (basemap, vector overlays) - top-right on the map, below the bottom sheet. */
 .map-page__layers-panel {
   @apply pointer-events-auto absolute right-2 top-2 z-[1200] flex max-w-[min(19rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white/95 text-sm shadow-md backdrop-blur-sm sm:right-3 sm:top-3 dark:border-zinc-600/90 dark:bg-zinc-900/95;
 }
@@ -403,7 +403,7 @@
 }
 
 
-/* Stocking fish markers — compact lake name on hover (Leaflet tooltip). */
+/* Stocking fish markers - compact lake name on hover (Leaflet tooltip). */
 .map-page__stocking-tooltip.leaflet-tooltip {
   @apply m-0 max-w-[15rem] border-0 bg-zinc-900/90 px-2.5 py-1 text-left text-[0.7rem] font-medium leading-tight text-zinc-100 shadow-sm;
   @apply dark:bg-zinc-800/95;
@@ -456,7 +456,7 @@
   @apply flex flex-1 items-center justify-center text-zinc-500;
 }
 
-/* Bottom sheet — forecast / lake detail (peek + expand).
+/* Bottom sheet - forecast / lake detail (peek + expand).
  * Leaflet uses z-index 400–1000+ on map panes/controls; stay above the map.
  * Fixed to viewport so the panel is not clipped or hidden behind the map tile stack.
  * Inset from edges + rounded bottom so the card reads as floating, not docked. */

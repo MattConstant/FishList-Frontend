@@ -7,7 +7,7 @@ export type BiteWindow = {
   kind: "major" | "minor";
 };
 
-/** Half-width of each bite window (major/minor), in ms — total window = 2 × this (±1 h). */
+/** Half-width of each bite window (major/minor), in ms - total window = 2 × this (±1 h). */
 const WINDOW_HALF_MS = 60 * 60 * 1000;
 
 /**

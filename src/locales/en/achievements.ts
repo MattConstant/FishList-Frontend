@@ -29,7 +29,7 @@ export default {
   "achievements.toast.xp": "+{{xp}} XP",
   "achievements.toast.dismiss": "Dismiss",
 
-  // Catalog — keep keys in sync with AchievementCode.java
+  // Catalog: keep keys in sync with AchievementCode.java
   "achievements.firstCatch.title": "First Catch",
   "achievements.firstCatch.description": "Log your very first catch.",
   "achievements.tenCatches.title": "Hooked",
@@ -106,7 +106,7 @@ export default {
   "achievements.rangeRoamer.description":
     "Fish at 3 different types of water.",
 
-  // Roles — keep keys in sync with RoleTier.java
+  // Roles: keep keys in sync with RoleTier.java
   "roles.section.title": "Role",
   "roles.newcomer": "Newcomer",
   "roles.angler": "Angler",

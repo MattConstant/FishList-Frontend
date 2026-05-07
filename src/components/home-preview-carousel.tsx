@@ -11,35 +11,39 @@ type PreviewSlide = {
   species: string;
   location: string;
   dateLabel: string;
+  likes: number;
+  comments: number;
 };
 
-/** Rows: image, username, species, location, date — keeps data dense without repeated keys */
-const PREVIEW_SLIDE_ROWS: [string, string, string, string, string][] = [
-  ["/example1.webp", "brookie_mike", "Brook trout", "Nipigon River", "Apr 2026"],
-  ["/example2.webp", "shore_lunch", "Walleye", "Lake of the Woods", "Apr 2026"],
-  ["/example3.webp", "early_spring", "Steelhead", "Ottawa River", "Mar 2026"],
-  ["/example4.jpg", "quiet_creek", "Smallmouth bass", "Georgian Bay", "Apr 2026"],
-  ["/example5.jpg", "sunrise_cast", "Northern pike", "French River", "Apr 2026"],
-  ["/example6.avif", "maple_angler", "Lake trout", "Algonquin Highlands", "Apr 2026"],
+/** Rows: image, username, species, location, date, likes, comments */
+const PREVIEW_SLIDE_ROWS: [string, string, string, string, string, number, number][] = [
+  ["/example1.webp", "brookie_mike", "Brook trout", "Nipigon River", "Apr 2026", 28, 6],
+  ["/example2.webp", "shore_lunch", "Walleye", "Lake of the Woods", "Apr 2026", 41, 9],
+  ["/example3.webp", "early_spring", "Steelhead", "Ottawa River", "Mar 2026", 19, 4],
+  ["/example4.jpg", "quiet_creek", "Smallmouth bass", "Georgian Bay", "Apr 2026", 33, 7],
+  ["/example5.jpg", "sunrise_cast", "Northern pike", "French River", "Apr 2026", 52, 11],
+  ["/example6.avif", "maple_angler", "Lake trout", "Algonquin Highlands", "Apr 2026", 24, 5],
 ];
 
 const PREVIEW_SLIDES: PreviewSlide[] = PREVIEW_SLIDE_ROWS.map(
-  ([imageSrc, username, species, location, dateLabel]) => ({
+  ([imageSrc, username, species, location, dateLabel, likes, comments]) => ({
     imageSrc,
     username,
     species,
     location,
     dateLabel,
+    likes,
+    comments,
   }),
 );
 
 const n = PREVIEW_SLIDES.length;
 
-/** Auto-advance interval — light (one timer); paused when tab hidden or reduced motion. */
+/** Auto-advance interval: light (one timer); paused when tab hidden or reduced motion. */
 const AUTO_ROTATE_MS = 5500;
 
 const NAV_BTN_CLASS =
-  "inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-300 bg-white text-zinc-700 shadow-md transition hover:bg-zinc-50 active:scale-95 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700";
+  "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-zinc-200/90 bg-white/95 text-zinc-600 shadow-[0_4px_18px_-4px_rgba(15,23,42,0.15)] backdrop-blur-sm transition hover:border-sky-200 hover:bg-white hover:text-sky-700 hover:shadow-[0_8px_22px_-6px_rgba(14,165,233,0.25)] active:scale-[0.97] dark:border-zinc-600 dark:bg-zinc-800/95 dark:text-zinc-300 dark:shadow-[0_4px_20px_-6px_rgba(0,0,0,0.45)] dark:hover:border-sky-500/35 dark:hover:bg-zinc-700 dark:hover:text-sky-200";
 
 const CHEVRON_PATH = {
   prev:
@@ -48,34 +52,10 @@ const CHEVRON_PATH = {
     "M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z",
 } as const;
 
-const DECK_BACK_MID: {
-  rel: number;
-  layer: "back" | "mid";
-  className: string;
-  style: React.CSSProperties;
-}[] = [
-  {
-    rel: 2,
-    layer: "back",
-    className:
-      "pointer-events-none absolute left-1/2 top-1/2 w-[92%] max-w-[26rem] -translate-x-1/2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] sm:w-[94%]",
-    style: {
-      transform: "translate(-50%, calc(-50% + 28px)) rotate(-11deg) scale(0.88)",
-      zIndex: 0,
-      opacity: 0.72,
-    },
-  },
-  {
-    rel: 1,
-    layer: "mid",
-    className:
-      "pointer-events-none absolute left-1/2 top-1/2 w-[96%] max-w-[27rem] -translate-x-1/2 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
-    style: {
-      transform: "translate(-50%, calc(-50% + 14px)) rotate(9deg) scale(0.94)",
-      zIndex: 5,
-      opacity: 0.88,
-    },
-  },
+/** Ordering for the two cards behind the front (cycled with `active`). Styles: `home-preview.css`. */
+const DECK_BACK_MID: { rel: number; layer: "back" | "mid" }[] = [
+  { rel: 2, layer: "back" },
+  { rel: 1, layer: "mid" },
 ];
 
 function CarouselArrow({
@@ -89,33 +69,46 @@ function CarouselArrow({
 }) {
   return (
     <button type="button" onClick={onClick} className={NAV_BTN_CLASS} aria-label={label}>
-      <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden>
+      <svg viewBox="0 0 20 20" fill="currentColor" className="h-[17px] w-[17px]" aria-hidden>
         <path fillRule="evenodd" d={CHEVRON_PATH[direction]} clipRule="evenodd" />
       </svg>
     </button>
   );
 }
 
+function PostMenuIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden>
+      <circle cx="12" cy="6.5" r="1.75" />
+      <circle cx="12" cy="12" r="1.75" />
+      <circle cx="12" cy="17.5" r="1.75" />
+    </svg>
+  );
+}
+
 function InstaPostCard({
   slide,
   layer,
+  richFooter = false,
 }: {
   slide: PreviewSlide;
   layer: "back" | "mid" | "front";
+  richFooter?: boolean;
 }) {
+  const { t } = useLocale();
   const isFront = layer === "front";
   const handle = `@${slide.username}`;
 
   return (
     <div
       className={[
-        "overflow-hidden rounded-[14px] border bg-white shadow-lg dark:border-zinc-600 dark:bg-zinc-950",
+        "overflow-hidden rounded-2xl border bg-white dark:border-zinc-700/90 dark:bg-zinc-950",
         isFront
-          ? "border-zinc-200/90 shadow-zinc-900/20 ring-1 ring-black/[0.06] dark:shadow-black/40 dark:ring-white/10"
-          : "border-zinc-200/70 dark:border-zinc-700",
+          ? "border-zinc-100 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.06)] ring-1 ring-zinc-950/[0.04] dark:border-zinc-600 dark:shadow-black/30 dark:ring-white/[0.06]"
+          : "border-zinc-200/60 shadow-sm dark:border-zinc-700 dark:shadow-none",
       ].join(" ")}
     >
-      <div className="flex items-center gap-3 px-3.5 py-3 sm:px-4 sm:py-3.5">
+      <div className="flex items-center gap-3 border-b border-zinc-100/90 px-3.5 py-2.5 dark:border-zinc-800/90 sm:px-4 sm:py-3">
         <div
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 text-white shadow-inner sm:h-11 sm:w-11"
           aria-hidden
@@ -126,48 +119,139 @@ function InstaPostCard({
           <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">{handle}</p>
           <p className="truncate text-xs text-zinc-500">{slide.location}</p>
         </div>
-        <span className="text-zinc-400 dark:text-zinc-500" aria-hidden>
-          ···
-        </span>
+        <button
+          type="button"
+          className="shrink-0 rounded-lg p-1.5 text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+          aria-label={t("home.preview.moreOptions")}
+        >
+          <PostMenuIcon className="h-5 w-5" />
+        </button>
       </div>
 
       <div className="relative aspect-[4/5] w-full bg-zinc-100 dark:bg-zinc-900">
         <Image
           src={slide.imageSrc}
-          alt={`${slide.species} — ${slide.location}`}
+          alt={`${slide.species} · ${slide.location}`}
           fill
-          className="object-cover"
-          sizes="(max-width: 640px) 92vw, 420px"
+          className="object-cover object-center"
+          sizes="(max-width: 480px) min(85vw, 280px), (max-width: 640px) min(72vw, 340px), (max-width: 1024px) min(40vw, 380px), 420px"
           priority={isFront}
           draggable={false}
         />
       </div>
 
-      <div className="space-y-1 px-3.5 py-3 sm:px-4 sm:py-3.5">
-        <p className="text-xs text-zinc-500">{slide.dateLabel}</p>
-        <p className="text-sm leading-snug text-zinc-900 dark:text-zinc-100">
-          <span className="font-semibold">{handle}</span>{" "}
-          <span className="font-medium text-emerald-700 dark:text-emerald-400">{slide.species}</span>
-          <span className="text-zinc-600 dark:text-zinc-300"> — {slide.location}</span>
-        </p>
-      </div>
+      {isFront && richFooter ? (
+        <>
+          <div className="flex items-center justify-between border-t border-zinc-100/90 px-2 pt-2 dark:border-zinc-800 sm:px-3">
+            <div className="flex items-center gap-0.5">
+              <button
+                type="button"
+                className="rounded-xl p-2 text-zinc-800 transition hover:bg-rose-50 hover:text-rose-600 active:scale-95 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-rose-400"
+                aria-label={t("home.preview.likePost")}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" className="h-6 w-6">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="rounded-xl p-2 text-zinc-800 transition hover:bg-zinc-100 active:scale-95 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                aria-label={t("home.preview.commentPost")}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" className="h-6 w-6">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.037 2.311 5.553L3 21l5.447-2.311A8.92 8.92 0 0012 20.25z"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="rounded-xl p-2 text-zinc-800 transition hover:bg-zinc-100 active:scale-95 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                aria-label={t("home.preview.sharePost")}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" className="h-6 w-6">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                </svg>
+              </button>
+            </div>
+            <button
+              type="button"
+              className="rounded-xl p-2 text-zinc-800 transition hover:bg-zinc-100 active:scale-95 dark:text-zinc-100 dark:hover:bg-zinc-800"
+              aria-label={t("home.preview.savePost")}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.85" className="h-6 w-6">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M17.25 20.25L12 17.25 6.75 20.25V5.25a1.5 1.5 0 011.5-1.5h7.5a1.5 1.5 0 011.5 1.5v15z"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div className="px-3.5 pb-1.5 pt-1 sm:px-4">
+            <p className="text-[13px] font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
+              {t("home.preview.engagementLikes", { n: slide.likes })}
+            </p>
+          </div>
+
+          <div className="space-y-1.5 px-3.5 pb-3 sm:px-4">
+            <p className="text-[13px] leading-snug text-zinc-900 dark:text-zinc-100">
+              <span className="font-semibold">{handle}</span>{" "}
+              <span className="font-medium text-emerald-700 dark:text-emerald-400">{slide.species}</span>
+              <span className="text-zinc-600 dark:text-zinc-400"> · {slide.location}</span>
+            </p>
+            <button
+              type="button"
+              className="text-left text-[13px] font-medium text-zinc-500 transition hover:text-sky-700 dark:text-zinc-400 dark:hover:text-sky-400"
+            >
+              {t("home.preview.viewAllComments", { n: slide.comments })}
+            </button>
+            <p className="text-[10px] font-medium uppercase tracking-[0.12em] text-zinc-400 dark:text-zinc-500">
+              {slide.dateLabel}
+            </p>
+          </div>
+        </>
+      ) : (
+        <div className="space-y-1 px-3.5 py-3 sm:px-4 sm:py-3.5">
+          <p className="text-xs text-zinc-500">{slide.dateLabel}</p>
+          <p className="text-sm leading-snug text-zinc-900 dark:text-zinc-100">
+            <span className="font-semibold">{handle}</span>{" "}
+            <span className="font-medium text-emerald-700 dark:text-emerald-400">{slide.species}</span>
+            <span className="text-zinc-600 dark:text-zinc-300"> · {slide.location}</span>
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
-const STACK_CLASS =
-  "relative mx-auto mt-5 flex min-h-[min(78vh,640px)] w-full max-w-[min(100%,28rem)] items-center justify-center sm:max-w-[min(100%,30rem)] sm:min-h-[min(72vh,680px)]";
+/** Matches `--fishlist-preview-card-*` steps in `home-preview.css` for consistent resize behavior. */
+const CARD_MAX_W_CLASS =
+  "w-full max-w-[min(100%,17.5rem)] min-[480px]:max-w-[min(100%,20rem)] sm:max-w-[min(100%,22.5rem)] lg:max-w-[min(100%,24rem)]";
 
-/** Tighter stack when embedded beside the hero (landing). */
-const STACK_CLASS_HERO =
-  "relative mx-auto mt-1 flex min-h-[min(40vh,360px)] w-full max-w-[min(100%,28rem)] items-center justify-center sm:min-h-[min(42vh,400px)] sm:max-w-[min(100%,30rem)]";
+/** Slightly wider cards on the logged-out landing (pairs with `.fishlist-preview-stack--rich`). */
+const CARD_LANDING_W_CLASS =
+  "w-full max-w-[min(100%,19rem)] min-[480px]:max-w-[min(100%,22rem)] sm:max-w-[min(100%,24rem)] lg:max-w-[min(100%,26rem)]";
 
 export function HomePreviewCarousel({
   className = "",
   variant = "default",
+  align = "center",
+  richFooter = false,
 }: {
   className?: string;
   variant?: "default" | "hero";
+  /** `start` = hug the left (e.g. logged-out landing); default keeps the stack centered in its row. */
+  align?: "center" | "start";
+  /** Extra like/comment row + larger card footprint (landing page). */
+  richFooter?: boolean;
 }) {
   const { t } = useLocale();
   const [active, setActive] = useState(0);
@@ -238,8 +322,18 @@ export function HomePreviewCarousel({
     }
   };
 
-  const stackClass = variant === "hero" ? STACK_CLASS_HERO : STACK_CLASS;
-  const dotsMargin = variant === "hero" ? "mt-6" : "mt-8";
+  const cardWClass = richFooter ? CARD_LANDING_W_CLASS : CARD_MAX_W_CLASS;
+
+  const stackClass = [
+    "fishlist-preview-stack",
+    variant === "hero" ? "fishlist-preview-stack--hero" : "",
+    variant === "hero" ? "mt-1" : "mt-2",
+    align === "start" ? "fishlist-preview-stack--align-start" : "",
+    richFooter ? "fishlist-preview-stack--rich" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const dotsMargin = variant === "hero" ? "mt-5 sm:mt-6" : "mt-6 sm:mt-8";
 
   return (
     <section
@@ -247,56 +341,92 @@ export function HomePreviewCarousel({
       aria-label={t("home.preview.carouselLabel")}
       aria-roledescription="carousel"
     >
+      {/* Narrow screens: controls above the deck. `sm+`: side buttons (see below). */}
       <div
         className={
           variant === "hero"
-            ? "mb-1 flex items-center justify-end gap-2 sm:mb-2"
-            : "flex items-center justify-end gap-2"
+            ? align === "start"
+              ? "mb-2 flex justify-start gap-2 sm:hidden"
+              : "mb-2 flex justify-center gap-2 sm:hidden"
+            : align === "start"
+              ? "mb-2 flex justify-start gap-2 sm:mb-3 sm:hidden"
+              : "mb-2 flex justify-center gap-2 sm:mb-3 sm:hidden"
         }
       >
         <CarouselArrow direction="prev" label={t("home.preview.prev")} onClick={() => go(-1)} />
         <CarouselArrow direction="next" label={t("home.preview.next")} onClick={() => go(1)} />
       </div>
 
-      <div
-        className={stackClass}
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onKeyDown={onStackKeyDown}
-        tabIndex={0}
-        role="group"
-      >
-        {DECK_BACK_MID.map(({ rel, layer, className: deckClass, style }) => {
-          const idx = (active + rel) % n;
-          return (
-            <div
-              key={`${layer}-${idx}`}
-              className={deckClass}
-              style={style}
-              aria-hidden
-            >
-              <InstaPostCard slide={PREVIEW_SLIDES[idx]} layer={layer} />
-            </div>
-          );
-        })}
-
         <div
-          key={active}
-          className={[
-            "relative z-10 w-full max-w-[min(100%,28rem)] will-change-transform sm:max-w-[min(100%,30rem)]",
-            direction === 1 ? "fishlist-preview-front-next" : "fishlist-preview-front-prev",
-          ].join(" ")}
-          style={{ filter: "drop-shadow(0 22px 40px rgba(0,0,0,0.18))" }}
+          className={
+            variant === "hero"
+              ? "relative sm:px-11 md:px-12"
+              : "relative sm:px-12 md:px-14 lg:px-16"
+          }
         >
-          <InstaPostCard slide={PREVIEW_SLIDES[active]} layer="front" />
+        <div
+          className={[
+            stackClass,
+            "rounded-2xl outline-none focus-visible:ring-2 focus-visible:ring-sky-500/90 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-200 dark:focus-visible:ring-offset-zinc-900",
+          ].join(" ")}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+          onKeyDown={onStackKeyDown}
+          tabIndex={0}
+          role="group"
+        >
+          {DECK_BACK_MID.map(({ rel, layer }) => {
+            const idx = (active + rel) % n;
+            return (
+              <div
+                key={`${layer}-${idx}`}
+                className={`fishlist-preview-deck-layer fishlist-preview-deck-layer--${layer}`}
+                aria-hidden
+              >
+                <div className={cardWClass}>
+                  <InstaPostCard slide={PREVIEW_SLIDES[idx]} layer={layer} richFooter={richFooter} />
+                </div>
+              </div>
+            );
+          })}
+
+          <div
+            key={active}
+            className={[
+              "relative z-10 will-change-transform rounded-2xl shadow-[0_22px_48px_-14px_rgba(15,23,42,0.22)] ring-1 ring-zinc-950/[0.05] dark:shadow-[0_28px_56px_-18px_rgba(0,0,0,0.65)] dark:ring-white/[0.07]",
+              align === "start" ? "ml-0 mr-auto" : "mx-auto",
+              cardWClass,
+              direction === 1 ? "fishlist-preview-front-next" : "fishlist-preview-front-prev",
+            ].join(" ")}
+          >
+            <InstaPostCard slide={PREVIEW_SLIDES[active]} layer="front" richFooter={richFooter} />
+          </div>
+        </div>
+
+        {/* After the deck in DOM so controls paint above the cards; still keyboard-accessible tab order follows DOM. */}
+        <div
+          className={
+            align === "start"
+              ? "pointer-events-none absolute inset-y-0 left-0 z-30 hidden w-11 items-center justify-start sm:flex"
+              : "pointer-events-none absolute inset-y-0 left-0 z-30 hidden w-11 items-center justify-center sm:flex"
+          }
+        >
+          <div className="pointer-events-auto">
+            <CarouselArrow direction="prev" label={t("home.preview.prev")} onClick={() => go(-1)} />
+          </div>
+        </div>
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-30 hidden w-11 items-center justify-center sm:flex">
+          <div className="pointer-events-auto">
+            <CarouselArrow direction="next" label={t("home.preview.next")} onClick={() => go(1)} />
+          </div>
         </div>
       </div>
 
-      <div
-        className={`${dotsMargin} flex justify-center gap-2`}
-        role="tablist"
-        aria-label={t("home.preview.dotsLabel")}
-      >
+        <div
+          className={`${dotsMargin} flex items-center gap-2 ${align === "start" ? "justify-start" : "justify-center"}`}
+          role="tablist"
+          aria-label={t("home.preview.dotsLabel")}
+        >
         {PREVIEW_SLIDES.map((_, idx) => (
           <button
             key={idx}
@@ -306,8 +436,10 @@ export function HomePreviewCarousel({
             aria-label={t("home.preview.goToSlide", { n: idx + 1 })}
             onClick={() => goToSlide(idx)}
             className={[
-              "h-2.5 rounded-full transition-all duration-300",
-              idx === active ? "w-8 bg-sky-600 dark:bg-sky-500" : "w-2.5 bg-zinc-300 dark:bg-zinc-600",
+              "rounded-full transition-all duration-300 ease-out",
+              idx === active
+                ? "h-2 w-8 bg-gradient-to-r from-sky-500 to-sky-600 shadow-[0_0_16px_-2px_rgba(14,165,233,0.55)] dark:from-sky-400 dark:to-sky-500 dark:shadow-[0_0_18px_-2px_rgba(56,189,248,0.35)]"
+                : "h-2 w-2 bg-zinc-300/90 hover:bg-zinc-400 dark:bg-zinc-600 dark:hover:bg-zinc-500",
             ].join(" ")}
           />
         ))}

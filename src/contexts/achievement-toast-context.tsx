@@ -184,7 +184,7 @@ export function useAchievementToasts() {
   return ctx;
 }
 
-/** Map an achievement code to its category — used by the toast since the wire payload omits it. */
+/** Map an achievement code to its category - used by the toast since the wire payload omits it. */
 function categoryFor(code: UnlockedAchievementSummary["code"]) {
   switch (code) {
     case "THREE_LOCATIONS":

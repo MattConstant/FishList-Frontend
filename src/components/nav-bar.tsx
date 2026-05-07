@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { NavLangThemeGroup } from "@/components/nav-lang-theme-group";
+import { NotificationsButton } from "@/components/notifications-button";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -33,7 +34,7 @@ export function NavBar() {
   const { t } = useLocale();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   useEffect(() => {
-    setMobileMenuOpen(false);
+    queueMicrotask(() => setMobileMenuOpen(false));
   }, [pathname]);
 
   const linkClass = (href: string) => {
@@ -87,7 +88,7 @@ export function NavBar() {
           className="inline-flex min-w-0 shrink items-center gap-1.5 text-base font-semibold tracking-tight text-sky-700 sm:gap-2 sm:text-lg dark:text-sky-400"
         >
           <Image
-            src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
+            src="/fishlist-logo.png"
             alt="FishList logo"
             width={28}
             height={28}
@@ -132,6 +133,7 @@ export function NavBar() {
             )}
           </button>
 
+          <NotificationsButton />
           <NavLangThemeGroup />
 
           {isReady && !user && (

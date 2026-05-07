@@ -4,7 +4,7 @@ import { ARA_FILTER_SUMMARY_NAMES, type AraSpeciesFilter } from "@/lib/ara-fish"
 export const runtime = "nodejs";
 
 /**
- * Ontario Aquatic Resource Areas (polygons) — public FeatureServer.
+ * Ontario Aquatic Resource Areas (polygons), public FeatureServer.
  * FISH_SPECIES_SUMMARY is comma-separated species (MNRF / LIO).
  * @see https://data.ontario.ca/dataset/aquatic-resource-areas-ara
  */
@@ -156,7 +156,7 @@ export async function GET(req: NextRequest) {
         if (!c) continue;
         all.push({
           id,
-          name: String(a.OFFICIAL_WATERBODY_NAME ?? "—"),
+          name: String(a.OFFICIAL_WATERBODY_NAME ?? "-"),
           species: String(a.FISH_SPECIES_SUMMARY ?? ""),
           lat: c.lat,
           lng: c.lng,

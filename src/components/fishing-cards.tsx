@@ -35,30 +35,29 @@ export function CatchCard({ c }: { c: CatchResponse }) {
     [c.imageUrls, c.imageUrl],
   );
   const firstImageKey = imageCandidates[0];
-  const [thumbSrc, setThumbSrc] = useState<string | null>(() =>
-    firstImageKey && !isObjectKey(firstImageKey) ? firstImageKey : null,
-  );
+  const directThumb = useMemo(() => {
+    if (!firstImageKey) return null;
+    return isObjectKey(firstImageKey) ? null : firstImageKey;
+  }, [firstImageKey]);
+  const [objectThumb, setObjectThumb] = useState<string | null>(null);
   const [resolvedUrls, setResolvedUrls] = useState<string[]>(
     imageCandidates.filter((u) => !isObjectKey(u)),
   );
   const [imgError, setImgError] = useState(false);
+  const thumbSrc = directThumb ?? objectThumb;
 
   useEffect(() => {
-    if (!firstImageKey) {
-      setThumbSrc(null);
-      return;
-    }
-    if (!isObjectKey(firstImageKey)) {
-      setThumbSrc(firstImageKey);
+    if (!firstImageKey || !isObjectKey(firstImageKey)) {
+      queueMicrotask(() => setObjectThumb(null));
       return;
     }
     let cancelled = false;
     getImageUrl(firstImageKey)
       .then((url) => {
-        if (!cancelled) setThumbSrc(url);
+        if (!cancelled) setObjectThumb(url);
       })
       .catch(() => {
-        if (!cancelled) setThumbSrc(null);
+        if (!cancelled) setObjectThumb(null);
       });
     return () => {
       cancelled = true;
@@ -166,7 +165,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
                   <p className="text-xs text-zinc-500">
                     {[formatLengthFromCm(f.lengthCm), formatWeightFromKg(f.weightKg)]
                       .filter(Boolean)
-                      .join(" · ") || "—"}
+                      .join(" · ") || "-"}
                   </p>
                   {f.notes ? (
                     <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-600 dark:text-zinc-400">
@@ -253,16 +252,6 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
 
   const catchTotalPages =
     totalCatches === 0 ? 0 : Math.ceil(totalCatches / CATCHES_PER_PAGE);
-
-  useEffect(() => {
-    const tp =
-      loc.catches.length === 0 ? 0 : Math.ceil(loc.catches.length / CATCHES_PER_PAGE);
-    if (tp === 0) {
-      setCatchPage(0);
-      return;
-    }
-    setCatchPage((p) => Math.min(p, tp - 1));
-  }, [loc.catches.length]);
 
   const catchPageIndex =
     catchTotalPages === 0 ? 0 : Math.min(catchPage, catchTotalPages - 1);

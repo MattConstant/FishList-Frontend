@@ -48,7 +48,7 @@ export default {
   "profile.prefs.languageGroup": "Langue de l'interface",
   "profile.prefs.langEn": "English",
   "profile.prefs.langFr": "Français",
-  "profile.prefs.mapFish": "Carte — poissons stockes",
+  "profile.prefs.mapFish": "Carte : poissons stockes",
   "profile.prefs.mapFishHelp":
     "Choisissez les especes qui vous interessent. Vous pouvez ouvrir la carte avec seulement ces especes dans le filtre de stockage.",
   "profile.prefs.autoFilterLabel":

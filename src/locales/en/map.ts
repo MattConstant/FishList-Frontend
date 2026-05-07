@@ -7,15 +7,15 @@ export default {
   "map.layers.expand": "Expand layer list",
   "map.layers.satellite": "Satellite basemap",
   "map.layers.stocking": "MNRF stocking",
-  "map.layers.stockingBlurb": "Blue pins — fish stocking events.",
+  "map.layers.stockingBlurb": "Blue pins: fish stocking events.",
   "map.layers.presence": "Species presence",
-  "map.layers.presenceBlurb": "Green pins — provincial presence records (ARA).",
+  "map.layers.presenceBlurb": "Green pins: provincial presence records (ARA).",
   "map.layers.catches": "Posted catches",
   "map.layers.catchesBlurb": "Catch photos and pins from the feed.",
   "map.layers.catchesLogin": "Log in to load pins from the feed.",
   "map.layers.bathymetry": "Lake depth contours",
   "map.layers.bathymetryBlurb":
-    "Ontario LIO bathymetry lines where surveyed — not for navigation.",
+    "Ontario LIO bathymetry lines where surveyed; not for navigation.",
   "map.layers.bathymetryZoomNote":
     "Drawn when zoomed to level {{zoom}} or closer. Not every lake has data.",
   "map.layers.legend": "Map legend",

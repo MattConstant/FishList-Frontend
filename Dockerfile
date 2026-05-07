@@ -10,7 +10,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=deps /app/node_modules ./node_modules
-# Explicit sources only (no COPY . .) — avoids shipping .env*, local secrets, or CI junk into the image.
+# Explicit sources only (no COPY . .) - avoids shipping .env*, local secrets, or CI junk into the image.
 COPY package.json package-lock.json ./
 COPY next.config.ts tsconfig.json postcss.config.mjs eslint.config.mjs next-env.d.ts ./
 COPY public ./public

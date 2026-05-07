@@ -1,5 +1,5 @@
 /**
- * Ontario GeoHub — Fish Stocking Data for Recreational Purposes.
+ * Ontario GeoHub - Fish Stocking Data for Recreational Purposes.
  *
  * ArcGIS REST endpoint returning point features for every lake stocked
  * by MNRF in the last decade. We filter to the last 5 years client-side

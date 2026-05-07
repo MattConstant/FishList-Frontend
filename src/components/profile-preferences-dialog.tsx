@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { useTheme } from "next-themes";
 import { useLocale } from "@/contexts/locale-context";
@@ -54,7 +54,11 @@ function segmentClass(active: boolean) {
 export function ProfilePreferencesDialog({ open, onClose }: ProfilePreferencesDialogProps) {
   const { t, locale, setLocale } = useLocale();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const titleId = useId();
   const [species, setSpecies] = useState<string[]>([]);
   const [speciesLoading, setSpeciesLoading] = useState(false);
@@ -68,21 +72,21 @@ export function ProfilePreferencesDialog({ open, onClose }: ProfilePreferencesDi
   );
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
     if (!open) return;
-    setFavorites(loadFavoriteSpecies());
-    setAutoFilter(getAutoFilterFavoriteSpecies());
-    setAraMapKeys(loadAraMapFilterSet());
-    setAraTargetKeys(new Set(loadAraTargetSpecies()));
+    queueMicrotask(() => {
+      setFavorites(loadFavoriteSpecies());
+      setAutoFilter(getAutoFilterFavoriteSpecies());
+      setAraMapKeys(loadAraMapFilterSet());
+      setAraTargetKeys(new Set(loadAraTargetSpecies()));
+    });
   }, [open]);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    setSpeciesLoading(true);
+    queueMicrotask(() => {
+      if (!cancelled) setSpeciesLoading(true);
+    });
     fetchAllStockingRecords(5, () => {})
       .then((data) => {
         if (cancelled) return;

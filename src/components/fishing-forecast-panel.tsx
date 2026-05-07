@@ -137,7 +137,7 @@ export function FishingForecastPanel({ data, compact }: Props) {
         ? `${ds.tempMinC.toFixed(1)}°C`
         : ds.tempMaxC != null
           ? `${ds.tempMaxC.toFixed(1)}°C`
-          : "—";
+          : "-";
 
   const windLine =
     ds.windSpeedMaxKmh != null
@@ -150,7 +150,7 @@ export function FishingForecastPanel({ data, compact }: Props) {
         : t("forecast.windSpeedOnly", {
             speed: ds.windSpeedMaxKmh.toFixed(1),
           })
-      : "—";
+      : "-";
 
   const section = compact
     ? "space-y-3"
@@ -251,7 +251,7 @@ export function FishingForecastPanel({ data, compact }: Props) {
           <dd className="text-right font-mono text-zinc-900 dark:text-zinc-100">
             {ds.humidityAvgPct != null
               ? `${ds.humidityAvgPct.toFixed(1)}%`
-              : "—"}
+              : "-"}
           </dd>
           <dt className="text-zinc-500">{t("forecast.precipDay")}</dt>
           <dd className="text-right font-mono text-zinc-900 dark:text-zinc-100">
@@ -265,7 +265,7 @@ export function FishingForecastPanel({ data, compact }: Props) {
           <dd className="text-right font-mono text-zinc-900 dark:text-zinc-100">
             {ds.cloudCoverAvgPct != null
               ? `${ds.cloudCoverAvgPct.toFixed(0)}%`
-              : "—"}
+              : "-"}
           </dd>
         </dl>
       </section>
@@ -471,13 +471,13 @@ export function FishingForecastPanel({ data, compact }: Props) {
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.sunrise
                 ? formatTime(data.sunMoon.sunrise, data.timezone, intlLocale)
-                : "—"}
+                : "-"}
             </dd>
             <dt className="text-zinc-500">{t("forecast.sunset")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.sunset
                 ? formatTime(data.sunMoon.sunset, data.timezone, intlLocale)
-                : "—"}
+                : "-"}
             </dd>
             <dt className="text-zinc-500">{t("forecast.moonrise")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">

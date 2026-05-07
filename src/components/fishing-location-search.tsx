@@ -63,15 +63,19 @@ export function FishingLocationSearch({
 
   useEffect(() => {
     if (query.trim().length < 2) {
-      setResults([]);
-      setLoading(false);
-      setActiveIndex(-1);
-      setOpen(false);
+      queueMicrotask(() => {
+        setResults([]);
+        setLoading(false);
+        setActiveIndex(-1);
+        setOpen(false);
+      });
       return;
     }
 
-    setLoading(true);
-    setOpen(true);
+    queueMicrotask(() => {
+      setLoading(true);
+      setOpen(true);
+    });
     const t = window.setTimeout(() => {
       const u = new URL("/api/geocode-search", window.location.origin);
       u.searchParams.set("q", query.trim());
@@ -129,6 +133,7 @@ export function FishingLocationSearch({
         {locationSectionLabel}
         <input
           type="search"
+          role="combobox"
           autoComplete="off"
           value={query}
           onChange={(e) => setQuery(e.target.value)}

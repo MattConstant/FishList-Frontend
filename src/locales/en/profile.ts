@@ -48,7 +48,7 @@ export default {
   "profile.prefs.languageGroup": "Interface language",
   "profile.prefs.langEn": "English",
   "profile.prefs.langFr": "Français",
-  "profile.prefs.mapFish": "Map — stocking fish",
+  "profile.prefs.mapFish": "Map: stocking fish",
   "profile.prefs.mapFishHelp":
     "Choose species you care about. You can start the stocking map with only those species selected.",
   "profile.prefs.autoFilterLabel":

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useRef, useState } from "react";
 import { LakePresenceTab } from "@/components/lake-presence-tab";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
@@ -7,6 +8,7 @@ import { MapForecastPopup } from "@/components/map-forecast-popup";
 import { useLocale } from "@/contexts/locale-context";
 import type { WaterbodyGroup } from "@/lib/geohub";
 import { formatAppInteger } from "@/lib/format-app-locale";
+import type { CampSpotResponse } from "@/lib/api";
 
 type MapLakeTab = "stocking" | "forecast";
 type MapPresenceTab = "species" | "forecast";
@@ -17,11 +19,12 @@ export type PresenceLake = {
 };
 
 type Props = {
-  mode: "forecast" | "lake" | "presence";
+  mode: "forecast" | "lake" | "presence" | "camp";
   lat: number;
   lng: number;
   lake?: WaterbodyGroup;
   presence?: PresenceLake;
+  camp?: CampSpotResponse;
   /** Reverse-geocoded area line for forecast mode (from map page). */
   forecastAreaLabel?: string | null;
   forecastAreaLabelLoading?: boolean;
@@ -29,9 +32,12 @@ type Props = {
   onExpandedChange: (expanded: boolean) => void;
   onClose: () => void;
   canUseAi: boolean;
+  showFavoriteButton?: boolean;
   favoriteEnabled?: boolean;
   isFavorite: boolean;
   onToggleFavorite: () => void;
+  canDeleteCamp?: boolean;
+  onDeleteCamp?: () => void;
 };
 
 function tabBtnClass(active: boolean) {
@@ -49,15 +55,19 @@ export function MapDetailBottomSheet({
   lng,
   lake,
   presence,
+  camp,
   forecastAreaLabel = null,
   forecastAreaLabelLoading = false,
   expanded,
   onExpandedChange,
   onClose,
   canUseAi,
+  showFavoriteButton = true,
   favoriteEnabled = true,
   isFavorite,
   onToggleFavorite,
+  canDeleteCamp = false,
+  onDeleteCamp,
 }: Props) {
   const { t, locale } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
@@ -80,6 +90,12 @@ export function MapDetailBottomSheet({
         })
       : mode === "presence" && presence
         ? t("forecast.mapPresenceCount", { count: presenceSpeciesCount })
+        : mode === "camp" && camp
+          ? camp.visibility === "PRIVATE"
+            ? "Private camp spot"
+            : camp.visibility === "FRIENDS"
+              ? "Friends-only camp spot"
+              : "Public camp spot"
         : mode === "forecast" && forecastAreaLabelLoading
           ? t("forecast.loading")
           : mode === "forecast" && forecastAreaLabel
@@ -142,6 +158,8 @@ export function MapDetailBottomSheet({
                 ? lake.waterbody
                 : mode === "presence" && presence
                   ? presence.name || t("forecast.mapPresenceUnknown")
+                  : mode === "camp" && camp
+                    ? camp.name
                   : t("forecast.popupTitle")}
             </h2>
             <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
@@ -152,50 +170,69 @@ export function MapDetailBottomSheet({
             </p>
           </div>
           <div className="flex min-w-0 shrink-0 flex-wrap items-start justify-end gap-1">
-            <span
-              className="inline-flex shrink-0"
-              title={
-                !favoriteEnabled
-                  ? t("map.favorite.loginRequiredShort")
-                  : isFavorite
-                    ? t("map.favorite.toggleRemove")
-                    : t("map.favorite.toggleAdd")
-              }
-            >
-              <button
-                type="button"
-                disabled={!favoriteEnabled}
-                onClick={() => favoriteEnabled && onToggleFavorite()}
-                className={[
-                  "map-page__bottom-sheet-icon-btn",
-                  !favoriteEnabled
-                    ? "cursor-not-allowed opacity-35"
-                    : isFavorite
-                      ? "map-page__bottom-sheet-favorite--on"
-                      : "text-zinc-400 dark:text-zinc-500",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                aria-label={
+            {showFavoriteButton ? (
+              <span
+                className="inline-flex shrink-0"
+                title={
                   !favoriteEnabled
                     ? t("map.favorite.loginRequiredShort")
                     : isFavorite
                       ? t("map.favorite.toggleRemove")
                       : t("map.favorite.toggleAdd")
                 }
-                aria-pressed={favoriteEnabled ? isFavorite : undefined}
-                aria-disabled={!favoriteEnabled}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-5 w-5"
-                  aria-hidden
-                  fill="currentColor"
+                <button
+                  type="button"
+                  disabled={!favoriteEnabled}
+                  onClick={() => favoriteEnabled && onToggleFavorite()}
+                  className={[
+                    "map-page__bottom-sheet-icon-btn",
+                    !favoriteEnabled
+                      ? "cursor-not-allowed opacity-35"
+                      : isFavorite
+                        ? "map-page__bottom-sheet-favorite--on"
+                        : "text-zinc-400 dark:text-zinc-500",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  aria-label={
+                    !favoriteEnabled
+                      ? t("map.favorite.loginRequiredShort")
+                      : isFavorite
+                        ? t("map.favorite.toggleRemove")
+                        : t("map.favorite.toggleAdd")
+                  }
+                  aria-pressed={favoriteEnabled ? isFavorite : undefined}
+                  aria-disabled={!favoriteEnabled}
                 >
-                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    className="h-5 w-5"
+                    aria-hidden
+                    fill="currentColor"
+                  >
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                  </svg>
+                </button>
+              </span>
+            ) : null}
+            {mode === "camp" && canDeleteCamp && onDeleteCamp ? (
+              <button
+                type="button"
+                onClick={onDeleteCamp}
+                className="map-page__bottom-sheet-icon-btn text-rose-600 hover:bg-rose-50 dark:text-rose-300 dark:hover:bg-rose-950/30"
+                aria-label="Delete camp"
+                title="Delete camp"
+              >
+                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5" aria-hidden>
+                  <path
+                    fillRule="evenodd"
+                    d="M8.5 2.75A.75.75 0 019.25 2h1.5a.75.75 0 01.75.75V4h3.75a.75.75 0 010 1.5h-.69l-.74 11.1A2.25 2.25 0 0111.58 18H8.42a2.25 2.25 0 01-2.24-2.4l-.74-11.1H4.75a.75.75 0 010-1.5H8.5V2.75zM7.5 5.5l.73 10.92a.75.75 0 00.75.68h2.04a.75.75 0 00.75-.68L12.5 5.5h-5z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </button>
-            </span>
+            ) : null}
             <button
               type="button"
               onClick={() => onExpandedChange(!expanded)}
@@ -360,6 +397,49 @@ export function MapDetailBottomSheet({
               lng={lng}
               omitOuterHeader
             />
+          ) : null}
+          {mode === "camp" && camp ? (
+            <div className="space-y-3">
+              {camp.imageUrls && camp.imageUrls.length > 0 ? (
+                <div className="grid grid-cols-2 gap-2">
+                  {camp.imageUrls.slice(0, 4).map((u) => (
+                    <div
+                      key={u}
+                      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                    >
+                      <div className="relative aspect-square w-full">
+                        <Image
+                          src={u}
+                          alt={camp.name}
+                          fill
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-zinc-500">No photos uploaded.</p>
+              )}
+
+              <div className="rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+                <p className="font-medium text-zinc-900 dark:text-zinc-100">Details</p>
+                <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                  Saved by <span className="font-semibold">@{camp.username}</span>
+                </p>
+                <p className="mt-1 text-zinc-600 dark:text-zinc-400">
+                  Visibility:{" "}
+                  <span className="font-medium">
+                    {camp.visibility === "PRIVATE"
+                      ? "Private"
+                      : camp.visibility === "FRIENDS"
+                        ? "Friends"
+                        : "Public"}
+                  </span>
+                </p>
+              </div>
+            </div>
           ) : null}
         </div>
       </div>

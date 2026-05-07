@@ -32,7 +32,7 @@ function moonPhaseBonus(phaseKey: MoonPhaseKey): number {
 
 /**
  * Heuristic same-day “conditions” score from pressure trend + level, solunar windows,
- * moon phase, and cloud cover. Informational only — not a guarantee of fishing success.
+ * moon phase, and cloud cover. Informational only - not a guarantee of fishing success.
  */
 export function computeConditionStars(
   data: FishingForecastPayload,

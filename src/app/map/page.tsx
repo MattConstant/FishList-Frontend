@@ -2,20 +2,32 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+} from "react";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
+import CampForm from "@/components/camp-form";
 import { MapDetailBottomSheet } from "@/components/map-detail-bottom-sheet";
 import { useLocale } from "@/contexts/locale-context";
 import type { CatchMapMarker } from "@/components/stocking-map";
 import {
+  fetchVisibleCampSpots,
   createMapFavorite,
+  deleteCampSpot,
   deleteMapFavorite,
   fetchLatestPosts,
   fetchMyFriends,
   fetchMyMapFavorites,
   getImageUrl,
   mapFavoriteSpotDtoToFavorite,
+  type CampSpotResponse,
   type FishEntryPayload,
 } from "@/lib/api";
 import {
@@ -62,10 +74,17 @@ const StockingMap = dynamic(() => import("@/components/stocking-map"), {
 });
 
 type PendingCatch = { lat: number; lng: number };
+type PendingCamp = { lat: number; lng: number };
 
 const MAP_FILTERS_EXPANDED_KEY = "fishlist-map-filters-expanded";
 const MAP_LAYERS_EXPANDED_KEY = "fishlist-map-layers-expanded";
 const MAP_LEGEND_VISIBLE_KEY = "fishlist-map-show-legend";
+const MAP_LAYER_SATELLITE_KEY = "fishlist-map-layer-satellite";
+const MAP_LAYER_STOCKING_KEY = "fishlist-map-layer-stocking";
+const MAP_LAYER_PRESENCE_KEY = "fishlist-map-layer-presence";
+const MAP_LAYER_CATCHES_KEY = "fishlist-map-layer-catches";
+const MAP_LAYER_CAMPS_KEY = "fishlist-map-layer-camps";
+const MAP_LAYER_BATHY_KEY = "fishlist-map-layer-bathymetry";
 
 /** Nearest lake / ARA point must be within this distance to open that sheet; otherwise treat as a plain map tap (forecast). */
 const FAVORITE_MATCH_MAX_KM = 2.5;
@@ -83,8 +102,16 @@ function speciesPillClass(active: boolean) {
 }
 
 export default function MapPage() {
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
   const { t, locale } = useLocale();
+  // Prevent SSR/CSR hydration mismatches for auth-dependent attributes (like `disabled`)
+  // by only applying them after the first client mount.
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+  const [deletingCampId, setDeletingCampId] = useState<number | null>(null);
   const [records, setRecords] = useState<StockingRecord[]>([]);
   const [groups, setGroups] = useState<WaterbodyGroup[]>([]);
   const [species, setSpecies] = useState<string[]>([]);
@@ -122,6 +149,8 @@ export default function MapPage() {
   const [minSpeciesCount, setMinSpeciesCount] = useState<1 | 2 | 3>(1);
 
   const [placing, setPlacing] = useState(false);
+  const [placingMode, setPlacingMode] = useState<"catch" | "camp">("catch");
+  const [logMenuOpen, setLogMenuOpen] = useState(false);
   const [mapSheet, setMapSheet] = useState<
     | null
     | { mode: "forecast"; lat: number; lng: number }
@@ -133,11 +162,18 @@ export default function MapPage() {
         name: string;
         speciesSummary: string;
       }
+    | {
+        mode: "camp";
+        lat: number;
+        lng: number;
+        camp: CampSpotResponse;
+      }
   >(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [forecastAreaLabel, setForecastAreaLabel] = useState<string | null>(null);
   const [forecastAreaLabelLoading, setForecastAreaLabelLoading] = useState(false);
   const [pendingCatch, setPendingCatch] = useState<PendingCatch | null>(null);
+  const [pendingCamp, setPendingCamp] = useState<PendingCamp | null>(null);
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("mine");
@@ -154,12 +190,32 @@ export default function MapPage() {
     "on-unless-false",
   );
 
-  const [showStocking, setShowStocking] = useState(true);
-  const [showAra, setShowAra] = useState(false);
-  const [showCatches, setShowCatches] = useState(true);
-  const [showBathymetry, setShowBathymetry] = useState(false);
-  const [satelliteImagery, setSatelliteImagery] = useState(false);
+  const [satelliteImagery, setSatelliteImagery] = useSyncedBooleanPref(
+    MAP_LAYER_SATELLITE_KEY,
+    "off-unless-true",
+  );
+  const [showStocking, setShowStocking] = useSyncedBooleanPref(
+    MAP_LAYER_STOCKING_KEY,
+    "on-unless-false",
+  );
+  const [showAra, setShowAra] = useSyncedBooleanPref(
+    MAP_LAYER_PRESENCE_KEY,
+    "off-unless-true",
+  );
+  const [showCatches, setShowCatches] = useSyncedBooleanPref(
+    MAP_LAYER_CATCHES_KEY,
+    "on-unless-false",
+  );
+  const [showCamps, setShowCamps] = useSyncedBooleanPref(
+    MAP_LAYER_CAMPS_KEY,
+    "on-unless-false",
+  );
+  const [showBathymetry, setShowBathymetry] = useSyncedBooleanPref(
+    MAP_LAYER_BATHY_KEY,
+    "off-unless-true",
+  );
   const [favoriteSpots, setFavoriteSpots] = useState<FavoriteSpot[]>([]);
+  const [campSpots, setCampSpots] = useState<import("@/lib/api").CampSpotResponse[]>([]);
   const [presenceSpecies, setPresenceSpecies] = useState<Set<AraSpeciesFilter>>(
     () => new Set(ARA_SPECIES_FILTERS),
   );
@@ -209,7 +265,7 @@ export default function MapPage() {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     skipNextAraSave.current = true;
@@ -313,7 +369,7 @@ export default function MapPage() {
         if (cancelled) return;
         setCatchMarkers(markers);
       } catch {
-        // silently fail — catch markers are nice-to-have
+        // silently fail - catch markers are nice-to-have
       }
     }
 
@@ -507,13 +563,17 @@ export default function MapPage() {
     (lat: number, lng: number) => {
       if (placing) {
         setPlacing(false);
-        setPendingCatch({ lat, lng });
+        if (placingMode === "camp") {
+          setPendingCamp({ lat, lng });
+        } else {
+          setPendingCatch({ lat, lng });
+        }
         return;
       }
       setMapSheet({ mode: "forecast", lat, lng });
       setSheetExpanded(false);
     },
-    [placing],
+    [placing, placingMode],
   );
 
   const handleStockingLakeClick = useCallback(
@@ -649,7 +709,7 @@ export default function MapPage() {
           });
         }
       } catch {
-        /* unauthorized / offline — silent */
+        /* unauthorized / offline - silent */
       }
     })();
   }, [
@@ -659,7 +719,7 @@ export default function MapPage() {
     currentSheetLabelForFavorite,
   ]);
 
-  /** Forecast pin only for “tap map for forecast” — not when a stocking marker is selected (avoids covering the fish icon). */
+  /** Forecast pin only for “tap map for forecast” - not when a stocking marker is selected (avoids covering the fish icon). */
   const forecastPin = useMemo(() => {
     if (!mapSheet || placing) return null;
     if (mapSheet.mode !== "forecast") return null;
@@ -730,6 +790,11 @@ export default function MapPage() {
         e.preventDefault();
         return;
       }
+      if (pendingCamp) {
+        setPendingCamp(null);
+        e.preventDefault();
+        return;
+      }
       if (placing) {
         setPlacing(false);
         e.preventDefault();
@@ -749,6 +814,7 @@ export default function MapPage() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [
     pendingCatch,
+    pendingCamp,
     placing,
     lakeSuggestionsOpen,
     mapSheet,
@@ -757,8 +823,53 @@ export default function MapPage() {
 
   function handleLogCatchClick() {
     if (!user) return;
+    setPlacingMode("catch");
     setPlacing(true);
   }
+
+  function handleLogCampClick() {
+    if (!user) return;
+    setPlacingMode("camp");
+    setPlacing(true);
+  }
+
+  useEffect(() => {
+    if (!user) {
+      setCampSpots([]);
+      return;
+    }
+    let cancelled = false;
+    fetchVisibleCampSpots(800)
+      .then(async (rows) => {
+        if (cancelled) return;
+
+        async function resolveOne(c: CampSpotResponse): Promise<CampSpotResponse> {
+          const raw = (c.imageUrls ?? []).slice(0, 4);
+          if (raw.length === 0) return c;
+          const resolved = await Promise.all(
+            raw.map(async (u) => {
+              if (!u) return "";
+              if (u.startsWith("http://") || u.startsWith("https://")) return u;
+              try {
+                return await getImageUrl(u);
+              } catch {
+                return "";
+              }
+            }),
+          );
+          return { ...c, imageUrls: resolved.filter(Boolean) };
+        }
+
+        const resolvedRows = await Promise.all(rows.map(resolveOne));
+        if (!cancelled) setCampSpots(resolvedRows);
+      })
+      .catch(() => {
+        if (!cancelled) setCampSpots([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     const q = lakePinQuery.trim();
@@ -900,37 +1011,64 @@ export default function MapPage() {
             </div>
           )}
           {user ? (
-            <button
-              type="button"
-              onClick={handleLogCatchClick}
-              disabled={placing}
-              className={[
-                "map-page__log-catch",
-                placing ? "map-page__log-catch--placing" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {placing ? (
-                <>
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                    <path
-                      fillRule="evenodd"
-                      d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.145c.182-.1.42-.244.697-.424a16.293 16.293 0 002.278-1.885C15.57 14.587 18 11.512 18 8A8 8 0 002 8c0 3.512 2.43 6.587 4.41 8.468a16.293 16.293 0 002.278 1.885 10.41 10.41 0 00.978.569l.018.008.006.003zM10 11a3 3 0 100-6 3 3 0 000 6z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Click on the map…
-                </>
-              ) : (
-                <>
-                  <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
-                    <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
-                  </svg>
-                  Log a Catch
-                </>
-              )}
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setLogMenuOpen((v) => !v)}
+                disabled={placing}
+                className={[
+                  "map-page__log-catch",
+                  placing ? "map-page__log-catch--placing" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {placing ? (
+                  <>
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path
+                        fillRule="evenodd"
+                        d="M9.69 18.933l.003.001C9.89 19.02 10 19 10 19s.11.02.308-.066l.002-.001.006-.003.018-.008a5.741 5.741 0 00.281-.145c.182-.1.42-.244.697-.424a16.293 16.293 0 002.278-1.885C15.57 14.587 18 11.512 18 8A8 8 0 002 8c0 3.512 2.43 6.587 4.41 8.468a16.293 16.293 0 002.278 1.885 10.41 10.41 0 00.978.569l.018.008.006.003zM10 11a3 3 0 100-6 3 3 0 000 6z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Click on the map…
+                  </>
+                ) : (
+                  <>
+                    <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4">
+                      <path d="M10.75 4.75a.75.75 0 00-1.5 0v4.5h-4.5a.75.75 0 000 1.5h4.5v4.5a.75.75 0 001.5 0v-4.5h4.5a.75.75 0 000-1.5h-4.5v-4.5z" />
+                    </svg>
+                    Log
+                  </>
+                )}
+              </button>
+
+              {logMenuOpen && !placing ? (
+                <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    onClick={() => {
+                      setLogMenuOpen(false);
+                      handleLogCatchClick();
+                    }}
+                  >
+                    <span aria-hidden>🐟</span> Log a catch
+                  </button>
+                  <button
+                    type="button"
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    onClick={() => {
+                      setLogMenuOpen(false);
+                      handleLogCampClick();
+                    }}
+                  >
+                    <span aria-hidden>🏕️</span> Log a camp
+                  </button>
+                </div>
+              ) : null}
+            </div>
           ) : (
             <Link href="/login" className="map-page__login-link">
               Log in to add catches
@@ -1426,7 +1564,7 @@ export default function MapPage() {
         </div>
       )}
 
-      {/* Map — flex-1 + basis-0 so Leaflet gets a non-zero height inside the scrollable main */}
+      {/* Map - flex-1 + basis-0 so Leaflet gets a non-zero height inside the scrollable main */}
       <div
         className={["map-page__map-area", placing ? "map-page__map-area--placing" : ""]
           .filter(Boolean)
@@ -1466,7 +1604,7 @@ export default function MapPage() {
         {/* Placing-mode banner */}
         {placing && (
           <div className="map-page__placing-banner">
-            Click anywhere on the map to place your catch
+            Click anywhere on the map to place your {placingMode === "camp" ? "camp" : "catch"}
           </div>
         )}
 
@@ -1489,6 +1627,12 @@ export default function MapPage() {
           bathymetryEnabled={showBathymetry}
           favoriteSpots={favoriteSpots}
           onFavoriteSpotClick={handleFavoriteSpotClick}
+          campSpots={campSpots}
+          campVisible={showCamps}
+          onCampMarkerClick={(camp, lat, lng) => {
+            setMapSheet({ mode: "camp", camp, lat, lng });
+            setSheetExpanded(true);
+          }}
         />
         <div
           className="map-page__layers-panel"
@@ -1570,12 +1714,30 @@ export default function MapPage() {
                   className="map-page__layers-check"
                   checked={showCatches}
                   onChange={(e) => setShowCatches(e.target.checked)}
-                  disabled={!user}
+                  disabled={hydrated ? !user : undefined}
                 />
                 <span className="map-page__layers-text">
                   <span className="map-page__layers-name">{t("map.layers.catches")}</span>
                   <span className="map-page__layers-blurb">
-                    {!user ? t("map.layers.catchesLogin") : t("map.layers.catchesBlurb")}
+                    {hydrated && !user ? t("map.layers.catchesLogin") : t("map.layers.catchesBlurb")}
+                  </span>
+                </span>
+              </label>
+              <label className="map-page__layers-row" htmlFor="map-layer-camps">
+                <input
+                  id="map-layer-camps"
+                  type="checkbox"
+                  className="map-page__layers-check"
+                  checked={showCamps}
+                  onChange={(e) => setShowCamps(e.target.checked)}
+                  disabled={hydrated ? !user : undefined}
+                />
+                <span className="map-page__layers-text">
+                  <span className="map-page__layers-name">Camps</span>
+                  <span className="map-page__layers-blurb">
+                    {hydrated && !user
+                      ? "Log in to save camp spots"
+                      : "Camping pins (public/friends/private)"}
                   </span>
                 </span>
               </label>
@@ -1657,7 +1819,9 @@ export default function MapPage() {
                 ? `lake-${mapSheet.group.waterbody}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
                 : mapSheet.mode === "presence"
                   ? `presence-${mapSheet.name}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
-                  : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+                  : mapSheet.mode === "camp"
+                    ? `camp-${mapSheet.camp.id}-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
+                    : `fc-${mapSheet.lat.toFixed(5)}-${mapSheet.lng.toFixed(5)}`
             }
             mode={mapSheet.mode}
             lat={mapSheet.lat}
@@ -1668,6 +1832,7 @@ export default function MapPage() {
                 ? { name: mapSheet.name, speciesSummary: mapSheet.speciesSummary }
                 : undefined
             }
+            camp={mapSheet.mode === "camp" ? mapSheet.camp : undefined}
             forecastAreaLabel={
               mapSheet.mode === "forecast" ? forecastAreaLabel : null
             }
@@ -1678,9 +1843,38 @@ export default function MapPage() {
             onExpandedChange={setSheetExpanded}
             onClose={closeMapSheet}
             canUseAi={!!user}
-            favoriteEnabled={!!user}
-            isFavorite={currentSheetIsFavorite}
-            onToggleFavorite={handleToggleMapFavorite}
+            showFavoriteButton={mapSheet.mode !== "camp"}
+            favoriteEnabled={mapSheet.mode === "camp" ? false : !!user}
+            isFavorite={mapSheet.mode === "camp" ? false : currentSheetIsFavorite}
+            onToggleFavorite={mapSheet.mode === "camp" ? (() => {}) : handleToggleMapFavorite}
+            canDeleteCamp={
+              mapSheet.mode === "camp" &&
+              !!user &&
+              (isAdmin || mapSheet.camp.accountId === user.id)
+            }
+            onDeleteCamp={
+              mapSheet.mode === "camp"
+                ? () => {
+                    if (!user) return;
+                    if (deletingCampId != null) return;
+                    const ok = window.confirm("Delete this camp spot?");
+                    if (!ok) return;
+                    const id = mapSheet.camp.id;
+                    setDeletingCampId(id);
+                    void (async () => {
+                      try {
+                        await deleteCampSpot(id);
+                        setCampSpots((prev) => prev.filter((c) => c.id !== id));
+                        setMapSheet(null);
+                      } catch {
+                        // Silent failure; map markers are secondary.
+                      } finally {
+                        setDeletingCampId(null);
+                      }
+                    })();
+                  }
+                : undefined
+            }
           />
         ) : null}
         {showMapLegend ? (
@@ -1770,6 +1964,37 @@ export default function MapPage() {
               ];
             });
             setPendingCatch(null);
+          }}
+        />
+      )}
+
+      {pendingCamp && (
+        <CampForm
+          lat={pendingCamp.lat}
+          lng={pendingCamp.lng}
+          onClose={() => setPendingCamp(null)}
+          onSuccess={async (saved) => {
+            // `saved.imageUrls` are typically object keys (e.g. `uploads/...`) so we must resolve them
+            // to actual fetchable URLs (e.g. `/api/storage/images/...`) before rendering.
+            const raw = (saved.imageUrls ?? []).slice(0, 4);
+            let resolved: string[] = [];
+            if (raw.length > 0) {
+              const out = await Promise.all(
+                raw.map(async (u) => {
+                  if (!u) return "";
+                  if (u.startsWith("http://") || u.startsWith("https://")) return u;
+                  try {
+                    return await getImageUrl(u);
+                  } catch {
+                    return "";
+                  }
+                }),
+              );
+              resolved = out.filter(Boolean);
+            }
+            const normalized: CampSpotResponse = raw.length > 0 ? { ...saved, imageUrls: resolved } : saved;
+            setCampSpots((prev) => [normalized, ...prev.filter((c) => c.id !== saved.id)]);
+            setPendingCamp(null);
           }}
         />
       )}

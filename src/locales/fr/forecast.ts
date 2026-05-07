@@ -34,14 +34,14 @@ export default {
   "forecast.loading": "Chargement…",
   "forecast.error": "Impossible de charger la prévision.",
   "forecast.dateNotAvailable":
-    "Cette date n’est pas encore disponible. Les prévisions ne couvrent que les prochaines semaines — choisissez un jour plus proche.",
+    "Cette date n’est pas encore disponible. Les prévisions ne couvrent que les prochaines semaines; choisissez un jour plus proche.",
   "forecast.pressureTitle": "Pression barométrique",
   "forecast.pressureTrend": "Tendance du jour (surface)",
   "forecast.trend.falling":
-    "En baisse — fenêtre d’activité pré-frontale, souvent les meilleures touches",
+    "En baisse : fenêtre d’activité pré-frontale, souvent les meilleures touches",
   "forecast.trend.rising":
-    "En hausse — après le passage du front, les touches ralentissent généralement",
-  "forecast.trend.steady": "Stable — schéma d’alimentation régulier et prévisible",
+    "En hausse : après le passage du front, les touches ralentissent généralement",
+  "forecast.trend.steady": "Stable : schéma d’alimentation régulier et prévisible",
   "forecast.trend.unknown": "Pas assez de données horaires",
   "forecast.pressureHpa": "{{first}} → {{last}} hPa",
   "forecast.pressureQuality.good": "Bonne (haute)",
@@ -55,7 +55,7 @@ export default {
     "Pression barométrique horaire de {{min}} à {{max}} hPa",
   "forecast.rating.title": "Note du jour",
   "forecast.rating.subtitle":
-    "Basée sur la tendance et le niveau de pression, la phase de la lune, les fenêtres solunaires et la nébulosité — une indication, sans garantie.",
+    "Basée sur la tendance et le niveau de pression, la phase de la lune, les fenêtres solunaires et la nébulosité : une indication, sans garantie.",
   "forecast.rating.aria": "{{stars}} sur 5 : {{label}}",
   "forecast.rating.level.1": "Conditions difficiles",
   "forecast.rating.level.2": "Sous la moyenne",
@@ -71,7 +71,7 @@ export default {
   "forecast.sunset": "Coucher du soleil",
   "forecast.moonrise": "Lever de la lune",
   "forecast.moonset": "Coucher de la lune",
-  "forecast.noMoon": "—",
+  "forecast.noMoon": "-",
   "forecast.moonPhase.new": "Nouvelle lune",
   "forecast.moonPhase.waxing_crescent": "Premier croissant",
   "forecast.moonPhase.first_quarter": "Premier quartier",
@@ -96,10 +96,10 @@ export default {
   "forecast.mapSheetTabsAria": "Détails du plan d’eau",
   "forecast.mapLakeSummary":
     "{{species}} espèces · {{total}} poissons stockés (enregistrements récents)",
-  "forecast.mapForecastPeek": "Prévision de pêche — déployer pour les détails",
+  "forecast.mapForecastPeek": "Prévision de pêche : déployer pour les détails",
   "forecast.mapPresenceHeading": "Espèces signalées",
   "forecast.mapPresenceNote":
-    "Espèces de poissons observées dans ce plan d’eau selon les données provinciales. Il s’agit d’une présence — non d’ensemencement ni d’une garantie de disponibilité.",
+    "Espèces de poissons observées dans ce plan d’eau selon les données provinciales. Il s’agit d’une présence, non d’ensemencement ni d’une garantie de disponibilité.",
   "forecast.mapPresenceCount": "{{count}} espèces signalées",
   "forecast.mapPresenceUnknown": "Plan d’eau sans nom",
   "forecast.mapPresenceEmpty": "Aucune donnée d'espèces pour ce plan d'eau.",
@@ -119,7 +119,7 @@ export default {
   "forecast.mapAiSignInSuffix": "pour obtenir des conseils IA.",
   "forecast.mapAiTipsButton": "Conseils de pêche (IA)",
   "forecast.mapAiDisclaimer":
-    "Les conseils sont généraux — vérifiez toujours la réglementation, les limites et l’accès avant de pêcher.",
+    "Les conseils sont généraux. Vérifiez toujours la réglementation, les limites et l’accès avant de pêcher.",
   "forecast.areaNameLoading": "Recherche du lieu…",
   "forecast.openInGoogleMaps": "Ouvrir dans Google Maps",
   "forecast.mapLinkAria": "Voir ce lieu dans Google Maps (nouvel onglet)",

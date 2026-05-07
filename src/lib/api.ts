@@ -1,5 +1,5 @@
 /**
- * FishList Spring API — Bearer JWT after Google Sign-In (see POST /api/auth/google).
+ * FishList Spring API - Bearer JWT after Google Sign-In (see POST /api/auth/google).
  */
 
 import type { LakeFishingInsightPayload } from "@/lib/lake-insights";
@@ -60,7 +60,7 @@ const ALLOWED_IMAGE_MIME_TYPES = new Set([
  */
 export const MAX_IMAGE_UPLOAD_BYTES = 25 * 1024 * 1024;
 
-/** Filename part for multipart uploads — some browsers send an empty name; the API needs an extension. */
+/** Filename part for multipart uploads - some browsers send an empty name; the API needs an extension. */
 export function imageUploadFileName(file: File): string {
   const trimmed = file.name?.trim();
   if (trimmed && getFileExtension(trimmed)) {
@@ -314,7 +314,7 @@ export async function exchangeGoogleCredential(
   return res.json() as Promise<GoogleAuthResponse>;
 }
 
-/** Username + password — same response shape as Google exchange (FishList JWT). */
+/** Username + password - same response shape as Google exchange (FishList JWT). */
 export async function exchangePasswordLogin(
   username: string,
   password: string,
@@ -614,6 +614,94 @@ async function authVoid(path: string, init?: RequestInit): Promise<void> {
 /** Matches server `PostVisibility` (who can see the location / feed post). */
 export type PostVisibility = "PUBLIC" | "FRIENDS" | "PRIVATE";
 
+// ── Camp spots (map pins, not feed posts) ────────────────────────────
+
+export type CampSpotResponse = {
+  id: number;
+  name: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  accountId: number;
+  username: string;
+  visibility?: PostVisibility | null;
+  /** Optional photos (object keys or absolute URLs). */
+  imageUrls?: string[];
+};
+
+export type CreateCampSpotPayload = {
+  name: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  visibility?: PostVisibility;
+  imageUrls?: string[];
+};
+
+export async function fetchVisibleCampSpots(limit = 500): Promise<CampSpotResponse[]> {
+  try {
+    return await authJson<CampSpotResponse[]>(`/api/camps/visible?limit=${limit}`);
+  } catch (e) {
+    // Backend may not have camp endpoints deployed yet; fall back to local-only camps.
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { listLocalCampsForUser, toCampSpotResponse } = await import("@/lib/camp-storage");
+      return listLocalCampsForUser(me.id).map(toCampSpotResponse).slice(0, limit);
+    }
+    throw e;
+  }
+}
+
+export async function createCampSpot(body: CreateCampSpotPayload): Promise<CampSpotResponse> {
+  try {
+    return await authJson<CampSpotResponse>("/api/camps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { upsertLocalCamp, toCampSpotResponse } = await import("@/lib/camp-storage");
+      const id = Date.now();
+      const local = {
+        id,
+        name: body.name.trim(),
+        latitude: body.latitude.trim(),
+        longitude: body.longitude.trim(),
+        timeStamp: body.timeStamp,
+        accountId: me.id,
+        username: me.username,
+        visibility: body.visibility ?? "PUBLIC",
+        imageUrls: body.imageUrls ?? [],
+      };
+      upsertLocalCamp(local);
+      return toCampSpotResponse(local);
+    }
+    throw e;
+  }
+}
+
+export async function deleteCampSpot(id: number): Promise<void> {
+  try {
+    await authVoid(`/api/camps/${id}`, { method: "DELETE" });
+  } catch (e) {
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { deleteLocalCamp } = await import("@/lib/camp-storage");
+      deleteLocalCamp(id, me.id);
+      return;
+    }
+    throw e;
+  }
+}
+
 /**
  * Body of water classification on a location. Mirrors the server
  * {@code ca.consmatt.beans.WaterType} enum names; UI labels are looked up via the locale key
@@ -696,7 +784,7 @@ export const FISHING_TYPE_OPTIONS: FishingType[] = [
   "OTHER",
 ];
 
-/** Payload for POST /locations/{id}/catches — use `fish` for multiple fish in one post. */
+/** Payload for POST /locations/{id}/catches - use `fish` for multiple fish in one post. */
 export type AddCatchPayload = {
   species?: string;
   quantity?: number;
@@ -832,6 +920,8 @@ export type FeedPost = {
   username: string;
   /** Present when the feed API includes it; avoids extra profile fetches. */
   profileImageKey?: string | null;
+  /** Visibility of the underlying location/post (PUBLIC / FRIENDS / PRIVATE). */
+  visibility?: PostVisibility | null;
   catch: CatchResponse;
 };
 
@@ -855,6 +945,7 @@ type FeedPostResponse = {
   imageUrls?: string;
   fishDetailsJson?: string | null;
   fishingType?: FishingType | null;
+  visibility?: PostVisibility | null;
 };
 
 function parseFishDetailsJson(
@@ -923,6 +1014,7 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
     accountId: row.accountId,
     username: row.username,
     profileImageKey: row.profileImageKey,
+    visibility: row.visibility ?? null,
     catch: {
       id: row.catchId,
       locationId: row.locationId,
@@ -1048,8 +1140,8 @@ export type LakeFishingInsightApiResponse = {
 };
 
 /**
- * Lake stocking insights — POST same-origin `/api/ai/lake-fishing-insights` (Next proxy → Spring).
- * Returns narrative text (species, tactics, general tips — no map pins).
+ * Lake stocking insights - POST same-origin `/api/ai/lake-fishing-insights` (Next proxy → Spring).
+ * Returns narrative text (species, tactics, general tips - no map pins).
  */
 export async function fetchLakeFishingInsights(
   payload: LakeFishingInsightPayload,
@@ -1118,6 +1210,7 @@ const downloadUrlInflight = new Map<string, Promise<string>>();
  */
 export async function getImageUrl(objectKey: string): Promise<string> {
   const key = objectKey.trim();
+  if (!key) throw new Error("Missing object key");
   const now = Date.now();
   const cached = downloadUrlCache.get(key);
   if (cached && cached.expiresAt > now) return cached.url;
@@ -1131,14 +1224,27 @@ export async function getImageUrl(objectKey: string): Promise<string> {
       }>(
         `/api/storage/images/download-url?key=${encodeURIComponent(key)}`,
       );
+      // Some deployments return a relative URL (e.g. "/api/storage/images/...") rather than
+      // an absolute presigned URL. Make it absolute against the backend base so `<img src>`
+      // resolves correctly regardless of the current Next.js origin.
+      const normalizedUrl = (() => {
+        const raw = (data.url ?? "").trim();
+        if (!raw) throw new Error("Missing download URL");
+        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+        if (raw.startsWith("/")) {
+          const base = getApiBaseUrl().replace(/\/$/, "");
+          return `${base}${raw}`;
+        }
+        return raw;
+      })();
       const resolvedAt = Date.now();
       const sec = data.expiresInSeconds ?? 3600;
       const ttlMs = Math.min(Math.max(30_000, sec * 1000 * 0.85), 55 * 60 * 1000);
       downloadUrlCache.set(key, {
-        url: data.url,
+        url: normalizedUrl,
         expiresAt: resolvedAt + ttlMs,
       });
-      return data.url;
+      return normalizedUrl;
     })().finally(() => {
       downloadUrlInflight.delete(key);
     });

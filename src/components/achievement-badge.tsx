@@ -10,7 +10,7 @@ import { AchievementIcon } from "@/components/achievement-icon";
 import { formatAppShortDate } from "@/lib/format-app-locale";
 
 /**
- * Color/glow palette per rarity — applied to the badge frame, glyph, and (when unlocked) the
+ * Color/glow palette per rarity - applied to the badge frame, glyph, and (when unlocked) the
  * ribbon. Locked badges fall back to a muted zinc treatment regardless of rarity so the user
  * can scan the page for what they already have.
  */

@@ -38,7 +38,7 @@ html {
 }
 
 body {
-  /* Dynamic viewport — avoids 100vh bugs when the iOS URL bar shows/hides */
+  /* Dynamic viewport - avoids 100vh bugs when the iOS URL bar shows/hides */
   min-height: 100%;
   min-height: 100dvh;
   color: var(--foreground);
@@ -81,7 +81,7 @@ button,
   display: none;
 }
 
-/* Fish loading spinner — wiggle + drift (friends page, location search, etc.) */
+/* Fish loading spinner - wiggle + drift (friends page, location search, etc.) */
 @keyframes fish-loading-swim {
   0%,
   100% {
@@ -96,4 +96,16 @@ button,
   animation: fish-loading-swim 0.95s ease-in-out infinite;
   transform-origin: 45% 55%;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08));
+}
+
+/* Logged-out home - ChronoTask-style dot canvas inside bento cards */
+.home-landing-dot-bg {
+  background-color: #f8fafc;
+  background-image: radial-gradient(circle, rgb(148 163 184 / 0.28) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.dark .home-landing-dot-bg {
+  background-color: rgb(24 24 27);
+  background-image: radial-gradient(circle, rgb(82 82 91 / 0.45) 1px, transparent 1px);
 }

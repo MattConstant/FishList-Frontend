@@ -21,7 +21,7 @@ function isLakeLikeQuery(q: string): boolean {
   return /\b(lake|pond|reservoir|waterbody|bay|basin|lagoon)\b/i.test(q);
 }
 
-/** Linear water features — often closest to GeoHub’s hint but wrong for “… Lake” pins. */
+/** Linear water features - often closest to GeoHub’s hint but wrong for “… Lake” pins. */
 function isStreamRiverWaterway(hit: NominatimHit): boolean {
   const cls = (hit.class ?? "").toLowerCase();
   const typ = (hit.type ?? "").toLowerCase();
@@ -33,7 +33,7 @@ function isStreamRiverWaterway(hit: NominatimHit): boolean {
 
 /**
  * Area water polygons in OSM (what we want for stocking pins). Excludes rivers/streams.
- * GeoHub coords are often on land — we must not pick the nearest road/POI to the hint.
+ * GeoHub coords are often on land - we must not pick the nearest road/POI to the hint.
  */
 function isWaterbodyPolygonHit(hit: NominatimHit): boolean {
   if (isStreamRiverWaterway(hit)) return false;
@@ -88,7 +88,7 @@ function isPopulationCenterPlace(hit: NominatimHit): boolean {
 }
 
 /**
- * Nominatim is biased toward the GeoHub point — a province-wide name search can
+ * Nominatim is biased toward the GeoHub point - a province-wide name search can
  * still return a high-importance result far away (e.g. Ottawa) even when the
  * stocking data references another part of the province. Keep a tight radius.
  */
@@ -176,7 +176,7 @@ function scoreHit(
   return w;
 }
 
-/** Score OSM water polygons — distance penalty is mild so a real lake km away beats a road at the hint. */
+/** Score OSM water polygons - distance penalty is mild so a real lake km away beats a road at the hint. */
 function scoreWaterbodyCandidate(
   hit: NominatimHit,
   hintLat: number,

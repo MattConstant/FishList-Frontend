@@ -1,4 +1,4 @@
-# Build context — keep secrets and dev-only files out of `docker build` (and out of any COPY).
+# Build context - keep secrets and dev-only files out of `docker build` (and out of any COPY).
 .git
 .github
 .gitignore

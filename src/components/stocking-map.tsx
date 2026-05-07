@@ -15,6 +15,7 @@ import {
   LIO_BATHYMETRY_MIN_ZOOM,
 } from "@/lib/lio-bathymetry";
 import type { FavoriteSpot } from "@/lib/map-favorites";
+import type { CampSpotResponse } from "@/lib/api";
 
 const ONTARIO_CENTER: [number, number] = [49.5, -85.0];
 const DEFAULT_ZOOM = 5;
@@ -109,9 +110,9 @@ function fishMarkerDataUrl(bodyFill: string): string {
   )}`;
 }
 
-/** Stocking lakes — sky blue (original inline asset). */
+/** Stocking lakes - sky blue (original inline asset). */
 const FISH_SVG_STOCKING = fishMarkerDataUrl("#0369a1");
-/** ARA (species presence) — emerald, distinct from stocking. */
+/** ARA (species presence) - emerald, distinct from stocking. */
 const FISH_SVG_ARA = fishMarkerDataUrl("#059669");
 
 const FAVORITE_HEART_ICON = L.icon({
@@ -143,12 +144,22 @@ function araFishIcon(): L.Icon {
   });
 }
 
-/** {@link /public/catch.png} — raw image, centered on the coordinates. */
+/** {@link /public/catch.png} - raw image, centered on the coordinates. */
 function catchPinIcon(): L.Icon {
   return L.icon({
     iconUrl: "/catch.png",
     iconSize: [32, 32],
     iconAnchor: [16, 16],
+    popupAnchor: [0, -14],
+  });
+}
+
+/** {@link /public/camp.png} - raw image, centered on the coordinates. */
+function campPinIcon(): L.Icon {
+  return L.icon({
+    iconUrl: "/camp.png",
+    iconSize: [30, 30],
+    iconAnchor: [15, 15],
     popupAnchor: [0, -14],
   });
 }
@@ -212,15 +223,15 @@ type StockingMapProps = {
   catchScope?: "all" | "friends" | "mine";
   friendIds?: Set<number>;
   currentUserId?: number;
-  /** Stocking marker clicked — open lake detail in parent UI (no Leaflet popup). */
+  /** Stocking marker clicked - open lake detail in parent UI (no Leaflet popup). */
   onStockingLakeClick?: (payload: {
     group: WaterbodyGroup;
     lat: number;
     lng: number;
   }) => void;
-  /** ARA (MNRF aquatic resource) species presence — not stocking events. */
+  /** ARA (MNRF aquatic resource) species presence - not stocking events. */
   araMarkers?: AraMapPoint[];
-  /** Species-presence (green fish) marker clicked — open presence detail in parent UI. */
+  /** Species-presence (green fish) marker clicked - open presence detail in parent UI. */
   onAraMarkerClick?: (payload: AraMapPoint) => void;
   /** Fires when the map is ready or the user stops panning/zooming (for viewport loading). */
   onViewportChange?: (bounds: AraViewport) => void;
@@ -232,8 +243,13 @@ type StockingMapProps = {
   bathymetryEnabled?: boolean;
   /** Locally saved favorite spots (heart on map at rounded coords). */
   favoriteSpots?: FavoriteSpot[];
-  /** Heart marker clicked — open the same detail flow as a lake/forecast tap at this spot. */
+  /** Heart marker clicked - open the same detail flow as a lake/forecast tap at this spot. */
   onFavoriteSpotClick?: (spot: FavoriteSpot) => void;
+  /** Camp spots to render as their own map layer. */
+  campSpots?: CampSpotResponse[];
+  campVisible?: boolean;
+  /** Camp marker clicked - open details in the parent UI (no Leaflet popup). */
+  onCampMarkerClick?: (camp: CampSpotResponse, lat: number, lng: number) => void;
 };
 
 export default function StockingMap({
@@ -255,6 +271,9 @@ export default function StockingMap({
   bathymetryEnabled = false,
   favoriteSpots = [],
   onFavoriteSpotClick,
+  campSpots = [],
+  campVisible = true,
+  onCampMarkerClick,
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -265,9 +284,12 @@ export default function StockingMap({
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
   const araLayerRef = useRef<L.LayerGroup | null>(null);
   const favoriteLayerRef = useRef<L.LayerGroup | null>(null);
+  const campLayerRef = useRef<L.LayerGroup | null>(null);
+  const onCampMarkerClickRef = useRef(onCampMarkerClick);
+  onCampMarkerClickRef.current = onCampMarkerClick;
   const onViewportChangeRef = useRef(onViewportChange);
   onViewportChangeRef.current = onViewportChange;
-  /** Stocking markers by lake key — updated in place when geocode refines coords (avoids rebuilding cluster). */
+  /** Stocking markers by lake key - updated in place when geocode refines coords (avoids rebuilding cluster). */
   const stockingMarkerByKeyRef = useRef<Map<string, L.Marker>>(new Map());
   const userLayerRef = useRef<L.LayerGroup | null>(null);
   const onStockingLakeClickRef = useRef(onStockingLakeClick);
@@ -797,6 +819,40 @@ export default function StockingMap({
     layer.addTo(map);
     favoriteLayerRef.current = layer;
   }, [favoriteSpots]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (campLayerRef.current) {
+      map.removeLayer(campLayerRef.current);
+      campLayerRef.current = null;
+    }
+    if (!campVisible) return;
+    if (campSpots.length === 0) return;
+
+    const layer = L.layerGroup();
+    const icon = campPinIcon();
+    for (const c of campSpots) {
+      const lat = parseFloat(c.latitude);
+      const lng = parseFloat(c.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+      const marker = L.marker([lat, lng], { icon, zIndexOffset: 1500 });
+      marker.bindTooltip(c.name || "Camp", {
+        direction: "top",
+        offset: L.point(0, -10),
+        opacity: 1,
+        className: "map-page__stocking-tooltip",
+      });
+      marker.on("click", () => {
+        onCampMarkerClickRef.current?.(c, lat, lng);
+      });
+      layer.addLayer(marker);
+    }
+
+    layer.addTo(map);
+    campLayerRef.current = layer;
+  }, [campSpots, campVisible]);
 
   useEffect(() => {
     const map = mapRef.current;

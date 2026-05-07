@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Placeholder for marketing screenshots that are not ready yet — flat, no gradients.
+ * Placeholder for marketing screenshots that are not ready yet - flat, no gradients.
  */
 export function LandingImagePlaceholder({
   label,

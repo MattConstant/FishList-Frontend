@@ -43,13 +43,13 @@ export function LakeStockingTab({ group, canUseAi }: Props) {
           <span className="font-medium text-zinc-600 dark:text-zinc-300">
             {t("forecast.mapDistrict")}{" "}
           </span>
-          {districts || "—"}
+          {districts || "-"}
         </p>
         <p>
           <span className="font-medium text-zinc-600 dark:text-zinc-300">
             {t("forecast.mapStage")}{" "}
           </span>
-          {stages || "—"}
+          {stages || "-"}
         </p>
       </div>
 

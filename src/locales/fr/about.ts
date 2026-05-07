@@ -2,9 +2,9 @@ export default {
   "about.kicker": "À propos de FishList",
   "about.title": "Un projet du cœur, depuis Ottawa",
   "about.p1":
-    "Je suis développeur à Ottawa et j'adore tout simplement la pêche. Une bonne partie de mon temps libre part à chercher de bons coins, à lire les nouvelles sur l'ensemencement et à rassembler cartes, photos et notes un peu partout — souvent à travers plus d'applications et d'onglets que j'aimerais le compter.",
+    "Je suis développeur à Ottawa et j'adore tout simplement la pêche. Une bonne partie de mon temps libre part à chercher de bons coins, à lire les nouvelles sur l'ensemencement et à rassembler cartes, photos et notes un peu partout, souvent à travers plus d'applications et d'onglets que j'aimerais le compter.",
   "about.p2":
-    "Alors j'ai décidé de regrouper les outils que j'utilise vraiment au même endroit : FishList. Parcourez les eaux de l'Ontario, enregistrez des prises avec photos et détails, restez en contact avec des amis et suivez un fil communautaire — sans jongler avec une demi-douzaine de services à chaque sortie.",
+    "Alors j'ai décidé de regrouper les outils que j'utilise vraiment au même endroit : FishList. Parcourez les eaux de l'Ontario, enregistrez des prises avec photos et détails, restez en contact avec des amis et suivez un fil communautaire, sans jongler avec une demi-douzaine de services à chaque sortie.",
   "about.p3":
     "L'application grandit encore, et les commentaires des pêcheurs comptent énormément pour moi. Si FishList vous épargne un peu de casse-tête et vous laisse plus de temps à pêcher qu'à organiser, c'est exactement pour ça qu'elle existe.",
   "about.card.local.title": "Concu localement",

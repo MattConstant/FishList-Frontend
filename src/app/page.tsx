@@ -36,6 +36,33 @@ const TOP_COMMENTS_LIMIT = 2;
 const COMMENTS_CHUNK_SIZE = 5;
 const FEED_PAGE_SIZE = 24;
 
+function dedupePosts(list: FeedPost[]): FeedPost[] {
+  const seen = new Set<string>();
+  const out: FeedPost[] = [];
+  for (const p of list) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    out.push(p);
+  }
+  return out;
+}
+
+function visibilityPill(vis: FeedPost["visibility"]) {
+  const v = vis ?? "PUBLIC";
+  const label = v === "FRIENDS" ? "Friends" : v === "PRIVATE" ? "Private" : "Public";
+  const cls =
+    v === "FRIENDS"
+      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
+      : v === "PRIVATE"
+        ? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200";
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
+      {label}
+    </span>
+  );
+}
+
 function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
 }
@@ -292,6 +319,7 @@ const FeedCard = memo(function FeedCard({
         </div>
         <div className="flex items-center gap-3">
           <p className="text-xs text-zinc-500">{post.locationName}</p>
+          {isAdmin ? visibilityPill(post.visibility) : null}
           {(isOwnPost || isAdmin) && (
             <button
               type="button"
@@ -532,7 +560,7 @@ export default function HomePage() {
     setError("");
     try {
       const nextPosts = await fetchLatestPosts(FEED_PAGE_SIZE, 0);
-      setPosts(nextPosts);
+      setPosts(dedupePosts(nextPosts));
       setHasMore(nextPosts.length === FEED_PAGE_SIZE);
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("home.loadLatestError")));
@@ -546,7 +574,7 @@ export default function HomePage() {
     setLoadingMore(true);
     try {
       const next = await fetchLatestPosts(FEED_PAGE_SIZE, posts.length);
-      setPosts((prev) => [...prev, ...next]);
+      setPosts((prev) => dedupePosts([...prev, ...next]));
       setHasMore(next.length === FEED_PAGE_SIZE);
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("home.loadMoreError")));
