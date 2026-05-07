@@ -617,7 +617,7 @@ const FeedCard = memo(function FeedCard({
 });
 
 function HomeFeed() {
-  const { user, isReady, isAdmin } = useAuth();
+  const { user, isReady, isAdmin, connectionIssueKey } = useAuth();
   const { t } = useLocale();
   const searchParams = useSearchParams();
   const focusPostId = searchParams.get("post");
@@ -799,6 +799,18 @@ function HomeFeed() {
   }
 
   if (!user) {
+    if (connectionIssueKey) {
+      return (
+        <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-6 py-16 text-center">
+          <p className="text-lg font-medium text-zinc-800 dark:text-zinc-100">
+            {t("errors.accountLoadFailed")}
+          </p>
+          <p className="mt-3 max-w-md text-sm text-zinc-500 dark:text-zinc-400">
+            {t("errors.offlineHomeHint")}
+          </p>
+        </div>
+      );
+    }
     return <HomeLandingPage />;
   }
 

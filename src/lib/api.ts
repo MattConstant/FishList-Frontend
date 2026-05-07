@@ -30,6 +30,78 @@ export class ApiHttpError extends Error {
   }
 }
 
+/**
+ * Thrown when `fetch` fails before a response (offline, DNS, CORS, connection reset, etc.).
+ * Callers should not clear auth session for this error.
+ */
+export class ApiNetworkError extends Error {
+  readonly code = "NETWORK" as const;
+
+  constructor(
+    message = "Could not reach FishList. Check your internet connection, or try again when the service is back online.",
+    cause?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiNetworkError";
+    if (cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = cause;
+    }
+  }
+}
+
+function isLikelyConnectivityFailure(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "AbortError") return true;
+  const msg = err.message.toLowerCase();
+  if (err instanceof TypeError && (msg.includes("fetch") || msg.includes("network") || msg.includes("failed"))) {
+    return true;
+  }
+  if (msg.includes("networkerror") || msg.includes("failed to fetch") || msg.includes("load failed")) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Wraps `fetch` so connection failures become {@link ApiNetworkError} with a clear message.
+ */
+export async function backendFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiNetworkError(
+        "The request was cancelled or timed out. Check your connection and try again.",
+        err,
+      );
+    }
+    if (isLikelyConnectivityFailure(err)) {
+      throw new ApiNetworkError(undefined, err);
+    }
+    throw err;
+  }
+}
+
+/** Parse JSON from a successful response body; never throws raw `SyntaxError`. */
+async function parseResponseJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new ApiHttpError("The server returned an empty response. Please try again.", res.status || 502);
+  }
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {
+    throw new ApiHttpError(
+      "The server returned data we could not read. Please try again in a moment.",
+      res.status || 502,
+    );
+  }
+}
+
 type ApiErrorPayload = {
   status?: number;
   code?: string;
@@ -236,6 +308,9 @@ export function getDisplayErrorMessage(
   err: unknown,
   fallback = "Something went wrong.",
 ): string {
+  if (err instanceof ApiNetworkError) {
+    return err.message;
+  }
   if (err instanceof ApiHttpError) {
     if (err.code === "VALIDATION_ERROR") return "Please check your input and try again.";
     if (err.status === 400) {
@@ -258,12 +333,42 @@ export function getDisplayErrorMessage(
       return "That value is already in use.";
     }
     if (err.status === 429) return "Too many requests. Please try again later.";
-    if (err.status === 502)
-      return "Upload failed (bad gateway). Try a smaller photo, or ask the host to raise MULTIPART_MAX_SIZE / proxy body limits.";
-    if (err.status >= 500) return "Server error. Please try again.";
+    if (err.status === 502 || err.status === 504) {
+      const m = err.message?.toLowerCase() ?? "";
+      if (m.includes("multipart") || m.includes("body") || m.includes("payload") || m.includes("too large")) {
+        return "Upload failed (bad gateway). Try a smaller photo, or ask the host to raise upload / proxy body limits.";
+      }
+      return "FishList is temporarily unreachable (gateway error). Please try again in a few minutes.";
+    }
+    if (err.status >= 500) return "Something went wrong on the server. Please try again later.";
     return fallback;
   }
+  if (err instanceof SyntaxError) {
+    return "Received an invalid response. Please try again later.";
+  }
+  if (err instanceof Error && err.name === "AbortError") {
+    return "The request was cancelled or timed out.";
+  }
+  if (isLikelyConnectivityFailure(err)) {
+    return "Could not reach FishList. Check your internet connection, or try again when the service is back online.";
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message.trim();
+  }
   return fallback;
+}
+
+/**
+ * i18n key for connection / availability issues (use with `t(key)`). Returns null if not a known connectivity-style error.
+ */
+export function getConnectionIssueLocaleKey(err: unknown): string | null {
+  if (err instanceof ApiNetworkError) return "errors.backendUnreachable";
+  if (err instanceof ApiHttpError) {
+    if (err.status === 502 || err.status === 504) return "errors.backendUnavailable";
+    if (err.status >= 500) return "errors.backendServerError";
+  }
+  if (isLikelyConnectivityFailure(err)) return "errors.backendUnreachable";
+  return null;
 }
 
 export function getApiBaseUrl(): string {
@@ -304,14 +409,14 @@ export async function exchangeGoogleCredential(
   credential: string,
 ): Promise<GoogleAuthResponse> {
   clearSession();
-  const res = await fetch(`${getApiBaseUrl()}/api/auth/google`, {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "omit",
     body: JSON.stringify({ credential }),
   });
   await throwIfNotOk(res);
-  return res.json() as Promise<GoogleAuthResponse>;
+  return parseResponseJson<GoogleAuthResponse>(res);
 }
 
 /** Username + password - same response shape as Google exchange (FishList JWT). */
@@ -320,14 +425,14 @@ export async function exchangePasswordLogin(
   password: string,
 ): Promise<GoogleAuthResponse> {
   clearSession();
-  const res = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "omit",
     body: JSON.stringify({ username: username.trim(), password }),
   });
   await throwIfNotOk(res);
-  return res.json() as Promise<GoogleAuthResponse>;
+  return parseResponseJson<GoogleAuthResponse>(res);
 }
 
 /** Create account with username + password; same response shape as login (FishList JWT). */
@@ -336,14 +441,14 @@ export async function exchangeRegister(
   password: string,
 ): Promise<GoogleAuthResponse> {
   clearSession();
-  const res = await fetch(`${getApiBaseUrl()}/api/auth/register`, {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "omit",
     body: JSON.stringify({ username: username.trim(), password }),
   });
   await throwIfNotOk(res);
-  return res.json() as Promise<GoogleAuthResponse>;
+  return parseResponseJson<GoogleAuthResponse>(res);
 }
 
 export function loadSession(): StoredSession | null {
@@ -381,11 +486,11 @@ function redirectToLogin(): void {
 export async function fetchCurrentAccount(
   authorizationHeader: string,
 ): Promise<AccountResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/api/accounts/me`, {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/accounts/me`, {
     headers: { Authorization: authorizationHeader },
   });
   await throwIfNotOk(res);
-  return res.json() as Promise<AccountResponse>;
+  return parseResponseJson<AccountResponse>(res);
 }
 
 /**
@@ -401,13 +506,13 @@ export async function apiGet(path: string): Promise<Response> {
   if (session?.authorizationHeader) {
     headers.Authorization = session.authorizationHeader;
   }
-  return fetch(url, { headers, cache: "no-store" });
+  return backendFetch(url, { headers, cache: "no-store" });
 }
 
 async function apiGetJson<T>(path: string): Promise<T> {
   const res = await apiGet(path);
   await throwIfNotOk(res);
-  return res.json() as Promise<T>;
+  return parseResponseJson<T>(res);
 }
 
 /** Updates username and/or profile image (object key from {@link uploadImage}; empty string clears photo). Returns a new JWT. */
@@ -596,7 +701,7 @@ export async function authenticatedFetch(
     ? path
     : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 
-  const res = await fetch(url, {
+  const res = await backendFetch(url, {
     ...init,
     cache: init.cache ?? "no-store",
     headers: {
@@ -615,7 +720,7 @@ export async function authenticatedFetch(
 async function authJson<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await authenticatedFetch(path, init);
   await throwIfNotOk(res);
-  return res.json() as Promise<T>;
+  return parseResponseJson<T>(res);
 }
 
 async function authVoid(path: string, init?: RequestInit): Promise<void> {
@@ -857,7 +962,7 @@ export async function addCatchToLocation(
     body: JSON.stringify(catchData),
   });
   await throwIfNotOk(catchRes);
-  const data = (await catchRes.json()) as AddCatchApiResponse;
+  const data = await parseResponseJson<AddCatchApiResponse>(catchRes);
   dispatchUnlocks(data.unlockedAchievements);
   return data.catch;
 }
@@ -883,7 +988,7 @@ export async function createLocationAndCatch(
     body: JSON.stringify(catchData),
   });
   await throwIfNotOk(catchRes);
-  const data = (await catchRes.json()) as AddCatchApiResponse;
+  const data = await parseResponseJson<AddCatchApiResponse>(catchRes);
   dispatchUnlocks(data.unlockedAchievements);
   return data.catch;
 }
@@ -904,20 +1009,24 @@ export async function fetchUserLocations(
 ): Promise<LocationWithCatches[]> {
   const res = await apiGet(`/api/accounts/${accountId}/locations`);
   await throwIfNotOk(res);
-  const locations = (await res.json()) as Array<{
-    id: number;
-    locationName: string;
-    latitude: string;
-    longitude: string;
-    timeStamp: string;
-    details: string | null;
-    accountId: number;
-  }>;
+  const locations = await parseResponseJson<
+    Array<{
+      id: number;
+      locationName: string;
+      latitude: string;
+      longitude: string;
+      timeStamp: string;
+      details: string | null;
+      accountId: number;
+    }>
+  >(res);
 
   const results: LocationWithCatches[] = [];
   for (const loc of locations) {
     const catchRes = await apiGet(`/api/locations/${loc.id}/catches`);
-    const catches: CatchResponse[] = catchRes.ok ? await catchRes.json() : [];
+    const catches: CatchResponse[] = catchRes.ok
+      ? await parseResponseJson<CatchResponse[]>(catchRes)
+      : [];
     results.push({ ...loc, catches });
   }
   return results;
@@ -1183,7 +1292,7 @@ export async function fetchLakeFishingInsights(
     throw new Error("Not authenticated");
   }
 
-  const res = await fetch("/api/ai/lake-fishing-insights", {
+  const res = await backendFetch("/api/ai/lake-fishing-insights", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1200,9 +1309,9 @@ export async function fetchLakeFishingInsights(
   }
 
   await throwIfNotOk(res);
-  const data = (await res.json()) as LakeFishingInsightApiResponse;
+  const data = await parseResponseJson<LakeFishingInsightApiResponse>(res);
   if (typeof data.text !== "string") {
-    throw new Error("Invalid response from server");
+    throw new ApiHttpError("Invalid response from server.", res.status);
   }
   return { text: data.text };
 }
@@ -1287,10 +1396,11 @@ export async function getImageUrl(objectKey: string): Promise<string> {
 async function throwIfNotOk(res: Response): Promise<void> {
   if (res.ok) return;
 
+  const text = await res.text();
   const contentType = res.headers.get("content-type") ?? "";
-  if (contentType.includes("application/json")) {
+  if (contentType.includes("application/json") && text.trim()) {
     try {
-      const payload = (await res.json()) as ApiErrorPayload;
+      const payload = JSON.parse(text) as ApiErrorPayload;
       throw new ApiHttpError(
         payload.message || res.statusText || `HTTP ${res.status}`,
         res.status,
@@ -1298,13 +1408,12 @@ async function throwIfNotOk(res: Response): Promise<void> {
       );
     } catch (err) {
       if (err instanceof ApiHttpError) throw err;
-      // Fall through to text parsing for malformed JSON.
+      // Malformed JSON body — fall through to generic error from text.
     }
   }
 
-  const text = await res.text();
   throw new ApiHttpError(
-    text || res.statusText || `HTTP ${res.status}`,
+    text.trim() || res.statusText || `HTTP ${res.status}`,
     res.status,
   );
 }

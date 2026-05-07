@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ConnectionBanner } from "@/components/connection-banner";
 import { NavBar } from "@/components/nav-bar";
 import { Providers } from "@/components/providers";
 import "./globals.css";
@@ -100,6 +101,7 @@ export default function RootLayout({
           {/* h-dvh gives main a real height so flex-1 children (e.g. map) don’t collapse to 0 */}
           <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden">
             <NavBar />
+            <ConnectionBanner />
             <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[env(safe-area-inset-bottom)]">
               {children}
             </main>
