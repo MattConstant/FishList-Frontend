@@ -37,34 +37,44 @@ export default {
   "profile.morePhotos": "+{{n}} photos de plus",
   "profile.prefs.open": "Reglages",
   "profile.prefs.close": "Fermer",
+  "profile.prefs.save": "Enregistrer",
+  "profile.prefs.cancel": "Annuler",
   "profile.prefs.title": "Reglages",
-  "profile.prefs.appearance": "Apparence",
-  "profile.prefs.themeHelp": "Clair, fonce, ou comme l'appareil.",
+  "profile.prefs.subtitle":
+    "Ces options sont enregistrees dans votre navigateur sur cet appareil. Elles reglent l'apparence et le comportement des filtres sur la carte.",
+  "profile.prefs.display.title": "Affichage",
+  "profile.prefs.display.body":
+    "Mode clair, mode fonce, ou comme l'appareil. S'applique a toute l'application.",
   "profile.prefs.themeGroup": "Theme de couleur",
   "profile.prefs.themeSystem": "Systeme",
   "profile.prefs.themeLight": "Clair",
   "profile.prefs.themeDark": "Fonce",
-  "profile.prefs.language": "Langue",
+  "profile.prefs.language.title": "Langue",
+  "profile.prefs.language.body":
+    "Francais ou English pour les menus, boutons et libelles. Les donnees de compte ne changent pas.",
   "profile.prefs.languageGroup": "Langue de l'interface",
   "profile.prefs.langEn": "English",
   "profile.prefs.langFr": "Français",
-  "profile.prefs.mapFish": "Carte : poissons stockes",
-  "profile.prefs.mapFishHelp":
-    "Choisissez les especes qui vous interessent. Vous pouvez ouvrir la carte avec seulement ces especes dans le filtre de stockage.",
+  "profile.prefs.stocking.title": "Carte d'ensemencement MNRF (epingles bleues)",
+  "profile.prefs.stocking.body":
+    "Ces especes servent au filtre d'ensemencement sur la carte (poissons bleus). Choisissez vos especes et, si vous voulez, demarrez avec seulement celles-ci a l'ouverture de la carte.",
   "profile.prefs.autoFilterLabel":
-    "A l'ouverture de la carte, pre-selectionner seulement mes especes favorites (filtre de stockage)",
+    "A l'ouverture de la carte, ne pre-selectionner que mes especes favorites dans le filtre d'ensemencement",
   "profile.prefs.autoFilterHint":
-    "Selectionnez au moins une espece ci-dessous, ou desactivez pour commencer avec toutes les especes.",
-  "profile.prefs.favoriteSpecies": "Especes favorites",
+    "Desactivez cette option ou choisissez au moins une espece favorite ci-dessous; sinon la carte peut s'ouvrir sans espece selectionnee.",
+  "profile.prefs.favoriteSpecies": "Especes favorites (ensemencement)",
   "profile.prefs.selectAllSpecies": "Tout selectionner",
   "profile.prefs.clearSpecies": "Effacer",
   "profile.prefs.speciesLoadError": "Impossible de charger la liste d'especes. Reessayez plus tard.",
-  "profile.prefs.araMapSection": "Presence des especes (poissons verts sur la carte)",
+  "profile.prefs.presence.title": "Presence des especes (epingles vertes)",
+  "profile.prefs.presence.body":
+    "Les epingles vertes viennent des donnees provinciales de presence: ce n'est pas l'ensemencement MNRF (bleu). Ces reglages concernent seulement la couche presence et le panneau du plan d'eau.",
+  "profile.prefs.araMapSection": "Especes pouvant apparaitre sur la carte",
   "profile.prefs.araMapHelp":
-    "Choisissez quelles especes apparaissent comme marqueurs de presence quand la couche est active. Ce n'est pas le stockage (poissons bleus).",
+    "Quand la couche presence est active, les especes cochees peuvent s'afficher en vert (si des donnees existent dans la zone).",
   "profile.prefs.araMapClear": "Effacer filtres carte",
-  "profile.prefs.araTargetsSection": "Especes cibles (presence)",
+  "profile.prefs.araTargetsSection": "Especes cibles dans le panneau du lac",
   "profile.prefs.araTargetsHelp":
-    "Au bord de l'eau, ces especes s'affichent d'abord sous « Especes cibles » dans le panneau vert. Tout desactiver pour une seule liste.",
-  "profile.prefs.araTargetsClear": "Effacer especes cibles",
+    "Pour un plan d'eau, les especes cochees sont mises en avant sous « Especes cibles ». Tout effacer pour une seule liste.",
+  "profile.prefs.araTargetsClear": "Effacer les cibles",
 } as const;

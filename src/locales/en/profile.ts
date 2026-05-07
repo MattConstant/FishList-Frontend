@@ -37,34 +37,44 @@ export default {
   "profile.morePhotos": "+{{n}} more photos",
   "profile.prefs.open": "Preferences",
   "profile.prefs.close": "Close",
+  "profile.prefs.save": "Save",
+  "profile.prefs.cancel": "Cancel",
   "profile.prefs.title": "Preferences",
-  "profile.prefs.appearance": "Appearance",
-  "profile.prefs.themeHelp": "Choose light, dark, or match your device.",
+  "profile.prefs.subtitle":
+    "These settings are saved in your browser on this device. They control how FishList looks and how map filters behave.",
+  "profile.prefs.display.title": "Display",
+  "profile.prefs.display.body":
+    "Choose light mode, dark mode, or follow your device setting. Applies across the whole app.",
   "profile.prefs.themeGroup": "Color theme",
   "profile.prefs.themeSystem": "System",
   "profile.prefs.themeLight": "Light",
   "profile.prefs.themeDark": "Dark",
-  "profile.prefs.language": "Language",
+  "profile.prefs.language.title": "Language",
+  "profile.prefs.language.body":
+    "Switch English or Français for menus, buttons, and labels. Your account data does not change.",
   "profile.prefs.languageGroup": "Interface language",
   "profile.prefs.langEn": "English",
   "profile.prefs.langFr": "Français",
-  "profile.prefs.mapFish": "Map: stocking fish",
-  "profile.prefs.mapFishHelp":
-    "Choose species you care about. You can start the stocking map with only those species selected.",
+  "profile.prefs.stocking.title": "MNRF stocking map (blue pins)",
+  "profile.prefs.stocking.body":
+    "These species power the stocking filter on the map (blue fish icons). Pick what you care about, and optionally start with only those selected when you open the map.",
   "profile.prefs.autoFilterLabel":
-    "When I open the map, pre-select only my favorite species (stocking filter)",
+    "When I open the map, start with only my favorite species selected in the stocking filter",
   "profile.prefs.autoFilterHint":
-    "Select at least one species below, or turn this off to start with all species.",
-  "profile.prefs.favoriteSpecies": "Favorite species",
+    "Turn this off, or pick at least one favorite species below; otherwise the map may open with no species selected.",
+  "profile.prefs.favoriteSpecies": "Favorite species for stocking",
   "profile.prefs.selectAllSpecies": "Select all",
   "profile.prefs.clearSpecies": "Clear",
   "profile.prefs.speciesLoadError": "Could not load species list. Try again later.",
-  "profile.prefs.araMapSection": "Species presence (green fish on map)",
+  "profile.prefs.presence.title": "Species presence (green pins)",
+  "profile.prefs.presence.body":
+    "Green pins come from provincial presence records. That is separate from MNRF stocking (blue). Settings here only affect the presence layer and the lake panel.",
+  "profile.prefs.araMapSection": "Which species can show on the map",
   "profile.prefs.araMapHelp":
-    "Choose which species show as presence markers when that map layer is on. This is separate from stocking (blue fish).",
+    "When the species presence layer is on, checked species can appear as green markers (if data exists in the area).",
   "profile.prefs.araMapClear": "Clear map filters",
-  "profile.prefs.araTargetsSection": "Target species (presence)",
+  "profile.prefs.araTargetsSection": "Your target species in the lake panel",
   "profile.prefs.araTargetsHelp":
-    "At a waterbody, these species appear first under “Your target species” in the green-fish panel. Leave all off to show a single list.",
-  "profile.prefs.araTargetsClear": "Clear target species",
+    "When you open a waterbody, checked species are highlighted first under “Your target species”. Clear all to show one combined list.",
+  "profile.prefs.araTargetsClear": "Clear targets",
 } as const;

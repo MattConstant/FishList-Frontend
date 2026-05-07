@@ -494,6 +494,20 @@ export async function fetchMyFriends(): Promise<AccountResponse[]> {
   return authJson<AccountResponse[]>("/api/accounts/me/friends");
 }
 
+export type CommentReplyNotificationResponse = {
+  replyCommentId: number;
+  locationId: number;
+  catchId: number;
+  replierUsername: string;
+  messagePreview: string;
+  createdAt: string;
+};
+
+export async function fetchCommentReplyNotifications(limit = 25): Promise<CommentReplyNotificationResponse[]> {
+  return authJson<CommentReplyNotificationResponse[]>(
+    `/api/accounts/me/comment-replies?limit=${limit}`,
+  );
+}
 
 type AddFriendApiResponse = {
   friend: AccountResponse;
@@ -978,6 +992,9 @@ export type CatchCommentResponse = {
   createdAt: string;
   ownedByMe: boolean;
   unlockedAchievements?: UnlockedAchievementSummary[];
+  /** Present when this comment is a reply to a top-level comment. */
+  parentCommentId?: number | null;
+  inReplyToUsername?: string | null;
 };
 
 export type CatchCommentsPageResponse = {
@@ -1076,9 +1093,16 @@ export async function fetchCatchComments(
   catchId: number,
   offset = 0,
   limit = 3,
+  /** `desc` = newest first (e.g. notification poller); default `asc` matches feed order. */
+  order: "asc" | "desc" = "asc",
 ): Promise<CatchCommentsPageResponse> {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+    order,
+  });
   return authJson<CatchCommentsPageResponse>(
-    `/api/locations/${locationId}/catches/${catchId}/comments?offset=${offset}&limit=${limit}`,
+    `/api/locations/${locationId}/catches/${catchId}/comments?${params.toString()}`,
   );
 }
 
@@ -1086,13 +1110,18 @@ export async function createCatchComment(
   locationId: number,
   catchId: number,
   message: string,
+  parentCommentId?: number | null,
 ): Promise<CatchCommentResponse> {
+  const body: { message: string; parentCommentId?: number } = { message };
+  if (parentCommentId != null && parentCommentId > 0) {
+    body.parentCommentId = parentCommentId;
+  }
   const res = await authJson<CatchCommentResponse>(
     `/api/locations/${locationId}/catches/${catchId}/comments`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify(body),
     },
   );
   dispatchUnlocks(res.unlockedAchievements);

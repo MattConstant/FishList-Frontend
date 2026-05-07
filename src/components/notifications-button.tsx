@@ -8,10 +8,11 @@ import {
   fetchCatchComments,
   fetchCatchLike,
   fetchLatestPosts,
+  fetchCommentReplyNotifications,
   type FeedPost,
 } from "@/lib/api";
 
-type NotificationKind = "comment" | "like" | "friend";
+type NotificationKind = "comment" | "like" | "friend" | "reply";
 
 type NotificationItem = {
   id: string;
@@ -39,6 +40,8 @@ type StoredNotifState = {
   friendIds?: number[];
   /** Notification ids the user marked as read (UI-only). */
   readIds?: string[];
+  /** Reply comment ids already surfaced or suppressed (dedupe / first-load snapshot). */
+  seenReplyCommentIds?: number[];
 };
 
 const STORAGE_KEY = "fishlist-notifications-v1";
@@ -58,7 +61,11 @@ function safeParseState(raw: string | null): StoredNotifState {
         ? (parsed.byPost as StoredNotifState["byPost"])
         : {};
 
-    return { lastSeenAtMs, byPost };
+    const seenReplyCommentIds = Array.isArray(parsed.seenReplyCommentIds)
+      ? (parsed.seenReplyCommentIds as unknown[]).filter((x): x is number => typeof x === "number")
+      : undefined;
+
+    return { lastSeenAtMs, byPost, seenReplyCommentIds };
   } catch {
     return { lastSeenAtMs: 0, byPost: {} };
   }
@@ -101,11 +108,27 @@ function postCatchKey(p: FeedPost): { postId: string; locationId: number; catchI
   return { postId: p.id, locationId: p.locationId, catchId: p.catch.id };
 }
 
+/** Deep-link to home feed card (`FeedPost.id` is `${locationId}-${catchId}`). */
+function feedPostHref(postId?: string, locationId?: number, catchId?: number): string {
+  const id =
+    postId ??
+    (locationId != null &&
+    catchId != null &&
+    Number.isFinite(locationId) &&
+    Number.isFinite(catchId)
+      ? `${locationId}-${catchId}`
+      : null);
+  if (!id) return "/";
+  return `/?post=${encodeURIComponent(id)}`;
+}
+
 export function NotificationsButton() {
   const { user, isReady } = useAuth();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
+  /** Bumps when localStorage readIds change so `readIds` memo recomputes (Mark read / tap row). */
+  const [readEpoch, setReadEpoch] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const canRun = isReady && !!user;
@@ -113,9 +136,10 @@ export function NotificationsButton() {
   const readIds = useMemo(() => {
     if (typeof window === "undefined") return new Set<string>();
     void open;
+    void readEpoch;
     const state = safeParseState(localStorage.getItem(STORAGE_KEY));
     return new Set<string>(state.readIds ?? []);
-  }, [open]);
+  }, [open, readEpoch]);
 
   const unreadCount = useMemo(
     () => items.filter((i) => !readIds.has(i.id)).length,
@@ -135,7 +159,7 @@ export function NotificationsButton() {
     <div className="px-3 py-8 text-center">
       <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">No notifications yet</p>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Likes, comments, and new friends will show up here.
+        Likes, comments, replies to your comments, and new friends will show up here.
       </p>
     </div>
   );
@@ -191,6 +215,35 @@ export function NotificationsButton() {
         });
       }
 
+      const replies = await fetchCommentReplyNotifications(30).catch(() => []);
+      const prevSeenReply = new Set<number>(state.seenReplyCommentIds ?? []);
+      /** Only true before we've ever persisted reply ids (empty array = baseline already taken). */
+      const firstReplySnapshot = state.seenReplyCommentIds === undefined;
+      const newReplyItems: NotificationItem[] = [];
+      for (const r of replies) {
+        if (!Number.isFinite(r.replyCommentId)) continue;
+        if (prevSeenReply.has(r.replyCommentId)) continue;
+        const createdAtMs = toMs(r.createdAt);
+        if (firstReplySnapshot) {
+          prevSeenReply.add(r.replyCommentId);
+          continue;
+        }
+        if (state.lastSeenAtMs && createdAtMs && createdAtMs <= state.lastSeenAtMs) {
+          prevSeenReply.add(r.replyCommentId);
+          continue;
+        }
+        newReplyItems.push({
+          id: `reply:${r.replyCommentId}`,
+          kind: "reply",
+          locationId: r.locationId,
+          catchId: r.catchId,
+          createdAtMs: createdAtMs || Date.now(),
+          message: `@${r.replierUsername} replied to your comment: ${r.messagePreview}`,
+          href: feedPostHref(undefined, r.locationId, r.catchId),
+        });
+        prevSeenReply.add(r.replyCommentId);
+      }
+
       // Limit work: only look at the most recent posts by the current user.
       const feed = await fetchLatestPosts(80);
       const myPosts = feed.filter((p) => p.accountId === user!.id).slice(0, 25);
@@ -198,10 +251,12 @@ export function NotificationsButton() {
       const results = await mapWithConcurrency(myPosts, 6, async (p) => {
         const { postId, locationId, catchId } = postCatchKey(p);
         const prev = state.byPost[postId] ?? {};
+        const isFirstCommentSnapshotForPost = prev.seenCommentIds === undefined;
 
         const [like, commentsPage] = await Promise.all([
           fetchCatchLike(locationId, catchId).catch(() => null),
-          fetchCatchComments(locationId, catchId, 0, 6).catch(() => null),
+          // Newest comments first — asc(0,6) was the six *oldest*, so new activity never appeared.
+          fetchCatchComments(locationId, catchId, 0, 6, "desc").catch(() => null),
         ]);
 
         const nextLikeCount = like?.likesCount ?? prev.likesCount ?? 0;
@@ -220,14 +275,26 @@ export function NotificationsButton() {
             catchId,
             createdAtMs: Date.now(),
             message: `Your post got ${delta} new ${delta === 1 ? "like" : "likes"}.`,
-            href: "/",
+            href: feedPostHref(postId, locationId, catchId),
           });
         }
 
         // Comments: we can use the comment id + createdAt.
         if (commentsPage) {
           for (const c of commentsPage.comments) {
+            if (isFirstCommentSnapshotForPost) {
+              nextSeenCommentIds.add(c.id);
+              continue;
+            }
             if (c.ownedByMe) continue;
+            if (
+              c.parentCommentId != null &&
+              c.inReplyToUsername &&
+              user!.username.toLowerCase() === c.inReplyToUsername.toLowerCase()
+            ) {
+              nextSeenCommentIds.add(c.id);
+              continue;
+            }
             if (nextSeenCommentIds.has(c.id)) continue;
             const createdAtMs = toMs(c.createdAt);
             // Don’t surface comments that happened before the user ever opened notifications.
@@ -243,7 +310,7 @@ export function NotificationsButton() {
               catchId,
               createdAtMs: createdAtMs || Date.now(),
               message: `@${c.username} commented: ${c.message}`,
-              href: "/",
+              href: feedPostHref(postId, locationId, catchId),
             });
             // mark seen so we don’t spam duplicates
             nextSeenCommentIds.add(c.id);
@@ -262,10 +329,12 @@ export function NotificationsButton() {
         ...state,
         byPost: { ...state.byPost },
         friendIds: nextFriendIds,
+        seenReplyCommentIds: Array.from(prevSeenReply).slice(0, 200),
       };
 
       const discovered: NotificationItem[] = [];
       discovered.push(...newFriendItems);
+      discovered.push(...newReplyItems);
       for (const r of results) {
         discovered.push(...r.newItems);
         nextState.byPost[r.postId] = {
@@ -302,15 +371,37 @@ export function NotificationsButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canRun, user?.id]);
 
+  function persistReadIds(nextRead: Set<string>) {
+    if (typeof window === "undefined") return;
+    const state = safeParseState(localStorage.getItem(STORAGE_KEY));
+    const next: StoredNotifState = {
+      ...state,
+      readIds: Array.from(nextRead),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+    setReadEpoch((e) => e + 1);
+  }
+
   function markAllRead() {
     if (typeof window === "undefined") return;
     const state = safeParseState(localStorage.getItem(STORAGE_KEY));
     const nextRead = new Set<string>(state.readIds ?? []);
     for (const it of items) nextRead.add(it.id);
-    const next: StoredNotifState = { ...state, lastSeenAtMs: Date.now(), readIds: Array.from(nextRead) };
+    const next: StoredNotifState = {
+      ...state,
+      lastSeenAtMs: Date.now(),
+      readIds: Array.from(nextRead),
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-    // Keep the list visible; just de-emphasize read rows.
-    setItems((prev) => [...prev]);
+    setReadEpoch((e) => e + 1);
+  }
+
+  function markOneRead(id: string) {
+    if (typeof window === "undefined") return;
+    const state = safeParseState(localStorage.getItem(STORAGE_KEY));
+    const nextRead = new Set<string>(state.readIds ?? []);
+    nextRead.add(id);
+    persistReadIds(nextRead);
   }
 
   if (!isReady) return null;
@@ -342,7 +433,7 @@ export function NotificationsButton() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="absolute right-0 z-[1200] mt-2 w-[min(22rem,calc(100vw-1.5rem))] overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-950">
           <div className="flex items-center justify-between gap-2 border-b border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Notifications</p>
             <div className="flex items-center gap-2">
@@ -380,7 +471,10 @@ export function NotificationsButton() {
                         "block rounded-xl p-2 transition hover:bg-zinc-50 dark:hover:bg-zinc-900",
                         isRead ? "opacity-70" : "bg-sky-50/60 dark:bg-sky-950/20",
                       ].join(" ")}
-                      onClick={() => setOpen(false)}
+                      onClick={() => {
+                        markOneRead(n.id);
+                        setOpen(false);
+                      }}
                     >
                       <div className="flex items-start gap-2">
                         <span
@@ -388,13 +482,21 @@ export function NotificationsButton() {
                             "mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm",
                             n.kind === "comment"
                               ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200"
-                              : n.kind === "friend"
-                                ? "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200"
-                                : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
+                              : n.kind === "reply"
+                                ? "bg-violet-100 text-violet-800 dark:bg-violet-900/40 dark:text-violet-200"
+                                : n.kind === "friend"
+                                  ? "bg-sky-100 text-sky-800 dark:bg-sky-900/40 dark:text-sky-200"
+                                  : "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-200",
                           ].join(" ")}
                           aria-hidden
                         >
-                          {n.kind === "comment" ? "💬" : n.kind === "friend" ? "👥" : "♥"}
+                          {n.kind === "comment"
+                            ? "💬"
+                            : n.kind === "reply"
+                              ? "↩"
+                              : n.kind === "friend"
+                                ? "👥"
+                                : "♥"}
                         </span>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm text-zinc-800 dark:text-zinc-100">{n.message}</p>

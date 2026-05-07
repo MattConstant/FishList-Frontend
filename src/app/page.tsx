@@ -4,12 +4,14 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   memo,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import HomeLandingPage from "@/components/home-landing-page";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
@@ -108,6 +110,10 @@ const FeedCard = memo(function FeedCard({
   const [commentsChunkLoading, setCommentsChunkLoading] = useState(false);
   const [commentMessage, setCommentMessage] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
+  /** Sync guard — React state updates async, so double-clicks can slip past `commentBusy`. */
+  const commentSubmitLockRef = useRef(false);
+  const [replyParentId, setReplyParentId] = useState<number | null>(null);
+  const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
 
   useEffect(() => {
@@ -234,23 +240,39 @@ const FeedCard = memo(function FeedCard({
 
   async function submitComment() {
     const trimmed = commentMessage.trim();
-    if (!trimmed || commentBusy) return;
+    if (!trimmed || commentBusy || commentSubmitLockRef.current) return;
+    commentSubmitLockRef.current = true;
     setCommentBusy(true);
     try {
       const created = await createCatchComment(
         post.locationId,
         post.catch.id,
         trimmed,
+        replyParentId,
       );
       setCommentsTotal((t) => t + 1);
       setComments((prev) => {
-        const next = [created, ...prev];
-        return commentsExpanded ? next : next.slice(0, TOP_COMMENTS_LIMIT);
+        const next = [...prev, created];
+        if (commentsExpanded) return next;
+        if (next.length <= TOP_COMMENTS_LIMIT) return next;
+        // Collapsed peek keeps the last N by id; a new reply has the highest id, which would
+        // slice away the parent comment — keep parent + reply together when applicable.
+        const parentId = created.parentCommentId;
+        if (parentId != null && parentId > 0) {
+          const parent = next.find((c) => c.id === parentId);
+          if (parent) {
+            return [parent, created].sort((a, b) => a.id - b.id);
+          }
+        }
+        return next.slice(-TOP_COMMENTS_LIMIT);
       });
       setCommentMessage("");
+      setReplyParentId(null);
+      setReplyToUsername(null);
     } catch {
       // Keep UX simple; user can retry.
     } finally {
+      commentSubmitLockRef.current = false;
       setCommentBusy(false);
     }
   }
@@ -260,8 +282,12 @@ const FeedCard = memo(function FeedCard({
     setCommentBusy(true);
     const previous = comments;
     const previousTotal = commentsTotal;
-    setComments((prev) => prev.filter((c) => c.id !== commentId));
-    setCommentsTotal((t) => Math.max(0, t - 1));
+    const optimistic = comments.filter(
+      (c) => c.id !== commentId && c.parentCommentId !== commentId,
+    );
+    const removedCount = comments.length - optimistic.length;
+    setComments(optimistic);
+    setCommentsTotal((t) => Math.max(0, t - removedCount));
     try {
       await deleteCatchComment(post.locationId, post.catch.id, commentId);
     } catch {
@@ -290,6 +316,7 @@ const FeedCard = memo(function FeedCard({
 
   return (
     <article
+      id={`feed-post-${post.id}`}
       ref={cardRef}
       className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
     >
@@ -437,62 +464,90 @@ const FeedCard = memo(function FeedCard({
         </div>
         <div className="pt-2">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-            Comments
+            {t("home.comments.title")}
           </p>
           {commentsLoading ? (
-            <p className="mt-1 text-sm text-zinc-400">Loading comments…</p>
+            <p className="mt-1 text-sm text-zinc-400">{t("home.comments.loading")}</p>
           ) : comments.length === 0 ? (
-            <p className="mt-1 text-sm text-zinc-500">No comments yet.</p>
+            <p className="mt-1 text-sm text-zinc-500">{t("home.comments.empty")}</p>
           ) : (
             <div className="mt-2 space-y-1.5">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="rounded-lg bg-zinc-100 px-2.5 py-2 text-sm dark:bg-zinc-800"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex min-w-0 flex-1 gap-2">
-                      <Link
-                        href={`/users/${comment.accountId}`}
-                        className="shrink-0 pt-0.5"
-                        aria-label={`@${comment.username}`}
-                      >
-                        <UserAvatar
-                          accountId={comment.accountId}
-                          profileImageKey={comment.profileImageKey}
-                          size="sm"
-                          label={t("home.avatarLabel", {
-                            username: comment.username,
-                          })}
-                        />
-                      </Link>
-                      <p className="min-w-0 flex-1">
+              {comments.map((comment) => {
+                const isReply =
+                  comment.parentCommentId != null && comment.parentCommentId > 0;
+                return (
+                  <div
+                    key={comment.id}
+                    className={[
+                      "rounded-lg bg-zinc-100 px-2.5 py-2 text-sm dark:bg-zinc-800",
+                      isReply ? "ml-4 border-l-2 border-sky-400/80 pl-3" : "",
+                    ].join(" ")}
+                  >
+                    {isReply && comment.inReplyToUsername ? (
+                      <p className="mb-1 text-[11px] font-medium text-sky-700 dark:text-sky-400">
+                        {t("home.comment.replyingTo", {
+                          username: comment.inReplyToUsername,
+                        })}
+                      </p>
+                    ) : null}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 flex-1 gap-2">
                         <Link
                           href={`/users/${comment.accountId}`}
-                          className="font-semibold text-zinc-800 hover:underline dark:text-zinc-200"
+                          className="shrink-0 pt-0.5"
+                          aria-label={`@${comment.username}`}
                         >
-                          @{comment.username}
-                        </Link>{" "}
-                        <span className="text-zinc-700 dark:text-zinc-300">
-                          {comment.message}
-                        </span>
-                      </p>
+                          <UserAvatar
+                            accountId={comment.accountId}
+                            profileImageKey={comment.profileImageKey}
+                            size="sm"
+                            label={t("home.avatarLabel", {
+                              username: comment.username,
+                            })}
+                          />
+                        </Link>
+                        <p className="min-w-0 flex-1">
+                          <Link
+                            href={`/users/${comment.accountId}`}
+                            className="font-semibold text-zinc-800 hover:underline dark:text-zinc-200"
+                          >
+                            @{comment.username}
+                          </Link>{" "}
+                          <span className="text-zinc-700 dark:text-zinc-300">
+                            {comment.message}
+                          </span>
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        {!isReply ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyParentId(comment.id);
+                              setReplyToUsername(comment.username);
+                            }}
+                            className="text-[11px] font-semibold text-sky-600 hover:underline dark:text-sky-400"
+                          >
+                            {t("home.comment.reply")}
+                          </button>
+                        ) : null}
+                        {comment.ownedByMe && (
+                          <button
+                            type="button"
+                            onClick={() => void removeComment(comment.id)}
+                            disabled={commentBusy}
+                            className="text-xs text-zinc-500 hover:text-red-500 disabled:opacity-60"
+                            title={t("home.comment.delete")}
+                            aria-label={t("home.comment.delete")}
+                          >
+                            {t("home.comment.delete")}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    {comment.ownedByMe && (
-                      <button
-                        type="button"
-                        onClick={() => void removeComment(comment.id)}
-                        disabled={commentBusy}
-                        className="shrink-0 text-xs text-zinc-500 hover:text-red-500 disabled:opacity-60"
-                        title="Delete comment"
-                        aria-label="Delete comment"
-                      >
-                        Delete
-                      </button>
-                    )}
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           {!commentsLoading && commentsTotal > comments.length && (
@@ -503,19 +558,46 @@ const FeedCard = memo(function FeedCard({
               className="mt-2 text-xs font-medium text-sky-600 transition hover:underline disabled:opacity-60 dark:text-sky-400"
             >
               {commentsChunkLoading
-                ? "Loading more comments..."
+                ? t("home.comments.loadMoreLoading")
                 : commentsExpanded
-                  ? `Load more comments (${commentsTotal - comments.length} left)`
-                  : `View more comments (${commentsTotal - comments.length})`}
+                  ? t("home.comments.loadMore", {
+                      n: commentsTotal - comments.length,
+                    })
+                  : t("home.comments.loadMorePeek", {
+                      n: commentsTotal - comments.length,
+                    })}
             </button>
           )}
+
+          {replyParentId != null && replyToUsername ? (
+            <div className="mt-2 flex items-center justify-between gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-xs dark:border-sky-900/40 dark:bg-sky-950/40">
+              <span className="font-medium text-sky-900 dark:text-sky-200">
+                {t("home.comment.replyingTo", { username: replyToUsername })}
+              </span>
+              <button
+                type="button"
+                onClick={() => {
+                  setReplyParentId(null);
+                  setReplyToUsername(null);
+                }}
+                className="shrink-0 font-semibold text-sky-700 underline dark:text-sky-400"
+              >
+                {t("home.comment.cancelReply")}
+              </button>
+            </div>
+          ) : null}
 
           <div className="mt-2 flex gap-2">
             <input
               type="text"
               value={commentMessage}
               onChange={(e) => setCommentMessage(e.target.value)}
-              placeholder="Add a comment..."
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                void submitComment();
+              }}
+              placeholder={t("home.comment.placeholder")}
               maxLength={500}
               className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
             />
@@ -525,7 +607,7 @@ const FeedCard = memo(function FeedCard({
               disabled={commentBusy || !commentMessage.trim()}
               className="rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-sky-700 disabled:opacity-60"
             >
-              Post
+              {t("home.comment.post")}
             </button>
           </div>
         </div>
@@ -534,9 +616,11 @@ const FeedCard = memo(function FeedCard({
   );
 });
 
-export default function HomePage() {
+function HomeFeed() {
   const { user, isReady, isAdmin } = useAuth();
   const { t } = useLocale();
+  const searchParams = useSearchParams();
+  const focusPostId = searchParams.get("post");
   const [posts, setPosts] = useState<FeedPost[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [feedScope, setFeedScope] = useState<"all" | "friends" | "mine">("all");
@@ -545,6 +629,13 @@ export default function HomePage() {
   const [hasMore, setHasMore] = useState(true);
   const [error, setError] = useState("");
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
+  const focusExpandDoneRef = useRef(false);
+  const focusScrollKeyRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    focusExpandDoneRef.current = false;
+    focusScrollKeyRef.current = null;
+  }, [focusPostId]);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
@@ -634,6 +725,70 @@ export default function HomePage() {
     }
     return posts;
   }, [posts, feedScope, friendIds, user]);
+
+  // Deep link: show the post in the "all" feed and widen the first fetch if it is not loaded yet.
+  useEffect(() => {
+    if (!focusPostId || !user) return;
+    setFeedScope("all");
+  }, [focusPostId, user]);
+
+  useEffect(() => {
+    if (!focusPostId || !user) return;
+    if (posts.some((p) => p.id === focusPostId) || focusExpandDoneRef.current) return;
+    focusExpandDoneRef.current = true;
+    void (async () => {
+      try {
+        const rows = await fetchLatestPosts(120, 0);
+        setPosts(dedupePosts(rows));
+        setHasMore(rows.length === 120);
+      } catch {
+        /* keep existing */
+      }
+    })();
+  }, [focusPostId, user, posts]);
+
+  useEffect(() => {
+    if (!focusPostId) {
+      focusScrollKeyRef.current = null;
+      return;
+    }
+    if (!visiblePosts.some((p) => p.id === focusPostId)) return;
+    const key = focusPostId;
+    if (focusScrollKeyRef.current === key) return;
+    const el = document.getElementById(`feed-post-${focusPostId}`);
+    if (!el) return;
+    focusScrollKeyRef.current = key;
+    requestAnimationFrame(() => {
+      // scrollIntoView can scroll the window / outer flex shell and shove the sticky nav off-screen.
+      // Only scroll the app <main> (the real scroll container).
+      const main = el.closest("main");
+      if (main) {
+        const pad = 12;
+        const elRect = el.getBoundingClientRect();
+        const mainRect = main.getBoundingClientRect();
+        const nextTop = main.scrollTop + (elRect.top - mainRect.top) - pad;
+        main.scrollTo({ top: Math.max(0, nextTop), behavior: "smooth" });
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      el.classList.add(
+        "ring-2",
+        "ring-sky-500",
+        "ring-offset-2",
+        "ring-offset-zinc-50",
+        "dark:ring-offset-zinc-950",
+      );
+      window.setTimeout(() => {
+        el.classList.remove(
+          "ring-2",
+          "ring-sky-500",
+          "ring-offset-2",
+          "ring-offset-zinc-50",
+          "dark:ring-offset-zinc-950",
+        );
+      }, 2200);
+    });
+  }, [focusPostId, visiblePosts]);
 
   if (!isReady) {
     return (
@@ -759,5 +914,19 @@ export default function HomePage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-3xl flex-1 items-center justify-center px-6 py-16">
+          <p className="text-zinc-500">Loading…</p>
+        </div>
+      }
+    >
+      <HomeFeed />
+    </Suspense>
   );
 }
