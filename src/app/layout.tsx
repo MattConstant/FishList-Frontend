@@ -42,10 +42,16 @@ export const metadata: Metadata = {
   metadataBase: metadataBaseUrl(),
   title: "FishList",
   description: "Track and explore fishing spots",
-  /** Same asset as `src/app/icon.png` - explicit entries help search/social crawlers. */
+  /**
+   * Explicit favicon/app icon entries help Google and social crawlers.
+   * (Google strongly prefers a real `/favicon.ico` at the site root.)
+   */
   icons: {
-    icon: [{ url: "/fishlist-logo.png", type: "image/png" }],
-    apple: [{ url: "/fishlist-logo.png" }],
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
     title: "FishList",

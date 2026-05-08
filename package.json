@@ -7,7 +7,8 @@
     "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate:favicons": "node ./scripts/generate-favicons.mjs"
   },
   "dependencies": {
     "@react-oauth/google": "^0.12.2",
@@ -38,6 +39,8 @@
     "@types/suncalc": "^1.9.2",
     "eslint": "^9.39.4",
     "eslint-config-next": "16.2.1",
+    "png-to-ico": "^2.1.0",
+    "sharp": "^0.34.3",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
