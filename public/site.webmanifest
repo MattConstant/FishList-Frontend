@@ -1,7 +1,7 @@
 {
   "name": "FishList",
   "short_name": "FishList",
-  "description": "Track and explore fishing spots",
+  "description": "Track stocking data, MNR surveys, and your own catches",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
