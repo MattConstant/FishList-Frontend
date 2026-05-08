@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { NavBar } from "@/components/nav-bar";
 import { Providers } from "@/components/providers";
+import { resolveSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 /**
@@ -22,26 +23,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** Canonical site URL for Open Graph / Twitter image resolution (set in production). */
-function metadataBaseUrl(): URL {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-  if (raw) {
-    try {
-      return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-    } catch {
-      // fall through to localhost
-    }
-  }
-  return new URL("http://localhost:3000");
-}
-
 /** Static metadata used by Next for the document head and PWA-like behavior. */
 export const metadata: Metadata = {
-  metadataBase: metadataBaseUrl(),
+  metadataBase: resolveSiteUrl(),
   title: "FishList",
   description: "Track and explore fishing spots",
+  manifest: "/site.webmanifest",
   /**
    * Explicit favicon/app icon entries help Google and social crawlers.
    * (Google strongly prefers a real `/favicon.ico` at the site root.)
