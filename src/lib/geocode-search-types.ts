@@ -6,6 +6,10 @@ export type GeocodeSearchHit = {
   longitude: number;
   country: string;
   admin1: string | null;
+  /** GeoNames feature code, e.g. PPL / PPLC (settlement), H.LK (lake). */
+  featureCode?: string | null;
+  /** Population when known; used to rank generic place queries. */
+  population?: number | null;
 };
 
 export function formatGeocodeHitLabel(hit: GeocodeSearchHit): string {

@@ -37,6 +37,7 @@ export default {
   "home.deletePostConfirm":
     "Supprimer cette publication ? Cette action est definitive.",
   "home.deletePostError": "Impossible de supprimer la publication.",
+  "home.feedLocationMap": "Ouvrir ce lieu sur la carte",
   "home.comments.title": "Commentaires",
   "home.comments.loading": "Chargement des commentaires…",
   "home.comments.empty": "Aucun commentaire pour le moment.",

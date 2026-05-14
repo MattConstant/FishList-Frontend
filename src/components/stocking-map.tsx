@@ -306,13 +306,19 @@ export default function StockingMap({
       center: ONTARIO_CENTER,
       zoom: DEFAULT_ZOOM,
       scrollWheelZoom: true,
-      closePopupOnClick: false,
+      closePopupOnClick: true,
     });
 
     function onResize() {
       map.invalidateSize();
     }
     window.addEventListener("resize", onResize);
+
+    function onEscapeKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      map.closePopup();
+    }
+    window.addEventListener("keydown", onEscapeKey);
 
     const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       maxZoom: 18,
@@ -340,6 +346,7 @@ export default function StockingMap({
 
     return () => {
       window.removeEventListener("resize", onResize);
+      window.removeEventListener("keydown", onEscapeKey);
       osmTileRef.current = null;
       satTileRef.current = null;
       map.remove();
@@ -589,7 +596,7 @@ export default function StockingMap({
       icon: searchPinIcon(),
       zIndexOffset: 1250,
     });
-    marker.bindTooltip(searchPin.label || "Searched waterbody", {
+    marker.bindTooltip(searchPin.label || "Search result", {
       direction: "top",
       offset: L.point(0, -12),
       opacity: 1,

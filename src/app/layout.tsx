@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { ConnectionBanner } from "@/components/connection-banner";
 import { NavBar } from "@/components/nav-bar";
 import { Providers } from "@/components/providers";
+import { resolveSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 
 /**
@@ -22,30 +24,22 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-/** Canonical site URL for Open Graph / Twitter image resolution (set in production). */
-function metadataBaseUrl(): URL {
-  const raw =
-    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "");
-  if (raw) {
-    try {
-      return new URL(raw.startsWith("http") ? raw : `https://${raw}`);
-    } catch {
-      // fall through to localhost
-    }
-  }
-  return new URL("http://localhost:3000");
-}
-
 /** Static metadata used by Next for the document head and PWA-like behavior. */
 export const metadata: Metadata = {
-  metadataBase: metadataBaseUrl(),
+  metadataBase: resolveSiteUrl(),
   title: "FishList",
   description: "Track and explore fishing spots",
-  /** Same asset as `src/app/icon.png` - explicit entries help search/social crawlers. */
+  manifest: "/site.webmanifest",
+  /**
+   * Explicit favicon/app icon entries help Google and social crawlers.
+   * (Google strongly prefers a real `/favicon.ico` at the site root.)
+   */
   icons: {
-    icon: [{ url: "/fishlist-logo.png", type: "image/png" }],
-    apple: [{ url: "/fishlist-logo.png" }],
+    icon: [
+      { url: "/favicon.ico", type: "image/x-icon" },
+      { url: "/icon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
   },
   openGraph: {
     title: "FishList",
@@ -76,7 +70,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#131a2a" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f1624" },
   ],
 };
 
@@ -107,6 +101,7 @@ export default function RootLayout({
             </main>
           </div>
         </Providers>
+        <Analytics />
         <SpeedInsights />
       </body>
     </html>

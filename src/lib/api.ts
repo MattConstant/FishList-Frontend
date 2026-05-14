@@ -1071,6 +1071,39 @@ type FeedPostResponse = {
   visibility?: PostVisibility | null;
 };
 
+/** Feed JSON may use numbers or alternate keys (`lat` / `lng` / `lon`) depending on the API serializer. */
+function feedRowLatitudeLongitudeStrings(row: FeedPostResponse): {
+  latitude: string;
+  longitude: string;
+} {
+  const r = row as FeedPostResponse & {
+    lat?: unknown;
+    lng?: unknown;
+    lon?: unknown;
+    location?: {
+      latitude?: unknown;
+      longitude?: unknown;
+      lat?: unknown;
+      lng?: unknown;
+      lon?: unknown;
+    };
+  };
+  const asString = (v: unknown): string => {
+    if (v == null) return "";
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+    if (typeof v === "string") return v.trim();
+    return "";
+  };
+  let latitude = asString(r.latitude ?? r.lat);
+  let longitude = asString(r.longitude ?? r.lng ?? r.lon);
+  if ((!latitude || !longitude) && r.location && typeof r.location === "object") {
+    const l = r.location;
+    if (!latitude) latitude = asString(l.latitude ?? l.lat);
+    if (!longitude) longitude = asString(l.longitude ?? l.lng ?? l.lon);
+  }
+  return { latitude, longitude };
+}
+
 function parseFishDetailsJson(
   raw: string | undefined | null,
 ): FishEntryPayload[] | undefined {
@@ -1134,8 +1167,7 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
     id: `${row.locationId}-${row.catchId}`,
     locationId: row.locationId,
     locationName: row.locationName,
-    latitude: row.latitude,
-    longitude: row.longitude,
+    ...feedRowLatitudeLongitudeStrings(row),
     timeStamp: row.timeStamp,
     accountId: row.accountId,
     username: row.username,

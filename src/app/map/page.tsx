@@ -3,14 +3,18 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import {
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
   useSyncExternalStore,
+  type Dispatch,
   type FormEvent,
+  type SetStateAction,
 } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import CatchForm from "@/components/catch-form";
 import CampForm from "@/components/camp-form";
@@ -65,6 +69,11 @@ import {
   saveMapFavorites,
   type FavoriteSpot,
 } from "@/lib/map-favorites";
+import { sortGeocodeHitsForPinDrop } from "@/lib/geocode-search-sort";
+import {
+  formatGeocodeHitLabel,
+  type GeocodeSearchHit,
+} from "@/lib/geocode-search-types";
 
 const StockingMap = dynamic(() => import("@/components/stocking-map"), {
   ssr: false,
@@ -101,6 +110,28 @@ function speciesPillClass(active: boolean) {
     .join(" ");
 }
 
+type LakeSearchPinState = { lat: number; lng: number; label: string };
+
+function MapUrlLakePinLoader({
+  setLakeSearchPin,
+}: {
+  setLakeSearchPin: Dispatch<SetStateAction<LakeSearchPinState | null>>;
+}) {
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const latRaw = searchParams.get("lat") ?? "";
+    const lngRaw = searchParams.get("lng") ?? searchParams.get("lon") ?? "";
+    const lat = Number.parseFloat(latRaw);
+    const lng = Number.parseFloat(lngRaw);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const labelRaw =
+      searchParams.get("location") ?? searchParams.get("name") ?? "";
+    const label = labelRaw.trim() || "Location";
+    setLakeSearchPin({ lat, lng, label });
+  }, [searchParams, setLakeSearchPin]);
+  return null;
+}
+
 export default function MapPage() {
   const { user, isAdmin } = useAuth();
   const { t, locale } = useLocale();
@@ -121,7 +152,6 @@ export default function MapPage() {
   const [loaded, setLoaded] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [waterbodyQuery, setWaterbodyQuery] = useState("");
   const [lakePinQuery, setLakePinQuery] = useState("");
   const [lakePinError, setLakePinError] = useState("");
   const [lakePinSearching, setLakePinSearching] = useState(false);
@@ -130,15 +160,8 @@ export default function MapPage() {
     lng: number;
     label: string;
   } | null>(null);
-  type LakeSuggestion = {
-    id: number;
-    name: string;
-    latitude: number;
-    longitude: number;
-    admin1?: string | null;
-    country?: string;
-  };
-  const [lakeSuggestions, setLakeSuggestions] = useState<LakeSuggestion[]>([]);
+
+  const [lakeSuggestions, setLakeSuggestions] = useState<GeocodeSearchHit[]>([]);
   const [lakeSuggestionsOpen, setLakeSuggestionsOpen] = useState(false);
   const [lakeSuggestionIndex, setLakeSuggestionIndex] = useState(-1);
   const lakeSearchAbortRef = useRef<AbortController | null>(null);
@@ -417,11 +440,9 @@ export default function MapPage() {
     if (activeSpecies.size === 0) return [];
     const maxYear = records.reduce((m, r) => Math.max(m, r.year), 0);
     const minYearForWindow = Math.max(0, maxYear - recentYearsWindow + 1);
-    const text = waterbodyQuery.trim().toLowerCase();
     const allSpeciesSelected = activeSpecies.size === species.length;
 
     return groups.filter((g) => {
-      if (text && !g.waterbody.toLowerCase().includes(text)) return false;
       if (g.totalFish < minTotalFish) return false;
       if (g.speciesSet.size < minSpeciesCount) return false;
       if (selectedDistrict !== "all" && !g.districtSet.has(selectedDistrict)) {
@@ -451,7 +472,6 @@ export default function MapPage() {
     recentYearsWindow,
     minTotalFish,
     minSpeciesCount,
-    waterbodyQuery,
     selectedDistrict,
     selectedDevelopmentalStage,
   ]);
@@ -536,10 +556,6 @@ export default function MapPage() {
       activeSpecies.size === species.length
         ? t("map.summary.allSpecies")
         : t("map.summary.speciesCount", { count: activeSpecies.size });
-    const q = waterbodyQuery.trim();
-    const quote = locale === "fr" ? "«" : "“";
-    const quoteEnd = locale === "fr" ? "»" : "”";
-    const tail = q ? ` · ${quote}${q}${quoteEnd}` : "";
     const stock =
       showStocking && activeSpecies.size > 0
         ? t("map.summary.lakesMatch", { count: filteredGroups.length })
@@ -547,15 +563,13 @@ export default function MapPage() {
           ? t("map.summary.stockingOff")
           : t("map.summary.noSpeciesSelected");
     const ara = showAra ? ` · ${t("map.summary.araOn")}` : "";
-    return `${stock} · ${spLabel}${ara}${tail}`;
+    return `${stock} · ${spLabel}${ara}`;
   }, [
     species.length,
     filteredGroups.length,
     activeSpecies.size,
-    waterbodyQuery,
     showStocking,
     showAra,
-    locale,
     t,
   ]);
 
@@ -808,6 +822,13 @@ export default function MapPage() {
       if (mapSheet) {
         closeMapSheet();
         e.preventDefault();
+        return;
+      }
+      if (lakeSearchPin) {
+        setLakeSearchPin(null);
+        setLakePinQuery("");
+        setLakePinError("");
+        e.preventDefault();
       }
     }
     window.addEventListener("keydown", onKeyDown);
@@ -818,6 +839,7 @@ export default function MapPage() {
     placing,
     lakeSuggestionsOpen,
     mapSheet,
+    lakeSearchPin,
     closeMapSheet,
   ]);
 
@@ -891,17 +913,9 @@ export default function MapPage() {
         url.searchParams.set("q", q);
         url.searchParams.set("lang", locale === "fr" ? "fr" : "en");
         const res = await fetch(url.toString(), { signal: controller.signal });
-        const data = (await res.json()) as { results?: LakeSuggestion[] };
+        const data = (await res.json()) as { results?: GeocodeSearchHit[] };
         const hits = data.results ?? [];
-        const waterHint = /(lake|lac|river|rivière|pond|bay|reservoir|water)/i;
-        const sorted = [...hits].sort((a, b) => {
-          const aWater = waterHint.test(a.name) ? 1 : 0;
-          const bWater = waterHint.test(b.name) ? 1 : 0;
-          if (aWater !== bWater) return bWater - aWater;
-          const aCa = a.country?.toLowerCase() === "canada" ? 1 : 0;
-          const bCa = b.country?.toLowerCase() === "canada" ? 1 : 0;
-          return bCa - aCa;
-        });
+        const sorted = sortGeocodeHitsForPinDrop(hits, q);
         setLakeSuggestions(sorted);
         setLakeSuggestionsOpen(sorted.length > 0);
         setLakeSuggestionIndex(sorted.length > 0 ? 0 : -1);
@@ -919,13 +933,14 @@ export default function MapPage() {
     };
   }, [lakePinQuery, locale]);
 
-  function selectLakeSuggestion(s: LakeSuggestion) {
+  function selectLakeSuggestion(s: GeocodeSearchHit) {
+    const label = formatGeocodeHitLabel(s);
     setLakeSearchPin({
       lat: s.latitude,
       lng: s.longitude,
-      label: s.admin1 ? `${s.name}, ${s.admin1}` : s.name,
+      label,
     });
-    setLakePinQuery(s.admin1 ? `${s.name}, ${s.admin1}` : s.name);
+    setLakePinQuery(label);
     setLakeSuggestionsOpen(false);
     setLakePinError("");
   }
@@ -964,6 +979,9 @@ export default function MapPage() {
 
   return (
     <div className="map-page__root">
+      <Suspense fallback={null}>
+        <MapUrlLakePinLoader setLakeSearchPin={setLakeSearchPin} />
+      </Suspense>
       {/* Header */}
       <div className="map-page__toolbar map-page__chrome">
         <div className="min-w-0">
@@ -1345,23 +1363,6 @@ export default function MapPage() {
                           {translateStockingSpecies(sp, locale)}
                         </button>
                       ))}
-                    </div>
-
-                    <div className="map-page__filter-field map-page__filter-field--span2 mt-2">
-                      <label
-                        className="map-page__filter-label--field"
-                        htmlFor="map-waterbody-filter"
-                      >
-                        {t("map.form.waterbody")}
-                      </label>
-                      <input
-                        id="map-waterbody-filter"
-                        type="text"
-                        value={waterbodyQuery}
-                        onChange={(e) => setWaterbodyQuery(e.target.value)}
-                        placeholder={t("map.form.waterbodyPh")}
-                        className="map-page__field map-page__field--waterbody w-full"
-                      />
                     </div>
 
                     <div className="map-page__filter-form-grid mt-2">

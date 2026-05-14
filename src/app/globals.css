@@ -25,9 +25,9 @@
 }
 
 html.dark {
-  --background: #131a2a;
-  --background-accent: #1d2b42;
-  --foreground: #e8edf7;
+  --background: #0f1624;
+  --background-accent: #1a2d45;
+  --foreground: #eef2f8;
 }
 
 html {
@@ -53,9 +53,11 @@ html:not(.dark) body {
 
 html.dark body {
   background:
-    radial-gradient(circle at 15% 20%, var(--background-accent) 0%, transparent 36%),
-    radial-gradient(circle at 85% 0%, var(--background-accent) 0%, transparent 32%),
-    linear-gradient(180deg, var(--background) 0%, var(--background) 100%);
+    radial-gradient(ellipse 120% 80% at 50% -30%, rgb(30 58 138 / 0.22) 0%, transparent 55%),
+    radial-gradient(circle at 12% 18%, rgb(56 189 248 / 0.08) 0%, transparent 38%),
+    radial-gradient(circle at 88% 8%, rgb(99 102 241 / 0.1) 0%, transparent 34%),
+    radial-gradient(circle at 50% 100%, rgb(0 0 0 / 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, var(--background) 0%, #0c121c 55%, var(--background) 100%);
 }
 
 /*
@@ -98,14 +100,14 @@ button,
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08));
 }
 
-/* Logged-out home - ChronoTask-style dot canvas inside bento cards */
+/* Logged-out home — dot grid only (no fill); light: zinc-100 parent, dark: body gradient shows through */
 .home-landing-dot-bg {
-  background-color: #f8fafc;
-  background-image: radial-gradient(circle, rgb(148 163 184 / 0.28) 1px, transparent 1px);
+  background-color: transparent;
+  background-image: radial-gradient(circle, rgb(113 113 122 / 0.22) 1px, transparent 1px);
   background-size: 22px 22px;
 }
 
 .dark .home-landing-dot-bg {
-  background-color: rgb(24 24 27);
-  background-image: radial-gradient(circle, rgb(82 82 91 / 0.45) 1px, transparent 1px);
+  background-color: transparent;
+  background-image: radial-gradient(circle, rgb(148 163 184 / 0.14) 1px, transparent 1px);
 }

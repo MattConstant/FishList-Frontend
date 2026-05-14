@@ -69,6 +69,22 @@ function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
 }
 
+function parseCoordLoose(raw: string): number {
+  return Number.parseFloat(raw.replace(",", ".").trim());
+}
+
+function feedPostMapHref(post: FeedPost): string | null {
+  const lat = parseCoordLoose(String(post.latitude ?? ""));
+  const lng = parseCoordLoose(String(post.longitude ?? ""));
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const u = new URLSearchParams();
+  u.set("lat", String(lat));
+  u.set("lng", String(lng));
+  const name = String(post.locationName ?? "").trim();
+  if (name) u.set("location", name);
+  return `/map?${u.toString()}`;
+}
+
 const FeedCard = memo(function FeedCard({
   post,
   currentUserId,
@@ -115,6 +131,7 @@ const FeedCard = memo(function FeedCard({
   const [replyParentId, setReplyParentId] = useState<number | null>(null);
   const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
+  const mapHref = useMemo(() => feedPostMapHref(post), [post]);
 
   useEffect(() => {
     if (!cardRef.current || isActive) return;
@@ -342,10 +359,20 @@ const FeedCard = memo(function FeedCard({
               @{post.username}
             </Link>
             <p className="text-xs text-zinc-500">{formatAppShortDate(post.timeStamp, locale)}</p>
+            {mapHref ? (
+              <Link
+                href={mapHref}
+                className="mt-0.5 block w-fit max-w-full truncate text-xs font-medium text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 hover:decoration-emerald-700 dark:text-emerald-400 dark:decoration-emerald-400/40 dark:hover:text-emerald-300"
+                title={t("home.feedLocationMap")}
+              >
+                {post.locationName.trim() || t("home.feedLocationMap")}
+              </Link>
+            ) : post.locationName.trim() ? (
+              <p className="mt-0.5 truncate text-xs text-zinc-500">{post.locationName}</p>
+            ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <p className="text-xs text-zinc-500">{post.locationName}</p>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
           {isAdmin ? visibilityPill(post.visibility) : null}
           {(isOwnPost || isAdmin) && (
             <button
