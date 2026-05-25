@@ -8,6 +8,7 @@ export default {
   "nav.login": "Log in",
   "nav.profile": "Profile",
   "nav.language": "Language",
+  "nav.theme": "Theme",
   "nav.useLightMode": "Switch to light mode",
   "nav.useDarkMode": "Switch to dark mode",
   "nav.langThemeGroup": "Language and theme",

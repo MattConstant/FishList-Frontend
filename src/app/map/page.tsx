@@ -210,7 +210,7 @@ export default function MapPage() {
   );
   const [showMapLegend, setShowMapLegend] = useSyncedBooleanPref(
     MAP_LEGEND_VISIBLE_KEY,
-    "on-unless-false",
+    "off-unless-true",
   );
 
   const [satelliteImagery, setSatelliteImagery] = useSyncedBooleanPref(
@@ -1879,7 +1879,16 @@ export default function MapPage() {
           />
         ) : null}
         {showMapLegend ? (
-          <div className="map-page__legend" role="group" aria-label={t("map.legend.title")}>
+          <div
+            className={[
+              "map-page__legend",
+              layersPanelExpanded ? "map-page__legend--layers-open" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            role="group"
+            aria-label={t("map.legend.title")}
+          >
             <p className="map-page__legend-title">{t("map.legend.title")}</p>
             <div className="map-page__legend-item">
               <span className="map-page__legend-icon map-page__legend-icon--stocking" />

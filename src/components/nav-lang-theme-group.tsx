@@ -5,30 +5,35 @@ import { NavThemeToggle } from "@/components/nav-theme-toggle";
 
 type NavLangThemeGroupProps = {
   className?: string;
+  /** Side-by-side in the header (md+). Preferences block in the mobile menu. */
+  variant?: "toolbar" | "menu";
 };
 
-/** EN / FR / sun-moon in one pill; 44px-class targets on small screens. */
-export function NavLangThemeGroup({ className }: NavLangThemeGroupProps) {
-  const { locale, setLocale, t } = useLocale();
+function NavLangSwitcher({ compact }: { compact?: boolean }) {
+  const { locale, setLocale } = useLocale();
+
+  const btn = (active: boolean) =>
+    [
+      "flex-1 touch-manipulation rounded-md px-3 py-2 text-xs font-semibold transition-colors",
+      compact ? "py-1.5" : "py-2",
+      active
+        ? "bg-white text-zinc-900 shadow-sm dark:bg-zinc-700 dark:text-zinc-50"
+        : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
+    ].join(" ");
 
   return (
     <div
       className={[
-        "inline-flex h-11 shrink-0 touch-manipulation items-center gap-0.5 rounded-xl border border-zinc-300 bg-white/95 p-0.5 shadow-sm dark:border-zinc-700 dark:bg-zinc-950/90",
-        className ?? "",
+        "inline-grid grid-cols-2 gap-0.5 rounded-lg border border-zinc-200 bg-zinc-100/90 p-0.5 dark:border-zinc-600 dark:bg-zinc-800/90",
+        compact ? "h-9 min-w-[5.5rem]" : "min-w-[6.5rem]",
       ].join(" ")}
       role="group"
-      aria-label={t("nav.langThemeGroup")}
+      aria-label="Language"
     >
       <button
         type="button"
         onClick={() => setLocale("en")}
-        className={[
-          "flex min-h-10 min-w-10 touch-manipulation items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors sm:min-h-9 sm:min-w-9 sm:px-2.5",
-          locale === "en"
-            ? "bg-sky-600 text-white"
-            : "text-zinc-600 active:bg-zinc-200/80 dark:text-zinc-300 dark:active:bg-zinc-700/80",
-        ].join(" ")}
+        className={btn(locale === "en")}
         aria-pressed={locale === "en"}
         aria-label="English"
       >
@@ -37,22 +42,43 @@ export function NavLangThemeGroup({ className }: NavLangThemeGroupProps) {
       <button
         type="button"
         onClick={() => setLocale("fr")}
-        className={[
-          "flex min-h-10 min-w-10 touch-manipulation items-center justify-center rounded-lg px-2 text-xs font-semibold transition-colors sm:min-h-9 sm:min-w-9 sm:px-2.5",
-          locale === "fr"
-            ? "bg-sky-600 text-white"
-            : "text-zinc-600 active:bg-zinc-200/80 dark:text-zinc-300 dark:active:bg-zinc-700/80",
-        ].join(" ")}
+        className={btn(locale === "fr")}
         aria-pressed={locale === "fr"}
         aria-label="Français"
       >
         FR
       </button>
-      <span
-        className="mx-0.5 h-6 w-px shrink-0 self-center bg-zinc-200 dark:bg-zinc-600"
-        aria-hidden
-      />
-      <NavThemeToggle grouped />
+    </div>
+  );
+}
+
+/** Language switcher + theme toggle (toolbar) or preferences block (mobile menu). */
+export function NavLangThemeGroup({ className, variant = "toolbar" }: NavLangThemeGroupProps) {
+  const { t } = useLocale();
+
+  if (variant === "menu") {
+    return (
+      <div
+        className={[
+          "mt-2 space-y-1 border-t border-zinc-200 pt-2 dark:border-zinc-800",
+          className ?? "",
+        ].join(" ")}
+      >
+        <p className="px-3 pb-1 pt-1 text-[0.65rem] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          {t("nav.language")}
+        </p>
+        <div className="px-3 pb-1">
+          <NavLangSwitcher />
+        </div>
+        <NavThemeToggle variant="menu-row" />
+      </div>
+    );
+  }
+
+  return (
+    <div className={["flex items-center gap-1.5", className ?? ""].join(" ")}>
+      <NavLangSwitcher compact />
+      <NavThemeToggle variant="icon" />
     </div>
   );
 }

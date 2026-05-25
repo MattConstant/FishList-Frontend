@@ -89,4 +89,9 @@ export default {
   "map.form.minSpecies": "Nb d’espèces (min.)",
   "map.form.district": "District MNRF",
   "map.form.stage": "Stade de développement",
+  "map.camp.enlargePhoto": "Voir la photo en grand",
+  "map.camp.photoLightbox": "Photo du campement agrandie",
+  "map.camp.closePhoto": "Fermer",
+  "map.camp.photoPrev": "Photo précédente",
+  "map.camp.photoNext": "Photo suivante",
 } as const;

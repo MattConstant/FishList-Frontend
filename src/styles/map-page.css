@@ -270,7 +270,7 @@
 
 /* Map layers (basemap, vector overlays) - top-right on the map, below the bottom sheet. */
 .map-page__layers-panel {
-  @apply pointer-events-auto absolute right-2 top-2 z-[1200] flex max-w-[min(19rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white/95 text-sm shadow-md backdrop-blur-sm sm:right-3 sm:top-3 dark:border-zinc-600/90 dark:bg-zinc-900/95;
+  @apply pointer-events-auto absolute right-2 top-2 z-[1250] flex max-w-[min(19rem,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200/90 bg-white/95 text-sm shadow-md backdrop-blur-sm sm:right-3 sm:top-3 dark:border-zinc-600/90 dark:bg-zinc-900/95;
 }
 
 .map-page__layers-panel-head {
@@ -361,7 +361,18 @@
 }
 
 .map-page__legend {
-  @apply absolute bottom-3 left-3 z-[1200] rounded-xl border border-zinc-200/90 bg-white/95 px-3 py-2 text-xs text-zinc-700 shadow-md backdrop-blur-sm dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-200;
+  @apply pointer-events-auto absolute bottom-3 left-3 z-[1100] max-w-[min(14rem,calc(100vw-5rem))] rounded-xl border border-zinc-200/90 bg-white/95 px-3 py-2 text-xs text-zinc-700 shadow-md backdrop-blur-sm dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-200;
+}
+
+/* Phone/narrow map: full-width bar at bottom; hide while layers panel is expanded */
+@media (max-width: 639px) {
+  .map-page__legend {
+    @apply bottom-2 left-2 right-2 max-w-none;
+  }
+
+  .map-page__legend--layers-open {
+    @apply hidden;
+  }
 }
 
 .map-page__legend-title {

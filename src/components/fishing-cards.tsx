@@ -113,7 +113,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
           )}
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
-          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="truncate w-64 font-semibold text-zinc-900 dark:text-zinc-50 ">
             {c.species}
           </p>
           <p className="mt-0.5 text-xs text-zinc-500">

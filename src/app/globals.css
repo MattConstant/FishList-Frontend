@@ -4,6 +4,7 @@
 @import "../styles/login-page.css";
 @import "../styles/leaflet-map.css";
 @import "../styles/home-preview.css";
+@import "../styles/home-landing.css";
 
 /* Manual dark mode (next-themes adds class="dark" on <html>) */
 @custom-variant dark (&:where(.dark, .dark *));

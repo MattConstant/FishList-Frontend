@@ -86,4 +86,9 @@ export default {
   "map.form.minSpecies": "Min species in record",
   "map.form.district": "MNRF district",
   "map.form.stage": "Developmental stage",
+  "map.camp.enlargePhoto": "View larger photo",
+  "map.camp.photoLightbox": "Enlarged campground photo",
+  "map.camp.closePhoto": "Close",
+  "map.camp.photoPrev": "Previous photo",
+  "map.camp.photoNext": "Next photo",
 } as const;

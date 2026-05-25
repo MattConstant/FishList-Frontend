@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LakePresenceTab } from "@/components/lake-presence-tab";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
@@ -72,6 +72,40 @@ export function MapDetailBottomSheet({
   const { t, locale } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
   const [presenceTab, setPresenceTab] = useState<MapPresenceTab>("species");
+  const [enlargedCampPhotoIndex, setEnlargedCampPhotoIndex] = useState<number | null>(
+    null,
+  );
+  const campPhotoUrls =
+    mode === "camp" && camp?.imageUrls && camp.imageUrls.length > 0
+      ? camp.imageUrls.slice(0, 4)
+      : [];
+
+  useEffect(() => {
+    setEnlargedCampPhotoIndex(null);
+  }, [camp?.id, mode]);
+
+  useEffect(() => {
+    if (enlargedCampPhotoIndex == null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setEnlargedCampPhotoIndex(null);
+        return;
+      }
+      if (campPhotoUrls.length <= 1) return;
+      if (e.key === "ArrowLeft") {
+        setEnlargedCampPhotoIndex(
+          (i) =>
+            (i ?? 0) <= 0 ? campPhotoUrls.length - 1 : (i ?? 0) - 1,
+        );
+      } else if (e.key === "ArrowRight") {
+        setEnlargedCampPhotoIndex(
+          (i) => ((i ?? 0) + 1) % campPhotoUrls.length,
+        );
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [enlargedCampPhotoIndex, campPhotoUrls.length]);
   const presenceSpeciesCount =
     mode === "presence" && presence
       ? presence.speciesSummary
@@ -136,7 +170,13 @@ export function MapDetailBottomSheet({
     handleDragRef.current = null;
   }
 
+  const enlargedCampPhotoUrl =
+    enlargedCampPhotoIndex != null
+      ? campPhotoUrls[enlargedCampPhotoIndex]
+      : null;
+
   return (
+    <>
     <div className="map-page__bottom-sheet">
       <div className="map-page__bottom-sheet-inner">
         <button
@@ -400,14 +440,17 @@ export function MapDetailBottomSheet({
           ) : null}
           {mode === "camp" && camp ? (
             <div className="space-y-3">
-              {camp.imageUrls && camp.imageUrls.length > 0 ? (
+              {campPhotoUrls.length > 0 ? (
                 <div className="grid grid-cols-2 gap-2">
-                  {camp.imageUrls.slice(0, 4).map((u) => (
-                    <div
+                  {campPhotoUrls.map((u, i) => (
+                    <button
                       key={u}
-                      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+                      type="button"
+                      onClick={() => setEnlargedCampPhotoIndex(i)}
+                      className="relative overflow-hidden rounded-xl border border-zinc-200 bg-zinc-100 transition hover:ring-2 hover:ring-emerald-500/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 dark:border-zinc-800 dark:bg-zinc-900"
+                      aria-label={t("map.camp.enlargePhoto")}
                     >
-                      <div className="relative aspect-square w-full">
+                      <div className="relative aspect-square w-full cursor-zoom-in">
                         <Image
                           src={u}
                           alt={camp.name}
@@ -416,7 +459,7 @@ export function MapDetailBottomSheet({
                           unoptimized
                         />
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -444,5 +487,72 @@ export function MapDetailBottomSheet({
         </div>
       </div>
     </div>
+
+    {enlargedCampPhotoUrl ? (
+      <div
+        className="fixed inset-0 z-[8000] flex items-center justify-center bg-black/85 p-4"
+        role="dialog"
+        aria-modal="true"
+        aria-label={t("map.camp.photoLightbox")}
+        onClick={() => setEnlargedCampPhotoIndex(null)}
+      >
+        <button
+          type="button"
+          className="absolute right-4 top-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-2xl leading-none text-white transition hover:bg-black/70"
+          aria-label={t("map.camp.closePhoto")}
+          onClick={(e) => {
+            e.stopPropagation();
+            setEnlargedCampPhotoIndex(null);
+          }}
+        >
+          <span aria-hidden>×</span>
+        </button>
+        {campPhotoUrls.length > 1 ? (
+          <>
+            <button
+              type="button"
+              className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-xl text-white transition hover:bg-black/70 sm:left-6"
+              aria-label={t("map.camp.photoPrev")}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEnlargedCampPhotoIndex((i) =>
+                  (i ?? 0) <= 0 ? campPhotoUrls.length - 1 : (i ?? 0) - 1,
+                );
+              }}
+            >
+              <span aria-hidden>‹</span>
+            </button>
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-xl text-white transition hover:bg-black/70 sm:right-6"
+              aria-label={t("map.camp.photoNext")}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEnlargedCampPhotoIndex(
+                  (i) => ((i ?? 0) + 1) % campPhotoUrls.length,
+                );
+              }}
+            >
+              <span aria-hidden>›</span>
+            </button>
+          </>
+        ) : null}
+        <div
+          className="relative h-[min(85vh,56rem)] w-full max-w-[min(95vw,56rem)]"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Image
+            src={enlargedCampPhotoUrl}
+            alt={camp?.name ?? ""}
+            fill
+            className="object-contain"
+            unoptimized
+            sizes="95vw"
+            priority
+          />
+        </div>
+      </div>
+    ) : null}
+    </>
   );
 }

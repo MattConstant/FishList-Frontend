@@ -90,12 +90,12 @@ export function NavBar() {
           <Image
             src="/fishlist-logo.png"
             alt="FishList logo"
-            width={28}
-            height={28}
-            className="shrink-0 rounded-md"
+            width={44}
+            height={44}
+            className="h-11 w-11 shrink-0 rounded-md md:h-7 md:w-7"
             priority
           />
-          <span className="truncate max-[340px]:hidden">{t("nav.brand")}</span>
+          <span className="hidden truncate md:inline">{t("nav.brand")}</span>
         </Link>
 
         <nav
@@ -134,7 +134,7 @@ export function NavBar() {
           </button>
 
           <NotificationsButton />
-          <NavLangThemeGroup />
+          <NavLangThemeGroup className="max-md:hidden md:flex" />
 
           {isReady && !user && (
             <Link

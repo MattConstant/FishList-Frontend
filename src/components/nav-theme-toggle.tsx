@@ -31,12 +31,12 @@ function MoonIcon({ className }: { className?: string }) {
 }
 
 type NavThemeToggleProps = {
-  /** Sit inside the EN/FR pill: no outer border, matches row height. */
-  grouped?: boolean;
+  /** Icon button in the header bar, or a full-width row in the mobile menu. */
+  variant?: "icon" | "menu-row";
 };
 
-/** Moon in light mode → dark; sun in dark mode → light. */
-export function NavThemeToggle({ grouped }: NavThemeToggleProps) {
+/** Toggle light / dark theme. */
+export function NavThemeToggle({ variant = "icon" }: NavThemeToggleProps) {
   const { t } = useLocale();
   const { resolvedTheme, setTheme } = useTheme();
   const hydrated = useSyncExternalStore(
@@ -48,27 +48,39 @@ export function NavThemeToggle({ grouped }: NavThemeToggleProps) {
   const isDark = hydrated && resolvedTheme === "dark";
   const label = isDark ? t("nav.useLightMode") : t("nav.useDarkMode");
 
+  const icon = !hydrated ? (
+    <MoonIcon className="h-4 w-4 opacity-50" />
+  ) : isDark ? (
+    <SunIcon className="h-4 w-4" />
+  ) : (
+    <MoonIcon className="h-4 w-4" />
+  );
+
+  if (variant === "menu-row") {
+    return (
+      <button
+        type="button"
+        onClick={() => setTheme(isDark ? "light" : "dark")}
+        className="flex w-full touch-manipulation items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 active:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-800"
+        aria-label={label}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">
+          {icon}
+        </span>
+        {label}
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className={[
-        "inline-flex shrink-0 touch-manipulation items-center justify-center rounded-lg text-zinc-700 transition-colors dark:text-zinc-200",
-        "min-h-11 min-w-11 active:bg-zinc-200/90 sm:min-h-10 sm:min-w-10 dark:active:bg-zinc-700/90",
-        grouped
-          ? "border-0 bg-transparent hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          : "border border-zinc-300 hover:bg-zinc-100 dark:border-zinc-600 dark:hover:bg-zinc-800",
-      ].join(" ")}
+      className="flex h-9 w-9 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-700 transition hover:bg-zinc-50 active:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-700"
       aria-label={label}
       title={label}
     >
-      {!hydrated ? (
-        <MoonIcon className="h-5 w-5 opacity-40 sm:h-4 sm:w-4" />
-      ) : isDark ? (
-        <SunIcon className="h-5 w-5 sm:h-4 sm:w-4" />
-      ) : (
-        <MoonIcon className="h-5 w-5 sm:h-4 sm:w-4" />
-      )}
+      {icon}
     </button>
   );
 }
