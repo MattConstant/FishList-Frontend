@@ -1,5 +1,4 @@
 export default {
-  "about.kicker": "À propos de FishList",
   "about.title": "Un projet du cœur, depuis Ottawa",
   "about.p1":
     "Je suis développeur à Ottawa et j'adore tout simplement la pêche. Une bonne partie de mon temps libre part à chercher de bons coins, à lire les nouvelles sur l'ensemencement et à rassembler cartes, photos et notes un peu partout, souvent à travers plus d'applications et d'onglets que j'aimerais le compter.",
