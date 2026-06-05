@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { PostImageLightbox } from "@/components/post-image-lightbox";
 import { useLocale } from "@/contexts/locale-context";
 import { formatAppShortDate } from "@/lib/format-app-locale";
 import {
@@ -44,6 +45,7 @@ export function CatchCard({ c }: { c: CatchResponse }) {
     imageCandidates.filter((u) => !isObjectKey(u)),
   );
   const [imgError, setImgError] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const thumbSrc = directThumb ?? objectThumb;
 
   useEffect(() => {
@@ -216,17 +218,24 @@ export function CatchCard({ c }: { c: CatchResponse }) {
           {imageCandidates.length > 0 && !imgError && (
             resolvedUrls.length > 0 ? (
               <div className="mt-3 grid grid-cols-2 gap-2">
-                {resolvedUrls.map((url) => (
-                  <Image
+                {resolvedUrls.map((url, imageIndex) => (
+                  <button
                     key={url}
-                    src={url}
-                    alt={c.species}
-                    width={800}
-                    height={600}
-                    className="max-h-[280px] w-full rounded-lg border border-zinc-200 object-cover dark:border-zinc-700"
-                    unoptimized
-                    onError={() => setImgError(true)}
-                  />
+                    type="button"
+                    onClick={() => setLightboxIndex(imageIndex)}
+                    className="cursor-zoom-in overflow-hidden rounded-lg border border-zinc-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-zinc-700"
+                    aria-label={t("home.imageLightbox.open")}
+                  >
+                    <Image
+                      src={url}
+                      alt={c.species}
+                      width={800}
+                      height={600}
+                      className="max-h-[280px] w-full object-cover transition hover:opacity-95"
+                      unoptimized
+                      onError={() => setImgError(true)}
+                    />
+                  </button>
                 ))}
               </div>
             ) : (
@@ -238,6 +247,21 @@ export function CatchCard({ c }: { c: CatchResponse }) {
           {imgError && (
             <p className="mt-3 text-xs text-zinc-400">Could not load image.</p>
           )}
+          {lightboxIndex != null && resolvedUrls.length > 0 ? (
+            <PostImageLightbox
+              urls={resolvedUrls}
+              index={lightboxIndex}
+              alt={c.species}
+              onClose={() => setLightboxIndex(null)}
+              onIndexChange={setLightboxIndex}
+              labels={{
+                close: t("home.imageLightbox.close"),
+                prev: t("home.imageLightbox.prev"),
+                next: t("home.imageLightbox.next"),
+                imageOf: t("home.imageLightbox.imageOf"),
+              }}
+            />
+          ) : null}
         </div>
       )}
     </div>

@@ -13,6 +13,7 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import { EditPostDialog } from "@/components/edit-post-dialog";
+import { PostImageLightbox } from "@/components/post-image-lightbox";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -136,6 +137,7 @@ const FeedCard = memo(function FeedCard({
   const [replyToUsername, setReplyToUsername] = useState<string | null>(null);
   const [deletingPost, setDeletingPost] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const mapHref = useMemo(() => feedPostMapHref(post), [post]);
 
   useEffect(() => {
@@ -413,19 +415,25 @@ const FeedCard = memo(function FeedCard({
       {imageCandidates.length > 0 ? (
         isActive && resolvedUrls.length > 0 && !imgError ? (
           <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
-            {resolvedUrls.map((url) => (
-              <div key={url} className="relative aspect-square w-full">
+            {resolvedUrls.map((url, imageIndex) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setLightboxIndex(imageIndex)}
+                className="relative aspect-square w-full cursor-zoom-in overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900"
+                aria-label={t("home.imageLightbox.open")}
+              >
                 <Image
                   src={url}
                   alt={post.catch.species}
                   fill
-                  className="object-cover"
+                  className="object-cover transition hover:opacity-95"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   loading="lazy"
                   unoptimized
                   onError={() => setImgError(true)}
                 />
-              </div>
+              </button>
             ))}
           </div>
         ) : (
@@ -438,6 +446,22 @@ const FeedCard = memo(function FeedCard({
           <span className="text-5xl">🐟</span>
         </div>
       )}
+
+      {lightboxIndex != null && resolvedUrls.length > 0 ? (
+        <PostImageLightbox
+          urls={resolvedUrls}
+          index={lightboxIndex}
+          alt={post.catch.species}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+          labels={{
+            close: t("home.imageLightbox.close"),
+            prev: t("home.imageLightbox.prev"),
+            next: t("home.imageLightbox.next"),
+            imageOf: t("home.imageLightbox.imageOf"),
+          }}
+        />
+      ) : null}
 
       <div className="space-y-1 px-4 py-3">
         <p className="font-semibold text-zinc-900 dark:text-zinc-100">
