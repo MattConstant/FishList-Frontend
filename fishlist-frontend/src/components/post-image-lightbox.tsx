@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 export type PostImageLightboxLabels = {
   close: string;
@@ -19,6 +19,24 @@ type PostImageLightboxProps = {
   labels: PostImageLightboxLabels;
 };
 
+/** Lock page scroll while the viewer is open (app scrolls on `<main>`, not always `body`). */
+function lockPageScroll() {
+  const html = document.documentElement;
+  const main = document.querySelector("main");
+  const prevHtml = html.style.overflow;
+  const prevMain = main instanceof HTMLElement ? main.style.overflow : "";
+  html.style.overflow = "hidden";
+  if (main instanceof HTMLElement) {
+    main.style.overflow = "hidden";
+  }
+  return () => {
+    html.style.overflow = prevHtml;
+    if (main instanceof HTMLElement) {
+      main.style.overflow = prevMain;
+    }
+  };
+}
+
 export function PostImageLightbox({
   urls,
   index,
@@ -27,12 +45,19 @@ export function PostImageLightbox({
   onIndexChange,
   labels,
 }: PostImageLightboxProps) {
+  const [mounted, setMounted] = useState(false);
   const url = urls[index];
   const hasMultiple = urls.length > 1;
   const canPrev = index > 0;
   const canNext = index < urls.length - 1;
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted || !url) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         onClose();
@@ -46,25 +71,24 @@ export function PostImageLightbox({
       }
     };
     document.addEventListener("keydown", onKeyDown);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const unlockScroll = lockPageScroll();
     return () => {
       document.removeEventListener("keydown", onKeyDown);
-      document.body.style.overflow = prevOverflow;
+      unlockScroll();
     };
-  }, [index, canPrev, canNext, onClose, onIndexChange]);
+  }, [mounted, url, index, canPrev, canNext, onClose, onIndexChange]);
 
-  if (!url) return null;
+  if (!mounted || !url) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[1300] flex flex-col bg-black/92"
+      className="fixed inset-0 z-[99999] flex flex-col bg-black/92"
       role="dialog"
       aria-modal="true"
       aria-label={alt}
       onClick={onClose}
     >
-      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 text-white">
+      <div className="flex shrink-0 items-center justify-between gap-3 px-4 py-3 pt-[max(0.75rem,env(safe-area-inset-top))] text-white">
         {hasMultiple ? (
           <p className="text-sm font-medium tabular-nums text-white/80">
             {labels.imageOf
@@ -86,7 +110,7 @@ export function PostImageLightbox({
         </button>
       </div>
 
-      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-6 pt-1 sm:px-8">
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-2 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1 sm:px-8">
         {hasMultiple && canPrev ? (
           <button
             type="button"
@@ -111,14 +135,12 @@ export function PostImageLightbox({
           className="relative flex h-full max-h-[calc(100dvh-5rem)] w-full max-w-5xl items-center justify-center"
           onClick={(e) => e.stopPropagation()}
         >
-          <Image
+          {/* Native img — presigned storage URLs are external and vary by environment. */}
+          <img
             src={url}
             alt={alt}
-            width={1920}
-            height={1920}
             className="max-h-[calc(100dvh-5rem)] w-auto max-w-full object-contain"
-            unoptimized
-            priority
+            decoding="async"
           />
         </div>
 
@@ -142,6 +164,7 @@ export function PostImageLightbox({
           </button>
         ) : null}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

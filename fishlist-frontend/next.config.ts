@@ -33,6 +33,15 @@ function securityHeaders(): { key: string; value: string }[] {
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  images: {
+    // Presigned Supabase/MinIO URLs and other HTTPS hosts used in feed photos.
+    remotePatterns: [
+      { protocol: "https", hostname: "**.supabase.co" },
+      { protocol: "https", hostname: "fishlist-backend.onrender.com" },
+      { protocol: "http", hostname: "localhost", port: "8080" },
+      { protocol: "http", hostname: "localhost", port: "9000" },
+    ],
+  },
   async headers() {
     return [
       {
