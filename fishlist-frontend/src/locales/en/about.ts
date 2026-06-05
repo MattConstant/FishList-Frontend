@@ -1,5 +1,4 @@
 export default {
-  "about.kicker": "About FishList",
   "about.title": "A labour of love from Ottawa",
   "about.p1":
     "I'm a developer based in Ottawa who simply loves to fish. A lot of my free time goes into scouting new spots, reading stocking updates, and piecing together maps, photos, and notes from all over the place, usually across more apps and browser tabs than I'd like to admit.",

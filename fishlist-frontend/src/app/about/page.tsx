@@ -28,13 +28,6 @@ export default function AboutPage() {
 
       {/* Main content surface: centered card with readable contrast over the background layers. */}
       <article className="relative z-10 mx-auto w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
-        {/* "Kicker" pill: small label above the main title. */}
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:border-sky-700/70 dark:bg-sky-900/30 dark:text-sky-300">
-          <svg viewBox="0 0 20 20" fill="currentColor" className="h-3.5 w-3.5">
-            <path d="M10 2a.75.75 0 01.706.497l1.23 3.445 3.664.13a.75.75 0 01.427 1.338l-2.88 2.203 1.008 3.524a.75.75 0 01-1.144.829L10 12.6l-3.011 1.366a.75.75 0 01-1.144-.829l1.008-3.524-2.88-2.203a.75.75 0 01.427-1.337l3.664-.131 1.23-3.445A.75.75 0 0110 2z" />
-          </svg>
-          {t("about.kicker")}
-        </div>
 
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl dark:text-zinc-50">
           {t("about.title")}
