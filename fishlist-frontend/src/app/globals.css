@@ -1,0 +1,119 @@
+@import "tailwindcss";
+@import "../styles/map-page.css";
+@import "../styles/about-page.css";
+@import "../styles/login-page.css";
+@import "../styles/leaflet-map.css";
+@import "../styles/home-preview.css";
+@import "../styles/home-landing.css";
+
+/* Manual dark mode (next-themes adds class="dark" on <html>) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --background-accent: #f2f7ff;
+  --foreground: #171717;
+  /* iOS safe-area fallbacks when env() is 0 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+html.dark {
+  --background: #0f1624;
+  --background-accent: #1a2d45;
+  --foreground: #eef2f8;
+}
+
+html {
+  height: 100%;
+  /* Prevent iOS Safari from inflating small text */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Hide SSR landing before paint when a session exists (see landing-session-hide.ts). */
+html.fishlist-has-session #fishlist-landing-ssr {
+  display: none;
+}
+
+body {
+  /* Dynamic viewport - avoids 100vh bugs when the iOS URL bar shows/hides */
+  min-height: 100%;
+  min-height: 100dvh;
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+  /* Tone down tap flash on controls */
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+html:not(.dark) body {
+  background-color: var(--background);
+}
+
+html.dark body {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -30%, rgb(30 58 138 / 0.22) 0%, transparent 55%),
+    radial-gradient(circle at 12% 18%, rgb(56 189 248 / 0.08) 0%, transparent 38%),
+    radial-gradient(circle at 88% 8%, rgb(99 102 241 / 0.1) 0%, transparent 34%),
+    radial-gradient(circle at 50% 100%, rgb(0 0 0 / 0.35) 0%, transparent 45%),
+    linear-gradient(180deg, var(--background) 0%, #0c121c 55%, var(--background) 100%);
+}
+
+/*
+ * iOS Safari zooms focused inputs if font-size < 16px. Keep form controls readable.
+ */
+input,
+textarea,
+select {
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+button,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Fish loading spinner - wiggle + drift (friends page, location search, etc.) */
+@keyframes fish-loading-swim {
+  0%,
+  100% {
+    transform: translateX(-3px) rotate(-10deg);
+  }
+  50% {
+    transform: translateX(5px) rotate(10deg);
+  }
+}
+
+.fish-loading-spinner__icon {
+  animation: fish-loading-swim 0.95s ease-in-out infinite;
+  transform-origin: 45% 55%;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.08));
+}
+
+/* Logged-out home — dot grid only (no fill); light: zinc-100 parent, dark: body gradient shows through */
+.home-landing-dot-bg {
+  background-color: transparent;
+  background-image: radial-gradient(circle, rgb(113 113 122 / 0.22) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+.dark .home-landing-dot-bg {
+  background-color: transparent;
+  background-image: radial-gradient(circle, rgb(148 163 184 / 0.14) 1px, transparent 1px);
+}

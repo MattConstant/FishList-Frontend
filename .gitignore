@@ -1,44 +1,10 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Monorepo: frontend in fishlist-frontend/, backend in FishList/
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
+# Frontend build artifacts
+fishlist-frontend/node_modules/
+fishlist-frontend/.next/
+fishlist-frontend/out/
+fishlist-frontend/.vercel/
 
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
+# OS / IDE
 .DS_Store
-*.pem
-
-# debug
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.pnpm-debug.log*
-
-# env files - secrets stay in .env.local (ignored); tracked templates set dev/prod defaults
-.env*
-!.env.example
-!.env.development
-!.env.production
-
-# vercel
-.vercel
-
-# typescript
-*.tsbuildinfo
-next-env.d.ts

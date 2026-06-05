@@ -19,6 +19,16 @@ Core product goals:
 - Add social features (friends, feed, likes, comments).
 - Keep backend validation, ownership rules, and API error handling strict and predictable.
 
+## Repository Layout
+
+```
+FishList/                 ← monorepo root (this repo)
+├── fishlist-frontend/    ← Next.js app (all frontend code)
+└── FishList/             ← Spring Boot API (git submodule → FishList-Backend)
+```
+
+There is no application code at the repo root — only shared docs, CI, and git metadata.
+
 ## Current Tech Stack
 
 ### Frontend
@@ -76,6 +86,7 @@ On Windows PowerShell:
 Use Docker Compose to bring up the backend API and MinIO object storage:
 
 ```bash
+cd FishList
 docker compose up --build
 ```
 
@@ -87,6 +98,7 @@ Services started by compose:
 Then run the frontend in a second terminal:
 
 ```bash
+cd fishlist-frontend
 npm ci
 npm run dev
 ```
@@ -102,8 +114,8 @@ The frontend map integrates Ontario GeoHub fish stocking data to display stocked
 
 Implementation details:
 - Data source: ArcGIS GeoHub fish stocking feature service.
-- Client utility: `src/lib/geohub.ts`.
-- Map page integration: `src/app/map/page.tsx`.
+- Client utility: `fishlist-frontend/src/lib/geohub.ts`.
+- Map page integration: `fishlist-frontend/src/app/map/page.tsx`.
 - Data handling:
   - paginated fetch in chunks,
   - grouped by waterbody/coordinates,
