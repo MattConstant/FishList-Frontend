@@ -13,7 +13,6 @@ import en from "@/locales/en";
 import fr from "@/locales/fr";
 import {
   LOCALE_STORAGE_KEY,
-  parseAppLocale,
   writeLocaleCookie,
   type AppLocale,
 } from "@/lib/locale-shared";
@@ -68,7 +67,9 @@ export function LocaleProvider({
 
   useEffect(() => {
     const next = getBrowserLocale();
-    setLocaleState((current) => (current === next ? current : next));
+    startTransition(() => {
+      setLocaleState((current) => (current === next ? current : next));
+    });
     document.documentElement.lang = next;
     writeLocaleCookie(next);
   }, []);

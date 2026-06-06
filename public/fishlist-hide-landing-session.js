@@ -6,5 +6,5 @@
     if (parsed && parsed.authorizationHeader) {
       document.documentElement.classList.add("fishlist-has-session");
     }
-  } catch (_err) {}
+  } catch {}
 })();

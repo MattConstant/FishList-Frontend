@@ -1,7 +1,7 @@
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
 
 const HeroWaterCanvas = dynamic(
@@ -225,29 +225,37 @@ export function HomeLandingContent({ labels, initialStats }: Props) {
     "home.landing.testimonials.title",
   );
 
-  let wordDelay = 0.15;
-  const heroWords = HERO_LINES.map((line, lineIdx) => (
-    <span
-      key={`line-${lineIdx}`}
-      className={`home-landing__hero-line${lineIdx === 1 ? " home-landing__hero-line--nowrap" : ""}`}
-    >
-      {line.map((word, wordIdx) => {
-        const isAccent = word === "bite.";
-        const delay = wordDelay;
-        wordDelay += 0.08;
+  const heroWords = useMemo(
+    () =>
+      HERO_LINES.map((line, lineIdx) => {
+        const wordsBeforeLine = HERO_LINES.slice(0, lineIdx).reduce(
+          (sum, words) => sum + words.length,
+          0,
+        );
         return (
           <span
-            key={`${lineIdx}-${word}`}
-            className={`home-landing__hero-word${isAccent ? " home-landing__hero-word--accent" : ""}`}
-            style={{ animationDelay: `${delay}s` }}
+            key={`line-${lineIdx}`}
+            className={`home-landing__hero-line${lineIdx === 1 ? " home-landing__hero-line--nowrap" : ""}`}
           >
-            {word}
-            {wordIdx < line.length - 1 ? "\u00a0" : null}
+            {line.map((word, wordIdx) => {
+              const isAccent = word === "bite.";
+              const delay = 0.15 + (wordsBeforeLine + wordIdx) * 0.08;
+              return (
+                <span
+                  key={`${lineIdx}-${word}`}
+                  className={`home-landing__hero-word${isAccent ? " home-landing__hero-word--accent" : ""}`}
+                  style={{ animationDelay: `${delay}s` }}
+                >
+                  {word}
+                  {wordIdx < line.length - 1 ? "\u00a0" : null}
+                </span>
+              );
+            })}
           </span>
         );
-      })}
-    </span>
-  ));
+      }),
+    [],
+  );
 
   return (
     <div className="home-landing">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useSyncExternalStore } from "react";
 
 type Ripple = {
   x: number;
@@ -14,21 +14,25 @@ type Ripple = {
 const FRAME_MS = 50;
 
 function prefersReducedMotion() {
-  return (
-    typeof window !== "undefined" &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
+  return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+}
+
+function subscribeReducedMotion(onStoreChange: () => void) {
+  const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+  media.addEventListener("change", onStoreChange);
+  return () => media.removeEventListener("change", onStoreChange);
 }
 
 /** Animated wave bands behind the landing hero (decorative, throttled for INP). */
 export function HeroWaterCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const stateRef = useRef({ ripples: [] as Ripple[], t: 0, w: 0, h: 0, visible: true });
-  const [enabled, setEnabled] = useState(false);
-
-  useEffect(() => {
-    setEnabled(!prefersReducedMotion());
-  }, []);
+  const reducedMotion = useSyncExternalStore(
+    subscribeReducedMotion,
+    prefersReducedMotion,
+    () => true,
+  );
+  const enabled = !reducedMotion;
 
   useEffect(() => {
     if (!enabled) return;

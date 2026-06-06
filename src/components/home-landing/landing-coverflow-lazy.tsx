@@ -13,8 +13,8 @@ export function LandingCoverflowLazy() {
     if (!el || mounted) return;
 
     if (typeof IntersectionObserver === "undefined") {
-      setMounted(true);
-      return;
+      const frame = requestAnimationFrame(() => setMounted(true));
+      return () => cancelAnimationFrame(frame);
     }
 
     const obs = new IntersectionObserver(

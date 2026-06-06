@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 
 export type PostImageLightboxLabels = {
@@ -45,15 +45,15 @@ export function PostImageLightbox({
   onIndexChange,
   labels,
 }: PostImageLightboxProps) {
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
   const url = urls[index];
   const hasMultiple = urls.length > 1;
   const canPrev = index > 0;
   const canNext = index < urls.length - 1;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     if (!mounted || !url) return;
@@ -136,6 +136,7 @@ export function PostImageLightbox({
           onClick={(e) => e.stopPropagation()}
         >
           {/* Native img — presigned storage URLs are external and vary by environment. */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={url}
             alt={alt}

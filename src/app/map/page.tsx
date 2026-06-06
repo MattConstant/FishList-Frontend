@@ -772,6 +772,7 @@ export default function MapPage() {
     lakeSearchPin,
     closeMapSheet,
     clearPlaceSearch,
+    setLakeSuggestionsOpen,
   ]);
 
   function handleLogCatchClick() {

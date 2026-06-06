@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { LakePresenceTab } from "@/components/lake-presence-tab";
 import { LakeStockingTab } from "@/components/lake-stocking-tab";
 import { MapForecastPopup } from "@/components/map-forecast-popup";
@@ -72,17 +72,28 @@ export function MapDetailBottomSheet({
   const { t, locale } = useLocale();
   const [lakeTab, setLakeTab] = useState<MapLakeTab>("stocking");
   const [presenceTab, setPresenceTab] = useState<MapPresenceTab>("species");
-  const [enlargedCampPhotoIndex, setEnlargedCampPhotoIndex] = useState<number | null>(
-    null,
+  const campPhotoScope = `${mode}:${camp?.id ?? ""}`;
+  const [enlargedCampPhoto, setEnlargedCampPhoto] = useState<{
+    scope: string;
+    index: number;
+  } | null>(null);
+  const enlargedCampPhotoIndex =
+    enlargedCampPhoto?.scope === campPhotoScope ? enlargedCampPhoto.index : null;
+  const setEnlargedCampPhotoIndex = useCallback(
+    (value: number | null | ((prev: number | null) => number | null)) => {
+      setEnlargedCampPhoto((prev) => {
+        const current = prev?.scope === campPhotoScope ? prev.index : null;
+        const next = typeof value === "function" ? value(current) : value;
+        if (next == null) return null;
+        return { scope: campPhotoScope, index: next };
+      });
+    },
+    [campPhotoScope],
   );
   const campPhotoUrls =
     mode === "camp" && camp?.imageUrls && camp.imageUrls.length > 0
       ? camp.imageUrls.slice(0, 4)
       : [];
-
-  useEffect(() => {
-    setEnlargedCampPhotoIndex(null);
-  }, [camp?.id, mode]);
 
   useEffect(() => {
     if (enlargedCampPhotoIndex == null) return;
@@ -105,7 +116,7 @@ export function MapDetailBottomSheet({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [enlargedCampPhotoIndex, campPhotoUrls.length]);
+  }, [enlargedCampPhotoIndex, campPhotoUrls.length, setEnlargedCampPhotoIndex]);
   const presenceSpeciesCount =
     mode === "presence" && presence
       ? presence.speciesSummary
