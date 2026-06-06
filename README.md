@@ -2,7 +2,7 @@
 
 **Map the water. Log the bite. Share the story.**
 
-[fishlist.ca](https://www.fishlist.ca) — an Ontario-first fishing app for logging catches, exploring provincial lake data, and sharing trips with friends.
+[fishlist.ca](https://www.fishlist.ca), an Ontario-first fishing app for logging catches, exploring provincial lake data, and sharing trips with friends.
 
 Built by an Ottawa angler who got tired of juggling maps, stocking PDFs, photos, and notes across a dozen tabs. FishList brings the useful parts into one place.
 
@@ -13,7 +13,7 @@ Built by an Ottawa angler who got tired of juggling maps, stocking PDFs, photos,
 FishList is a full-stack fishing log and social app:
 
 - **Explore** Ontario waters on an interactive map with MNRF stocking data, species presence records, bathymetry, and community catch pins.
-- **Log** catches and camp spots with photos, species, gear, and notes — straight from the map.
+- **Log** catches and camp spots with photos, species, gear, and notes, straight from the map.
 - **Share** a community feed with likes, threaded comments, and friend filters.
 - **Plan** with fishing forecasts, solunar timing, and lake-level insights.
 
@@ -26,8 +26,8 @@ Guests can browse the map and landing page. Create a free account to post, comme
 ### Map & data
 
 - Interactive Leaflet map with satellite or street basemap
-- **MNRF stocking** layer — filter by species, district, stage, and volume
-- **Species presence (ARA)** — provincial occurrence records
+- **MNRF stocking** layer: filter by species, district, stage, and volume
+- **Species presence (ARA)**: provincial occurrence records
 - **Lake search** with geocoding and deep links to a lake pin
 - **Bathymetry** contours (Ontario LIO, where surveyed)
 - **Community catch pins** from the feed (signed-in users)
@@ -74,14 +74,14 @@ Guests can browse the map and landing page. Create a free account to post, comme
 | i18n | Custom locale dictionaries (`en` / `fr`) |
 | Analytics | Vercel Analytics & Speed Insights |
 | Hosting | [Vercel](https://vercel.com/) (frontend) |
-| API | [FishList backend](https://github.com/MattConstant/FishList-Backend) — Spring Boot on Render |
+| API | [FishList backend](https://github.com/MattConstant/FishList-Backend), Spring Boot on Render |
 
 ---
 
 ## Prerequisites
 
 - **Node.js 20+** and npm
-- **FishList backend** running locally for full auth, posts, and uploads — see the [FishList-Backend](https://github.com/MattConstant/FishList-Backend) repo (`docker compose up --build` → API at `http://localhost:8080`)
+- **FishList backend** running locally for full auth, posts, and uploads. See the [FishList-Backend](https://github.com/MattConstant/FishList-Backend) repo (`docker compose up --build` → API at `http://localhost:8080`)
 
 ---
 
@@ -100,16 +100,16 @@ npm ci
 Copy or create `.env.local` for secrets and overrides (git-ignored):
 
 ```bash
-# Required — Spring Boot API (local Docker or remote)
+# Required: Spring Boot API (local Docker or remote)
 NEXT_PUBLIC_API_BASE_URL=http://localhost:8080
 
-# Optional — canonical site URL for metadata / sitemap
+# Optional: canonical site URL for metadata / sitemap
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-# Optional — Google OAuth (must match backend GOOGLE_CLIENT_ID)
+# Optional: Google OAuth (must match backend GOOGLE_CLIENT_ID)
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=
 
-# Optional — reserved usernames / admin (comma-separated)
+# Optional: reserved usernames / admin (comma-separated)
 NEXT_PUBLIC_ADMIN_USERNAME=
 NEXT_PUBLIC_RESERVED_USERNAMES=
 ```
@@ -178,7 +178,7 @@ Server routes under `src/app/api/` proxy geocoding, forecasts, and AI tips so ke
 ## Deployment (Vercel)
 
 1. Import the **FishList-Frontend** GitHub repo.
-2. **Root Directory** — leave blank (app lives at repo root).
+2. **Root Directory**: leave blank (app lives at repo root).
 3. Framework preset: **Next.js** (auto-detected).
 4. Set environment variables:
    - `NEXT_PUBLIC_API_BASE_URL` → your production API URL
