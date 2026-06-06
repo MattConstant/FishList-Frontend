@@ -1,0 +1,35 @@
+import about from "./fr/about";
+import achievements from "./fr/achievements";
+import admin from "./fr/admin";
+import catchDict from "./fr/catch";
+import errors from "./fr/errors";
+import forecast from "./fr/forecast";
+import friends from "./fr/friends";
+import home from "./fr/home";
+import map from "./fr/map";
+import legal from "./fr/legal";
+import login from "./fr/login";
+import nav from "./fr/nav";
+import profile from "./fr/profile";
+import register from "./fr/register";
+import users from "./fr/users";
+
+const fr = {
+  ...nav,
+  ...catchDict,
+  ...login,
+  ...register,
+  ...about,
+  ...legal,
+  ...friends,
+  ...profile,
+  ...home,
+  ...map,
+  ...users,
+  ...admin,
+  ...achievements,
+  ...errors,
+  ...forecast,
+} as const;
+
+export default fr;

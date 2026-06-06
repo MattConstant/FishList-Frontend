@@ -1,0 +1,1549 @@
+/**
+ * FishList Spring API - Bearer JWT after Google Sign-In (see POST /api/auth/google).
+ */
+
+import type { LakeFishingInsightPayload } from "@/lib/lake-insights";
+
+const SESSION_KEY = "fishlist-session";
+
+/**
+ * Fallback if NEXT_PUBLIC_API_BASE_URL is missing (e.g. old build).
+ * Normal flow: .env.development / .env.production / Vercel env set this at build time.
+ */
+const DEFAULT_PRODUCTION_API_BASE = "https://fishlist-backend.onrender.com";
+
+export class ApiHttpError extends Error {
+  readonly status: number;
+  readonly code?: string;
+  readonly fieldErrors?: Record<string, string>;
+
+  constructor(
+    message: string,
+    status: number,
+    options?: { code?: string; fieldErrors?: Record<string, string> },
+  ) {
+    super(message);
+    this.name = "ApiHttpError";
+    this.status = status;
+    this.code = options?.code;
+    this.fieldErrors = options?.fieldErrors;
+  }
+}
+
+/**
+ * Thrown when `fetch` fails before a response (offline, DNS, CORS, connection reset, etc.).
+ * Callers should not clear auth session for this error.
+ */
+export class ApiNetworkError extends Error {
+  readonly code = "NETWORK" as const;
+
+  constructor(
+    message = "Could not reach FishList. Check your internet connection, or try again when the service is back online.",
+    cause?: unknown,
+  ) {
+    super(message);
+    this.name = "ApiNetworkError";
+    if (cause !== undefined) {
+      (this as Error & { cause?: unknown }).cause = cause;
+    }
+  }
+}
+
+function isLikelyConnectivityFailure(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === "AbortError") return true;
+  const msg = err.message.toLowerCase();
+  if (err instanceof TypeError && (msg.includes("fetch") || msg.includes("network") || msg.includes("failed"))) {
+    return true;
+  }
+  if (msg.includes("networkerror") || msg.includes("failed to fetch") || msg.includes("load failed")) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Wraps `fetch` so connection failures become {@link ApiNetworkError} with a clear message.
+ */
+export async function backendFetch(
+  input: RequestInfo | URL,
+  init?: RequestInit,
+): Promise<Response> {
+  try {
+    return await fetch(input, init);
+  } catch (err) {
+    if (err instanceof Error && err.name === "AbortError") {
+      throw new ApiNetworkError(
+        "The request was cancelled or timed out. Check your connection and try again.",
+        err,
+      );
+    }
+    if (isLikelyConnectivityFailure(err)) {
+      throw new ApiNetworkError(undefined, err);
+    }
+    throw err;
+  }
+}
+
+/** Parse JSON from a successful response body; never throws raw `SyntaxError`. */
+async function parseResponseJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  const trimmed = text.trim();
+  if (!trimmed) {
+    throw new ApiHttpError("The server returned an empty response. Please try again.", res.status || 502);
+  }
+  try {
+    return JSON.parse(trimmed) as T;
+  } catch {
+    throw new ApiHttpError(
+      "The server returned data we could not read. Please try again in a moment.",
+      res.status || 502,
+    );
+  }
+}
+
+type ApiErrorPayload = {
+  status?: number;
+  code?: string;
+  message?: string;
+  errors?: Record<string, string>;
+};
+
+const ALLOWED_IMAGE_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".heic",
+]);
+const ALLOWED_IMAGE_MIME_TYPES = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+  "image/heic",
+  "image/heif",
+]);
+
+/**
+ * Must stay in sync with Spring `MULTIPART_MAX_SIZE` (default 25MB in application.properties).
+ * Reject before upload so users get a clear message instead of a 502 from the gateway.
+ */
+export const MAX_IMAGE_UPLOAD_BYTES = 25 * 1024 * 1024;
+
+/** Filename part for multipart uploads - some browsers send an empty name; the API needs an extension. */
+export function imageUploadFileName(file: File): string {
+  const trimmed = file.name?.trim();
+  if (trimmed && getFileExtension(trimmed)) {
+    return trimmed;
+  }
+  const ext = inferExtensionFromMime(file.type) || ".jpg";
+  return `image${ext}`;
+}
+
+function inferExtensionFromMime(mimeRaw: string): string {
+  const mime = mimeRaw.split(";")[0]?.trim().toLowerCase() ?? "";
+  const map: Record<string, string> = {
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "image/heic": ".heic",
+    "image/heif": ".heic",
+  };
+  return map[mime] ?? "";
+}
+
+export type AccountResponse = {
+  id: number;
+  username: string;
+  /** S3/MinIO object key; resolve with {@link getImageUrl} when present. */
+  profileImageKey?: string | null;
+};
+
+// ── Achievements + roles ─────────────────────────────────────────────
+
+export type AchievementRarity = "COMMON" | "RARE" | "LEGENDARY";
+export type AchievementCategory = "CATCH" | "EXPLORATION" | "SOCIAL";
+
+/** Stable enum names from {@code AchievementCode.java}; used as React keys / locale lookups. */
+export type AchievementCode =
+  | "FIRST_CATCH"
+  | "TEN_CATCHES"
+  | "FIFTY_CATCHES"
+  | "HUNDRED_CATCHES"
+  | "FIVE_SPECIES"
+  | "TEN_SPECIES"
+  | "THREE_LOCATIONS"
+  | "TEN_LOCATIONS"
+  | "FIRST_PHOTO"
+  | "FIRST_LIKE_GIVEN"
+  | "FIRST_COMMENT"
+  | "FIRST_FRIEND"
+  | "POPULAR_CATCH"
+  | "TROPHY_FISH"
+  | "FIRST_FLY"
+  | "FLY_FISHING_PRO"
+  | "FIRST_TROLLING"
+  | "TROLLING_PRO"
+  | "FIRST_ICE"
+  | "ICE_FISHING_PRO"
+  | "VERSATILE_ANGLER"
+  | "TECHNIQUE_MASTER"
+  | "STOCKED_LAKE_CATCH"
+  | "RIVER_CATCH"
+  | "OCEAN_CATCH"
+  | "TRAILBLAZER"
+  | "RANGE_ROAMER";
+
+export type RoleTierName =
+  | "NEWCOMER"
+  | "ANGLER"
+  | "ADEPT"
+  | "VETERAN"
+  | "MASTER"
+  | "LEGEND";
+
+/** Inline notification when a mutation tripped a new achievement. */
+export type UnlockedAchievementSummary = {
+  code: AchievementCode;
+  titleKey: string;
+  descriptionKey: string;
+  xp: number;
+  rarity: AchievementRarity;
+};
+
+export type AchievementResponse = {
+  code: AchievementCode;
+  titleKey: string;
+  descriptionKey: string;
+  xp: number;
+  rarity: AchievementRarity;
+  category: AchievementCategory;
+  target: number;
+  progress: number;
+  unlocked: boolean;
+  unlockedAt?: string | null;
+};
+
+export type AchievementProgressResponse = {
+  accountId: number;
+  username: string;
+  profileImageKey?: string | null;
+  xp: number;
+  roleTier: RoleTierName;
+  roleTierLabelKey: string;
+  nextRoleTier?: RoleTierName | null;
+  nextRoleTierLabelKey?: string | null;
+  nextRoleTierMinXp?: number | null;
+  admin: boolean;
+  unlockedCount: number;
+  totalCount: number;
+  achievements: AchievementResponse[];
+};
+
+/**
+ * Module-level callback set by {@code AchievementToastProvider}; lets API helpers fire toasts
+ * without each call site needing to forward the unlock list manually.
+ */
+type AchievementToastDispatcher = (
+  list: UnlockedAchievementSummary[],
+) => void;
+let achievementToastDispatcher: AchievementToastDispatcher | null = null;
+
+/**
+ * Registers (or clears with {@code null}) the function that receives unlock notifications.
+ * Provider should call on mount and clear on unmount.
+ */
+export function setAchievementToastDispatcher(
+  fn: AchievementToastDispatcher | null,
+): void {
+  achievementToastDispatcher = fn;
+}
+
+function dispatchUnlocks(
+  list: UnlockedAchievementSummary[] | null | undefined,
+): void {
+  if (!list || list.length === 0) return;
+  achievementToastDispatcher?.(list);
+}
+
+export type AccountUpdateResponse = {
+  account: AccountResponse;
+  accessToken: string;
+  tokenType: string;
+};
+
+export type AdminMeResponse = {
+  username: string;
+  admin: boolean;
+};
+
+export type AdminSummaryResponse = {
+  totalAccounts: number;
+  totalLocations: number;
+  totalCatches: number;
+  totalComments: number;
+  totalLikes: number;
+  totalFriendships: number;
+};
+
+export type AdminAccountRowResponse = {
+  id: number;
+  username: string;
+  locations: number;
+  catches: number;
+  comments: number;
+  likes: number;
+};
+
+export type StoredSession = {
+  username: string;
+  authorizationHeader: string;
+};
+
+function formatValidationFieldErrors(err: ApiHttpError): string | null {
+  if (!err.fieldErrors || Object.keys(err.fieldErrors).length === 0) return null;
+  const labels: Record<string, string> = {
+    email: "Email",
+    username: "Username",
+    password: "Password",
+  };
+  return Object.entries(err.fieldErrors)
+    .map(([field, msg]) => `${labels[field] ?? field}: ${msg}`)
+    .join(" ");
+}
+
+export function getDisplayErrorMessage(
+  err: unknown,
+  fallback = "Something went wrong.",
+): string {
+  if (err instanceof ApiNetworkError) {
+    return err.message;
+  }
+  if (err instanceof ApiHttpError) {
+    if (err.code === "VALIDATION_ERROR") {
+      return formatValidationFieldErrors(err) ?? "Please check your input and try again.";
+    }
+    if (err.status === 400) {
+      const m = err.message?.trim();
+      if (m) return m;
+      return "Invalid request.";
+    }
+    if (err.status === 401) {
+      const m = err.message?.trim();
+      if (m && m !== "Unauthorized") return m;
+      return "Session expired or invalid. Please sign in again.";
+    }
+    if (err.status === 503) return "Sign-in is not configured on the server.";
+    if (err.status === 403)
+      return "Access denied. New site URL? Add that origin to the API CORS list (app.cors.*), not only Google OAuth.";
+    if (err.status === 404) return "The requested item was not found.";
+    if (err.status === 409) {
+      const m = err.message?.trim();
+      if (m) return m;
+      return "That value is already in use.";
+    }
+    if (err.status === 429) return "Too many requests. Please try again later.";
+    if (err.status === 502 || err.status === 504) {
+      const m = err.message?.toLowerCase() ?? "";
+      if (m.includes("multipart") || m.includes("body") || m.includes("payload") || m.includes("too large")) {
+        return "Upload failed (bad gateway). Try a smaller photo, or ask the host to raise upload / proxy body limits.";
+      }
+      return "FishList is temporarily unreachable (gateway error). Please try again in a few minutes.";
+    }
+    if (err.status >= 500) return "Something went wrong on the server. Please try again later.";
+    return fallback;
+  }
+  if (err instanceof SyntaxError) {
+    return "Received an invalid response. Please try again later.";
+  }
+  if (err instanceof Error && err.name === "AbortError") {
+    return "The request was cancelled or timed out.";
+  }
+  if (isLikelyConnectivityFailure(err)) {
+    return "Could not reach FishList. Check your internet connection, or try again when the service is back online.";
+  }
+  if (err instanceof Error && err.message.trim()) {
+    return err.message.trim();
+  }
+  return fallback;
+}
+
+/**
+ * i18n key for connection / availability issues (use with `t(key)`). Returns null if not a known connectivity-style error.
+ */
+export function getConnectionIssueLocaleKey(err: unknown): string | null {
+  if (err instanceof ApiNetworkError) return "errors.backendUnreachable";
+  if (err instanceof ApiHttpError) {
+    if (err.status === 502 || err.status === 504) return "errors.backendUnavailable";
+    if (err.status >= 500) return "errors.backendServerError";
+  }
+  if (isLikelyConnectivityFailure(err)) return "errors.backendUnreachable";
+  return null;
+}
+
+export function getApiBaseUrl(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+  if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") return DEFAULT_PRODUCTION_API_BASE;
+  return "http://localhost:8080";
+}
+
+export function validateImageFileForUpload(file: File): void {
+  if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    const mb = Math.floor(MAX_IMAGE_UPLOAD_BYTES / (1024 * 1024));
+    throw new Error(
+      `Each photo must be at most ${mb} MB. Pick a smaller file or reduce export/camera quality.`,
+    );
+  }
+  let ext = getFileExtension(file.name);
+  if (!ext) {
+    ext = inferExtensionFromMime(file.type);
+  }
+  if (!ALLOWED_IMAGE_EXTENSIONS.has(ext)) {
+    throw new Error("Unsupported file extension. Allowed: jpg, jpeg, png, gif, webp, heic.");
+  }
+  const mime = file.type.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (mime && !ALLOWED_IMAGE_MIME_TYPES.has(mime)) {
+    throw new Error("Unsupported file type. Allowed image formats: JPEG, PNG, GIF, WEBP, HEIC.");
+  }
+}
+
+export type GoogleAuthResponse = {
+  accessToken: string;
+  tokenType: string;
+  account: AccountResponse;
+};
+
+/** Exchanges a Google ID token (GIS credential) for a FishList JWT. */
+export async function exchangeGoogleCredential(
+  credential: string,
+): Promise<GoogleAuthResponse> {
+  clearSession();
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/google`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ credential }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<GoogleAuthResponse>(res);
+}
+
+/** Username + password - same response shape as Google exchange (FishList JWT). */
+export async function exchangePasswordLogin(
+  username: string,
+  password: string,
+): Promise<GoogleAuthResponse> {
+  clearSession();
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ username: username.trim(), password }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<GoogleAuthResponse>(res);
+}
+
+export type RegisterResponse = {
+  message: string;
+  email: string;
+  emailVerificationRequired: boolean;
+};
+
+/** Create account with username, email, and password. Requires email confirmation before login. */
+export async function exchangeRegister(
+  username: string,
+  email: string,
+  password: string,
+): Promise<RegisterResponse> {
+  clearSession();
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ username: username.trim(), email: email.trim(), password }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<RegisterResponse>(res);
+}
+
+export async function verifyEmailToken(token: string): Promise<{ message: string }> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ token }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<{ message: string }>(res);
+}
+
+export async function resendVerificationEmail(email: string): Promise<{ message: string }> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/resend-verification`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<{ message: string }>(res);
+}
+
+export function isEmailNotVerifiedError(err: unknown): boolean {
+  return err instanceof ApiHttpError && err.code === "EMAIL_NOT_VERIFIED";
+}
+
+export function loadSession(): StoredSession | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as StoredSession;
+    if (
+      typeof parsed?.username === "string" &&
+      typeof parsed?.authorizationHeader === "string"
+    ) {
+      return parsed;
+    }
+  } catch {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+  return null;
+}
+
+export function saveSession(session: StoredSession): void {
+  sessionStorage.setItem(SESSION_KEY, JSON.stringify(session));
+}
+
+export function clearSession(): void {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+function redirectToLogin(): void {
+  if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+    window.location.assign("/login");
+  }
+}
+
+export async function fetchCurrentAccount(
+  authorizationHeader: string,
+): Promise<AccountResponse> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/accounts/me`, {
+    headers: { Authorization: authorizationHeader },
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<AccountResponse>(res);
+}
+
+/**
+ * GET JSON with optional Bearer when a session exists. Use for endpoints that may be
+ * public or accept optional auth (e.g. viewing another account's profile or locations).
+ */
+export async function apiGet(path: string): Promise<Response> {
+  const base = getApiBaseUrl();
+  const url =
+    path.startsWith("http") ? path : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+  const session = typeof window !== "undefined" ? loadSession() : null;
+  const headers: Record<string, string> = { Accept: "application/json" };
+  if (session?.authorizationHeader) {
+    headers.Authorization = session.authorizationHeader;
+  }
+  return backendFetch(url, { headers, cache: "no-store" });
+}
+
+async function apiGetJson<T>(path: string): Promise<T> {
+  const res = await apiGet(path);
+  await throwIfNotOk(res);
+  return parseResponseJson<T>(res);
+}
+
+/** Updates username and/or profile image (object key from {@link uploadImage}; empty string clears photo). Returns a new JWT. */
+export async function patchMyProfile(payload: {
+  username?: string;
+  profileImageKey?: string;
+}): Promise<AccountUpdateResponse> {
+  return authJson<AccountUpdateResponse>("/api/accounts/me", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+/**
+ * Public account lookup by id. Uses Bearer token when logged in; works without a session
+ * if the API allows anonymous GET (otherwise returns 401).
+ */
+export async function fetchAccountById(id: number): Promise<AccountResponse> {
+  return apiGetJson<AccountResponse>(`/api/accounts/${id}`);
+}
+
+export async function searchAccounts(query: string): Promise<AccountResponse[]> {
+  return authJson<AccountResponse[]>(
+    `/api/accounts/search?query=${encodeURIComponent(query)}`,
+  );
+}
+
+
+export type MapFavoriteSpotResponseDto = {
+  id: number;
+  latitude: number;
+  longitude: number;
+  spotKey: string;
+  label: string;
+  createdAtEpochMs: number;
+};
+
+/** Normalizes backend map bookmark payload for UI + Leaflet markers. */
+export function mapFavoriteSpotDtoToFavorite(
+  row: MapFavoriteSpotResponseDto,
+): import("@/lib/map-favorites").FavoriteSpot {
+  type F = import("@/lib/map-favorites").FavoriteSpot;
+  return {
+    id: String(row.id),
+    lat: row.latitude,
+    lng: row.longitude,
+    label: row.label,
+    createdAt: Number.isFinite(row.createdAtEpochMs) ? row.createdAtEpochMs : Date.now(),
+  } satisfies F;
+}
+
+export async function fetchMyMapFavorites(): Promise<
+  import("@/lib/map-favorites").FavoriteSpot[]
+> {
+  const rows = await authJson<MapFavoriteSpotResponseDto[]>(
+    "/api/accounts/me/map-favorites",
+  );
+  return rows.map(mapFavoriteSpotDtoToFavorite);
+}
+
+export async function createMapFavorite(body: {
+  latitude: number;
+  longitude: number;
+  label: string;
+}): Promise<MapFavoriteSpotResponseDto> {
+  return authJson<MapFavoriteSpotResponseDto>(
+    "/api/accounts/me/map-favorites",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export async function deleteMapFavorite(serverId: number): Promise<void> {
+  await authVoid(`/api/accounts/me/map-favorites/${serverId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchMyFriends(): Promise<AccountResponse[]> {
+  return authJson<AccountResponse[]>("/api/accounts/me/friends");
+}
+
+export type CommentReplyNotificationResponse = {
+  replyCommentId: number;
+  locationId: number;
+  catchId: number;
+  replierUsername: string;
+  messagePreview: string;
+  createdAt: string;
+};
+
+export async function fetchCommentReplyNotifications(limit = 25): Promise<CommentReplyNotificationResponse[]> {
+  return authJson<CommentReplyNotificationResponse[]>(
+    `/api/accounts/me/comment-replies?limit=${limit}`,
+  );
+}
+
+type AddFriendApiResponse = {
+  friend: AccountResponse;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
+export async function addFriend(accountId: number): Promise<AccountResponse> {
+  const res = await authJson<AddFriendApiResponse>(
+    `/api/accounts/${accountId}/friends`,
+    { method: "POST" },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res.friend;
+}
+
+export async function removeFriend(accountId: number): Promise<void> {
+  await authVoid(`/api/accounts/${accountId}/friends`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchMyAchievements(): Promise<AchievementProgressResponse> {
+  return authJson<AchievementProgressResponse>("/api/achievements/me");
+}
+
+export async function fetchAccountAchievements(
+  accountId: number,
+): Promise<AchievementProgressResponse> {
+  return authJson<AchievementProgressResponse>(
+    `/api/achievements/users/${accountId}`,
+  );
+}
+
+export async function fetchAdminMe(): Promise<AdminMeResponse> {
+  return authJson<AdminMeResponse>("/api/admin/me");
+}
+
+export async function fetchAdminSummary(): Promise<AdminSummaryResponse> {
+  return authJson<AdminSummaryResponse>("/api/admin/summary");
+}
+
+export type AdminAccountPageResponse = {
+  content: AdminAccountRowResponse[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+};
+
+export async function fetchAdminAccountsPage(
+  query: string,
+  page: number,
+  size: number,
+): Promise<AdminAccountPageResponse> {
+  const params = new URLSearchParams({
+    query,
+    page: String(page),
+    size: String(size),
+  });
+  return authJson<AdminAccountPageResponse>(
+    `/api/admin/accounts?${params.toString()}`,
+  );
+}
+
+export async function adminDeleteAccount(accountId: number): Promise<void> {
+  await authVoid(`/api/admin/accounts/${accountId}`, {
+    method: "DELETE",
+  });
+}
+
+/**
+ * Calls the API with the stored Bearer token. Clears session on 401.
+ */
+export async function authenticatedFetch(
+  path: string,
+  init: RequestInit = {},
+): Promise<Response> {
+  const session = loadSession();
+  if (!session) {
+    redirectToLogin();
+    throw new Error("Not authenticated");
+  }
+
+  const base = getApiBaseUrl();
+  const url = path.startsWith("http")
+    ? path
+    : `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+
+  const res = await backendFetch(url, {
+    ...init,
+    cache: init.cache ?? "no-store",
+    headers: {
+      ...normalizeHeaders(init.headers),
+      Authorization: session.authorizationHeader,
+    },
+  });
+
+  if (res.status === 401) {
+    clearSession();
+    redirectToLogin();
+  }
+  return res;
+}
+
+async function authJson<T>(path: string, init?: RequestInit): Promise<T> {
+  const res = await authenticatedFetch(path, init);
+  await throwIfNotOk(res);
+  return parseResponseJson<T>(res);
+}
+
+async function authVoid(path: string, init?: RequestInit): Promise<void> {
+  const res = await authenticatedFetch(path, init);
+  await throwIfNotOk(res);
+}
+
+// ── Location + Catch types ──────────────────────────────────────────
+
+/** Matches server `PostVisibility` (who can see the location / feed post). */
+export type PostVisibility = "PUBLIC" | "FRIENDS" | "PRIVATE";
+
+// ── Camp spots (map pins, not feed posts) ────────────────────────────
+
+export type CampSpotResponse = {
+  id: number;
+  name: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  accountId: number;
+  username: string;
+  visibility?: PostVisibility | null;
+  /** Optional photos (object keys or absolute URLs). */
+  imageUrls?: string[];
+};
+
+export type CreateCampSpotPayload = {
+  name: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  visibility?: PostVisibility;
+  imageUrls?: string[];
+};
+
+export async function fetchVisibleCampSpots(limit = 500): Promise<CampSpotResponse[]> {
+  try {
+    return await authJson<CampSpotResponse[]>(`/api/camps/visible?limit=${limit}`);
+  } catch (e) {
+    // Backend may not have camp endpoints deployed yet; fall back to local-only camps.
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { listLocalCampsForUser, toCampSpotResponse } = await import("@/lib/camp-storage");
+      return listLocalCampsForUser(me.id).map(toCampSpotResponse).slice(0, limit);
+    }
+    throw e;
+  }
+}
+
+export async function createCampSpot(body: CreateCampSpotPayload): Promise<CampSpotResponse> {
+  try {
+    return await authJson<CampSpotResponse>("/api/camps", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (e) {
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { upsertLocalCamp, toCampSpotResponse } = await import("@/lib/camp-storage");
+      const id = Date.now();
+      const local = {
+        id,
+        name: body.name.trim(),
+        latitude: body.latitude.trim(),
+        longitude: body.longitude.trim(),
+        timeStamp: body.timeStamp,
+        accountId: me.id,
+        username: me.username,
+        visibility: body.visibility ?? "PUBLIC",
+        imageUrls: body.imageUrls ?? [],
+      };
+      upsertLocalCamp(local);
+      return toCampSpotResponse(local);
+    }
+    throw e;
+  }
+}
+
+export async function deleteCampSpot(id: number): Promise<void> {
+  try {
+    await authVoid(`/api/camps/${id}`, { method: "DELETE" });
+  } catch (e) {
+    if (e instanceof ApiHttpError && e.status === 404) {
+      const session = loadSession();
+      if (!session) throw e;
+      const me = await fetchCurrentAccount(session.authorizationHeader);
+      const { deleteLocalCamp } = await import("@/lib/camp-storage");
+      deleteLocalCamp(id, me.id);
+      return;
+    }
+    throw e;
+  }
+}
+
+/**
+ * Body of water classification on a location. Mirrors the server
+ * {@code ca.consmatt.beans.WaterType} enum names; UI labels are looked up via the locale key
+ * {@code catch.waterType.<lowercase value>}.
+ */
+export type WaterType =
+  | "LAKE"
+  | "STOCKED_LAKE"
+  | "POND"
+  | "RIVER"
+  | "STREAM"
+  | "RESERVOIR"
+  | "OCEAN"
+  | "OTHER";
+
+/** Order in which water types are presented in the picker. */
+export const WATER_TYPE_OPTIONS: WaterType[] = [
+  "LAKE",
+  "STOCKED_LAKE",
+  "POND",
+  "RIVER",
+  "STREAM",
+  "RESERVOIR",
+  "OCEAN",
+  "OTHER",
+];
+
+export type LocationPayload = {
+  locationName: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  Details?: string;
+  visibility?: PostVisibility;
+  /** Optional body of water classification (lake, river, ocean…). */
+  waterType?: WaterType;
+};
+
+export type LocationResponse = LocationPayload & {
+  id: number;
+  accountId: number;
+};
+
+/** One fish line in a catch (matches server `FishEntryRequest` / `fishDetails` JSON). */
+export type FishEntryPayload = {
+  species: string;
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+};
+
+/**
+ * Fishing technique used for a catch. Mirrors the server {@code ca.consmatt.beans.FishingType}
+ * enum names; UI labels are looked up via the locale key
+ * {@code catch.fishingType.<lowercase value>}.
+ */
+export type FishingType =
+  | "FLY"
+  | "SPIN"
+  | "BAITCAST"
+  | "TROLLING"
+  | "ICE"
+  | "JIGGING"
+  | "BOTTOM"
+  | "FLOAT"
+  | "SURF"
+  | "OTHER";
+
+/** Order in which fishing types are presented in the picker. */
+export const FISHING_TYPE_OPTIONS: FishingType[] = [
+  "FLY",
+  "SPIN",
+  "BAITCAST",
+  "TROLLING",
+  "JIGGING",
+  "FLOAT",
+  "BOTTOM",
+  "SURF",
+  "ICE",
+  "OTHER",
+];
+
+/** Payload for POST /locations/{id}/catches - use `fish` for multiple fish in one post. */
+export type AddCatchPayload = {
+  species?: string;
+  quantity?: number;
+  /** When set (and non-empty), all fish are stored on one catch as `fishDetails` on the server. */
+  fish?: FishEntryPayload[];
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+  description?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  /** Optional technique used for this post. */
+  fishingType?: FishingType;
+};
+
+export type CatchResponse = {
+  id: number;
+  locationId: number;
+  species: string;
+  quantity?: number;
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+  description?: string;
+  imageUrl?: string;
+  imageUrls?: string[];
+  fishDetails?: FishEntryPayload[] | null;
+  fishingType?: FishingType | null;
+};
+
+export async function createLocation(
+  loc: LocationPayload,
+): Promise<string> {
+  const res = await authenticatedFetch("/api/locations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(loc),
+  });
+  await throwIfNotOk(res);
+  return res.text();
+}
+
+type AddCatchApiResponse = {
+  catch: CatchResponse;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
+/** Adds one catch to an existing location (same trip / coordinates). */
+export async function addCatchToLocation(
+  locationId: string,
+  catchData: AddCatchPayload,
+): Promise<CatchResponse> {
+  const catchRes = await authenticatedFetch(`/api/locations/${locationId}/catches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(catchData),
+  });
+  await throwIfNotOk(catchRes);
+  const data = await parseResponseJson<AddCatchApiResponse>(catchRes);
+  dispatchUnlocks(data.unlockedAchievements);
+  return data.catch;
+}
+
+export async function createLocationAndCatch(
+  loc: LocationPayload,
+  catchData: AddCatchPayload,
+): Promise<CatchResponse> {
+  const locRes = await authenticatedFetch("/api/locations", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(loc),
+  });
+  await throwIfNotOk(locRes);
+  const locText = await locRes.text();
+  const idMatch = locText.match(/(\d+)/);
+  if (!idMatch) throw new Error("Could not parse location id from response");
+  const locationId = idMatch[1];
+
+  const catchRes = await authenticatedFetch(`/api/locations/${locationId}/catches`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(catchData),
+  });
+  await throwIfNotOk(catchRes);
+  const data = await parseResponseJson<AddCatchApiResponse>(catchRes);
+  dispatchUnlocks(data.unlockedAchievements);
+  return data.catch;
+}
+
+export type LocationWithCatches = {
+  id: number;
+  locationName: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  details: string | null;
+  accountId: number;
+  catches: CatchResponse[];
+};
+
+export async function fetchUserLocations(
+  accountId: number,
+): Promise<LocationWithCatches[]> {
+  const res = await apiGet(`/api/accounts/${accountId}/locations`);
+  await throwIfNotOk(res);
+  const locations = await parseResponseJson<
+    Array<{
+      id: number;
+      locationName: string;
+      latitude: string;
+      longitude: string;
+      timeStamp: string;
+      details: string | null;
+      accountId: number;
+    }>
+  >(res);
+
+  const results: LocationWithCatches[] = [];
+  for (const loc of locations) {
+    const catchRes = await apiGet(`/api/locations/${loc.id}/catches`);
+    const catches: CatchResponse[] = catchRes.ok
+      ? await parseResponseJson<CatchResponse[]>(catchRes)
+      : [];
+    results.push({ ...loc, catches });
+  }
+  return results;
+}
+
+export type FeedPost = {
+  id: string;
+  locationId: number;
+  locationName: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  accountId: number;
+  username: string;
+  /** Present when the feed API includes it; avoids extra profile fetches. */
+  profileImageKey?: string | null;
+  /** Visibility of the underlying location/post (PUBLIC / FRIENDS / PRIVATE). */
+  visibility?: PostVisibility | null;
+  catch: CatchResponse;
+};
+
+type FeedPostResponse = {
+  locationId: number;
+  locationName: string;
+  latitude: string;
+  longitude: string;
+  timeStamp: string;
+  accountId: number;
+  username: string;
+  profileImageKey?: string | null;
+  catchId: number;
+  species: string;
+  quantity?: number;
+  lengthCm?: number;
+  weightKg?: number;
+  notes?: string;
+  description?: string;
+  imageUrl?: string;
+  imageUrls?: string;
+  fishDetailsJson?: string | null;
+  fishingType?: FishingType | null;
+  visibility?: PostVisibility | null;
+};
+
+/** Feed JSON may use numbers or alternate keys (`lat` / `lng` / `lon`) depending on the API serializer. */
+function feedRowLatitudeLongitudeStrings(row: FeedPostResponse): {
+  latitude: string;
+  longitude: string;
+} {
+  const r = row as FeedPostResponse & {
+    lat?: unknown;
+    lng?: unknown;
+    lon?: unknown;
+    location?: {
+      latitude?: unknown;
+      longitude?: unknown;
+      lat?: unknown;
+      lng?: unknown;
+      lon?: unknown;
+    };
+  };
+  const asString = (v: unknown): string => {
+    if (v == null) return "";
+    if (typeof v === "number" && Number.isFinite(v)) return String(v);
+    if (typeof v === "string") return v.trim();
+    return "";
+  };
+  let latitude = asString(r.latitude ?? r.lat);
+  let longitude = asString(r.longitude ?? r.lng ?? r.lon);
+  if ((!latitude || !longitude) && r.location && typeof r.location === "object") {
+    const l = r.location;
+    if (!latitude) latitude = asString(l.latitude ?? l.lat);
+    if (!longitude) longitude = asString(l.longitude ?? l.lng ?? l.lon);
+  }
+  return { latitude, longitude };
+}
+
+function parseFishDetailsJson(
+  raw: string | undefined | null,
+): FishEntryPayload[] | undefined {
+  if (raw == null || raw.trim() === "") return undefined;
+  try {
+    const v = JSON.parse(raw) as unknown;
+    if (!Array.isArray(v)) return undefined;
+    return v as FishEntryPayload[];
+  } catch {
+    return undefined;
+  }
+}
+
+export type CatchLikeResponse = {
+  catchId: number;
+  likesCount: number;
+  likedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
+export type CatchCommentResponse = {
+  id: number;
+  catchId: number;
+  accountId: number;
+  username: string;
+  profileImageKey?: string | null;
+  message: string;
+  createdAt: string;
+  ownedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+  /** Present when this comment is a reply to a top-level comment. */
+  parentCommentId?: number | null;
+  inReplyToUsername?: string | null;
+};
+
+export type CatchCommentsPageResponse = {
+  comments: CatchCommentResponse[];
+  totalCount: number;
+  offset: number;
+  limit: number;
+};
+
+export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost[]> {
+  const MAX_PAGE = 100;
+  let remaining = Math.max(0, limit);
+  let currentOffset = Math.max(0, offset);
+  const allRows: FeedPostResponse[] = [];
+
+  while (remaining > 0) {
+    const pageSize = Math.min(MAX_PAGE, remaining);
+    const rows = await authJson<FeedPostResponse[]>(
+      `/api/locations/feed?offset=${currentOffset}&limit=${pageSize}`,
+    );
+    allRows.push(...rows);
+    if (rows.length < pageSize) break;
+    remaining -= rows.length;
+    currentOffset += rows.length;
+  }
+
+  return allRows.map((row) => ({
+    id: `${row.locationId}-${row.catchId}`,
+    locationId: row.locationId,
+    locationName: row.locationName,
+    ...feedRowLatitudeLongitudeStrings(row),
+    timeStamp: row.timeStamp,
+    accountId: row.accountId,
+    username: row.username,
+    profileImageKey: row.profileImageKey,
+    visibility: row.visibility ?? null,
+    catch: {
+      id: row.catchId,
+      locationId: row.locationId,
+      species: row.species,
+      quantity: row.quantity,
+      lengthCm: row.lengthCm,
+      weightKg: row.weightKg,
+      notes: row.notes,
+      description: row.description,
+      imageUrl: row.imageUrl,
+      imageUrls: row.imageUrls
+        ? row.imageUrls
+            .split(/\r?\n/)
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .slice(0, 4)
+        : row.imageUrl
+          ? [row.imageUrl]
+          : [],
+      fishDetails: parseFishDetailsJson(row.fishDetailsJson),
+      fishingType: row.fishingType ?? null,
+    },
+  }));
+}
+
+export async function fetchCatchLike(
+  locationId: number,
+  catchId: number,
+): Promise<CatchLikeResponse> {
+  return authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+  );
+}
+
+export async function likeCatch(
+  locationId: number,
+  catchId: number,
+): Promise<CatchLikeResponse> {
+  const res = await authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+    { method: "POST" },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
+}
+
+export async function unlikeCatch(
+  locationId: number,
+  catchId: number,
+): Promise<CatchLikeResponse> {
+  return authJson<CatchLikeResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/like`,
+    { method: "DELETE" },
+  );
+}
+
+export async function fetchCatchComments(
+  locationId: number,
+  catchId: number,
+  offset = 0,
+  limit = 3,
+  /** `desc` = newest first (e.g. notification poller); default `asc` matches feed order. */
+  order: "asc" | "desc" = "asc",
+): Promise<CatchCommentsPageResponse> {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+    order,
+  });
+  return authJson<CatchCommentsPageResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/comments?${params.toString()}`,
+  );
+}
+
+export async function createCatchComment(
+  locationId: number,
+  catchId: number,
+  message: string,
+  parentCommentId?: number | null,
+): Promise<CatchCommentResponse> {
+  const body: { message: string; parentCommentId?: number } = { message };
+  if (parentCommentId != null && parentCommentId > 0) {
+    body.parentCommentId = parentCommentId;
+  }
+  const res = await authJson<CatchCommentResponse>(
+    `/api/locations/${locationId}/catches/${catchId}/comments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
+}
+
+export async function deleteCatchComment(
+  locationId: number,
+  catchId: number,
+  commentId: number,
+): Promise<void> {
+  await authVoid(
+    `/api/locations/${locationId}/catches/${catchId}/comments/${commentId}`,
+    { method: "DELETE" },
+  );
+}
+
+export async function deleteCatch(
+  locationId: number,
+  catchId: number,
+): Promise<void> {
+  await authVoid(`/api/locations/${locationId}/catches/${catchId}`, {
+    method: "DELETE",
+  });
+}
+
+export type UpdateCatchPostPayload = {
+  locationName: string;
+  visibility: PostVisibility;
+  fishingType?: FishingType | null;
+  description?: string | null;
+  fish: FishEntryPayload[];
+};
+
+export type UpdateCatchPostResponse = {
+  locationId: number;
+  locationName: string;
+  visibility: PostVisibility;
+  catch: CatchResponse;
+};
+
+export async function updateCatchPost(
+  locationId: number,
+  catchId: number,
+  payload: UpdateCatchPostPayload,
+): Promise<UpdateCatchPostResponse> {
+  return authJson<UpdateCatchPostResponse>(
+    `/api/locations/${locationId}/catches/${catchId}`,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+// ── Image upload ────────────────────────────────────────────────────
+
+export type ImageUploadResponse = {
+  bucket: string;
+  objectKey: string;
+  contentType: string;
+  sizeBytes: number;
+  getUrl: string;
+};
+
+export type FishIdentificationResponse = {
+  suggestedSpecies: string;
+  confidence: number | null;
+  message: string;
+};
+
+export type LakeFishingInsightApiResponse = {
+  text: string;
+};
+
+/**
+ * Lake stocking insights - POST same-origin `/api/ai/lake-fishing-insights` (Next proxy → Spring).
+ * Returns narrative text (species, tactics, general tips - no map pins).
+ */
+export async function fetchLakeFishingInsights(
+  payload: LakeFishingInsightPayload,
+): Promise<{ text: string }> {
+  const session = loadSession();
+  if (!session) {
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+    throw new Error("Not authenticated");
+  }
+
+  const res = await backendFetch("/api/ai/lake-fishing-insights", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: session.authorizationHeader,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+  }
+
+  await throwIfNotOk(res);
+  const data = await parseResponseJson<LakeFishingInsightApiResponse>(res);
+  if (typeof data.text !== "string") {
+    throw new ApiHttpError("Invalid response from server.", res.status);
+  }
+  return { text: data.text };
+}
+
+export async function uploadImage(file: File): Promise<ImageUploadResponse> {
+  validateImageFileForUpload(file);
+  const formData = new FormData();
+  formData.append("file", file, imageUploadFileName(file));
+  return authJson<ImageUploadResponse>("/api/storage/images", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+export async function identifyFishFromImage(
+  file: File,
+): Promise<FishIdentificationResponse> {
+  validateImageFileForUpload(file);
+  const formData = new FormData();
+  formData.append("file", file, imageUploadFileName(file));
+  return authJson<FishIdentificationResponse>("/api/ai/identify-fish", {
+    method: "POST",
+    body: formData,
+  });
+}
+
+type CachedDownloadUrl = { url: string; expiresAt: number };
+const downloadUrlCache = new Map<string, CachedDownloadUrl>();
+const downloadUrlInflight = new Map<string, Promise<string>>();
+
+/**
+ * Resolves a presigned URL for a storage object key. Results are cached in-memory for a
+ * fraction of the server-reported TTL to avoid hammering the API when many avatars/images mount.
+ */
+export async function getImageUrl(objectKey: string): Promise<string> {
+  const key = objectKey.trim();
+  if (!key) throw new Error("Missing object key");
+  const now = Date.now();
+  const cached = downloadUrlCache.get(key);
+  if (cached && cached.expiresAt > now) return cached.url;
+
+  let inflight = downloadUrlInflight.get(key);
+  if (!inflight) {
+    inflight = (async () => {
+      const data = await authJson<{
+        url: string;
+        expiresInSeconds?: number;
+      }>(
+        `/api/storage/images/download-url?key=${encodeURIComponent(key)}`,
+      );
+      // Some deployments return a relative URL (e.g. "/api/storage/images/...") rather than
+      // an absolute presigned URL. Make it absolute against the backend base so `<img src>`
+      // resolves correctly regardless of the current Next.js origin.
+      const normalizedUrl = (() => {
+        const raw = (data.url ?? "").trim();
+        if (!raw) throw new Error("Missing download URL");
+        if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+        if (raw.startsWith("/")) {
+          const base = getApiBaseUrl().replace(/\/$/, "");
+          return `${base}${raw}`;
+        }
+        return raw;
+      })();
+      const resolvedAt = Date.now();
+      const sec = data.expiresInSeconds ?? 3600;
+      const ttlMs = Math.min(Math.max(30_000, sec * 1000 * 0.85), 55 * 60 * 1000);
+      downloadUrlCache.set(key, {
+        url: normalizedUrl,
+        expiresAt: resolvedAt + ttlMs,
+      });
+      return normalizedUrl;
+    })().finally(() => {
+      downloadUrlInflight.delete(key);
+    });
+    downloadUrlInflight.set(key, inflight);
+  }
+  return inflight;
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────
+
+async function throwIfNotOk(res: Response): Promise<void> {
+  if (res.ok) return;
+
+  const text = await res.text();
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json") && text.trim()) {
+    try {
+      const payload = JSON.parse(text) as ApiErrorPayload;
+      throw new ApiHttpError(
+        payload.message || res.statusText || `HTTP ${res.status}`,
+        res.status,
+        { code: payload.code, fieldErrors: payload.errors },
+      );
+    } catch (err) {
+      if (err instanceof ApiHttpError) throw err;
+      // Malformed JSON body — fall through to generic error from text.
+    }
+  }
+
+  throw new ApiHttpError(
+    text.trim() || res.statusText || `HTTP ${res.status}`,
+    res.status,
+  );
+}
+
+function getFileExtension(filename: string): string {
+  const dot = filename.lastIndexOf(".");
+  if (dot < 0) return "";
+  return filename.slice(dot).toLowerCase();
+}
+
+function normalizeHeaders(h: HeadersInit | undefined): Record<string, string> {
+  if (!h) return {};
+  if (h instanceof Headers) {
+    const o: Record<string, string> = {};
+    h.forEach((v, k) => {
+      o[k] = v;
+    });
+    return o;
+  }
+  if (Array.isArray(h)) {
+    return Object.fromEntries(h);
+  }
+  return { ...h };
+}

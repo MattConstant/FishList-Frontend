@@ -1,0 +1,17 @@
+export default {
+  "users.invalidId": "Invalid user id.",
+  "users.loadError": "Could not load user profile.",
+  "users.loadingProfile": "Loading profile...",
+  "users.mustLogin": "Sign in to view this profile.",
+  "users.angler": "Angler",
+  "users.catches": "Catches",
+  "users.noCatches": "No catches posted yet.",
+  "users.editProfile": "Edit my profile",
+  "users.addFriend": "Add friend",
+  "users.removeFriend": "Unfriend",
+  "users.friendBusy": "Working...",
+  "users.locations": "Locations",
+  "users.totalCatches": "Total catches",
+  "users.accountId": "Account",
+  "users.sectionSpots": "Spots & catches",
+} as const;
