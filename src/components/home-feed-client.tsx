@@ -12,8 +12,11 @@ import {
   useState,
 } from "react";
 import { useSearchParams } from "next/navigation";
+import { CreateThreadDialog } from "@/components/create-thread-dialog";
 import { EditPostDialog } from "@/components/edit-post-dialog";
+import { PostChooserDialog } from "@/components/post-chooser-dialog";
 import { PostImageLightbox } from "@/components/post-image-lightbox";
+import { ThreadFeedCard } from "@/components/thread-feed-card";
 import { UserAvatar } from "@/components/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
@@ -25,6 +28,7 @@ import {
   deleteCatchComment,
   fetchCatchComments,
   fetchCatchLike,
+  fetchForumThreads,
   fetchLatestPosts,
   getDisplayErrorMessage,
   getImageUrl,
@@ -33,6 +37,7 @@ import {
   unlikeCatch,
   type CatchCommentResponse,
   type FeedPost,
+  type ForumThreadPost,
 } from "@/lib/api";
 import { formatAppShortDate } from "@/lib/format-app-locale";
 import { formatLengthFromCm, formatWeightFromKg } from "@/lib/units";
@@ -40,6 +45,42 @@ import { formatLengthFromCm, formatWeightFromKg } from "@/lib/units";
 const TOP_COMMENTS_LIMIT = 2;
 const COMMENTS_CHUNK_SIZE = 5;
 const FEED_PAGE_SIZE = 24;
+
+type HomeFeedItem =
+  | { kind: "catch"; key: string; timeStamp: string; post: FeedPost }
+  | { kind: "thread"; key: string; timeStamp: string; thread: ForumThreadPost };
+
+function dedupeThreads(list: ForumThreadPost[]): ForumThreadPost[] {
+  const seen = new Set<number>();
+  const out: ForumThreadPost[] = [];
+  for (const thread of list) {
+    if (seen.has(thread.id)) continue;
+    seen.add(thread.id);
+    out.push(thread);
+  }
+  return out;
+}
+
+function mergeFeedItems(
+  catches: FeedPost[],
+  threads: ForumThreadPost[],
+): HomeFeedItem[] {
+  const items: HomeFeedItem[] = [
+    ...catches.map((post) => ({
+      kind: "catch" as const,
+      key: `catch-${post.id}`,
+      timeStamp: post.timeStamp,
+      post,
+    })),
+    ...threads.map((thread) => ({
+      kind: "thread" as const,
+      key: `thread-${thread.id}`,
+      timeStamp: thread.createdAt,
+      thread,
+    })),
+  ];
+  return items.sort((a, b) => b.timeStamp.localeCompare(a.timeStamp));
+}
 
 function dedupePosts(list: FeedPost[]): FeedPost[] {
   const seen = new Set<string>();
@@ -92,6 +133,7 @@ const FeedCard = memo(function FeedCard({
   post,
   currentUserId,
   isAdmin,
+  priorityImage = false,
   onDeletePost,
   onDeleteError,
   onUpdatePost,
@@ -99,6 +141,8 @@ const FeedCard = memo(function FeedCard({
   post: FeedPost;
   currentUserId?: number;
   isAdmin?: boolean;
+  /** First above-the-fold catch photo: load immediately for LCP. */
+  priorityImage?: boolean;
   onDeletePost: (postId: string) => void;
   onDeleteError: (message: string) => void;
   onUpdatePost: (updated: FeedPost) => void;
@@ -106,6 +150,7 @@ const FeedCard = memo(function FeedCard({
   const { t, locale } = useLocale();
   const cardRef = useRef<HTMLElement | null>(null);
   const [isActive, setIsActive] = useState(false);
+  const cardActive = isActive || priorityImage;
   const isOwnPost = currentUserId != null && post.accountId === currentUserId;
   const imageCandidates = useMemo(
     () =>
@@ -141,7 +186,7 @@ const FeedCard = memo(function FeedCard({
   const mapHref = useMemo(() => feedPostMapHref(post), [post]);
 
   useEffect(() => {
-    if (!cardRef.current || isActive) return;
+    if (!cardRef.current || cardActive) return;
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) {
@@ -153,10 +198,10 @@ const FeedCard = memo(function FeedCard({
     );
     observer.observe(cardRef.current);
     return () => observer.disconnect();
-  }, [isActive]);
+  }, [cardActive]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!cardActive) return;
     if (imageCandidates.length === 0) return;
     let cancelled = false;
     Promise.all(
@@ -174,10 +219,10 @@ const FeedCard = memo(function FeedCard({
     return () => {
       cancelled = true;
     };
-  }, [isActive, imageCandidates]);
+  }, [cardActive, imageCandidates]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!cardActive) return;
     let cancelled = false;
     fetchCatchLike(post.locationId, post.catch.id)
       .then((res) => {
@@ -196,10 +241,10 @@ const FeedCard = memo(function FeedCard({
     return () => {
       cancelled = true;
     };
-  }, [isActive, post.locationId, post.catch.id]);
+  }, [cardActive, post.locationId, post.catch.id]);
 
   useEffect(() => {
-    if (!isActive) return;
+    if (!cardActive) return;
     let cancelled = false;
     fetchCatchComments(post.locationId, post.catch.id, 0, TOP_COMMENTS_LIMIT)
       .then((res) => {
@@ -218,7 +263,7 @@ const FeedCard = memo(function FeedCard({
     return () => {
       cancelled = true;
     };
-  }, [isActive, post.locationId, post.catch.id]);
+  }, [cardActive, post.locationId, post.catch.id]);
 
   async function loadMoreComments() {
     if (commentsChunkLoading || commentsLoading) return;
@@ -413,7 +458,7 @@ const FeedCard = memo(function FeedCard({
       />
 
       {imageCandidates.length > 0 ? (
-        isActive && resolvedUrls.length > 0 && !imgError ? (
+        cardActive && resolvedUrls.length > 0 && !imgError ? (
           <div className={resolvedUrls.length > 1 ? "grid grid-cols-2 gap-1" : ""}>
             {resolvedUrls.map((url, imageIndex) => (
               <button
@@ -429,7 +474,8 @@ const FeedCard = memo(function FeedCard({
                   fill
                   className="object-cover transition hover:opacity-95"
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  loading="lazy"
+                  priority={priorityImage && imageIndex === 0}
+                  loading={priorityImage && imageIndex === 0 ? "eager" : "lazy"}
                   unoptimized
                   onError={() => setImgError(true)}
                 />
@@ -698,13 +744,23 @@ function HomeFeed() {
   const { t } = useLocale();
   const searchParams = useSearchParams();
   const focusPostId = searchParams.get("post");
+  const focusThreadIdRaw = searchParams.get("thread");
+  const focusThreadId =
+    focusThreadIdRaw != null && /^\d+$/.test(focusThreadIdRaw)
+      ? Number.parseInt(focusThreadIdRaw, 10)
+      : null;
   const [posts, setPosts] = useState<FeedPost[]>([]);
+  const [threads, setThreads] = useState<ForumThreadPost[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [feedScope, setFeedScope] = useState<"all" | "friends" | "mine">("all");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
+  const [hasMoreCatches, setHasMoreCatches] = useState(true);
+  const [hasMoreThreads, setHasMoreThreads] = useState(true);
+  const [postChooserOpen, setPostChooserOpen] = useState(false);
+  const [createThreadOpen, setCreateThreadOpen] = useState(false);
   const [error, setError] = useState("");
+  const hasMore = hasMoreCatches || hasMoreThreads;
   const loadMoreSentinelRef = useRef<HTMLDivElement | null>(null);
   const focusExpandDoneRef = useRef(false);
   const focusScrollKeyRef = useRef<string | null>(null);
@@ -720,10 +776,14 @@ function HomeFeed() {
   useEffect(() => {
     focusExpandDoneRef.current = false;
     focusScrollKeyRef.current = null;
-  }, [focusPostId]);
+  }, [focusPostId, focusThreadId]);
 
   const handleDeletePost = useCallback((postId: string) => {
     setPosts((prev) => prev.filter((p) => p.id !== postId));
+  }, []);
+
+  const handleDeleteThread = useCallback((threadId: number) => {
+    setThreads((prev) => prev.filter((thread) => thread.id !== threadId));
   }, []);
 
   const handleDeleteError = useCallback((message: string) => {
@@ -734,14 +794,29 @@ function HomeFeed() {
     setPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
   }, []);
 
+  const handleUpdateThread = useCallback((updated: ForumThreadPost) => {
+    setThreads((prev) =>
+      prev.map((thread) => (thread.id === updated.id ? updated : thread)),
+    );
+  }, []);
+
+  const handleThreadCreated = useCallback((thread: ForumThreadPost) => {
+    setThreads((prev) => dedupeThreads([thread, ...prev]));
+  }, []);
+
   const loadFeed = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     setError("");
     try {
-      const nextPosts = await fetchLatestPosts(FEED_PAGE_SIZE, 0);
+      const [nextPosts, nextThreads] = await Promise.all([
+        fetchLatestPosts(FEED_PAGE_SIZE, 0),
+        fetchForumThreads(FEED_PAGE_SIZE, 0),
+      ]);
       setPosts(dedupePosts(nextPosts));
-      setHasMore(nextPosts.length === FEED_PAGE_SIZE);
+      setThreads(dedupeThreads(nextThreads));
+      setHasMoreCatches(nextPosts.length === FEED_PAGE_SIZE);
+      setHasMoreThreads(nextThreads.length === FEED_PAGE_SIZE);
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("home.loadLatestError")));
     } finally {
@@ -753,15 +828,38 @@ function HomeFeed() {
     if (!user || loadingMore || loading || !hasMore) return;
     setLoadingMore(true);
     try {
-      const next = await fetchLatestPosts(FEED_PAGE_SIZE, posts.length);
-      setPosts((prev) => dedupePosts([...prev, ...next]));
-      setHasMore(next.length === FEED_PAGE_SIZE);
+      const [nextPosts, nextThreads] = await Promise.all([
+        hasMoreCatches
+          ? fetchLatestPosts(FEED_PAGE_SIZE, posts.length)
+          : Promise.resolve([] as FeedPost[]),
+        hasMoreThreads
+          ? fetchForumThreads(FEED_PAGE_SIZE, threads.length)
+          : Promise.resolve([] as ForumThreadPost[]),
+      ]);
+      if (hasMoreCatches) {
+        setPosts((prev) => dedupePosts([...prev, ...nextPosts]));
+        setHasMoreCatches(nextPosts.length === FEED_PAGE_SIZE);
+      }
+      if (hasMoreThreads) {
+        setThreads((prev) => dedupeThreads([...prev, ...nextThreads]));
+        setHasMoreThreads(nextThreads.length === FEED_PAGE_SIZE);
+      }
     } catch (e) {
       setError(getDisplayErrorMessage(e, t("home.loadMoreError")));
     } finally {
       setLoadingMore(false);
     }
-  }, [user, loadingMore, loading, hasMore, posts.length, t]);
+  }, [
+    user,
+    loadingMore,
+    loading,
+    hasMore,
+    hasMoreCatches,
+    hasMoreThreads,
+    posts.length,
+    threads.length,
+    t,
+  ]);
 
   useEffect(() => {
     void loadFeed();
@@ -804,49 +902,93 @@ function HomeFeed() {
     return () => observer.disconnect();
   }, [user, feedScope, hasMore, loading, loadingMore, loadMore]);
 
-  const visiblePosts = useMemo(() => {
-    if (!user) return posts;
+  const visibleItems = useMemo(() => {
+    const merged = mergeFeedItems(posts, threads);
+    if (!user) return merged;
     if (feedScope === "mine") {
-      return posts.filter((post) => post.accountId === user.id);
+      return merged.filter((item) =>
+        item.kind === "catch"
+          ? item.post.accountId === user.id
+          : item.thread.accountId === user.id,
+      );
     }
     if (feedScope === "friends") {
-      return posts.filter((post) => friendIds.has(post.accountId));
+      return merged.filter((item) =>
+        item.kind === "catch"
+          ? friendIds.has(item.post.accountId)
+          : friendIds.has(item.thread.accountId),
+      );
     }
-    return posts;
-  }, [posts, feedScope, friendIds, user]);
+    return merged;
+  }, [posts, threads, feedScope, friendIds, user]);
 
-  // Deep link: show the post in the "all" feed and widen the first fetch if it is not loaded yet.
+  const lcpFeedPostKey = useMemo(() => {
+    for (const item of visibleItems) {
+      if (item.kind !== "catch") continue;
+      const c = item.post.catch;
+      const hasImages =
+        (c.imageUrls != null && c.imageUrls.length > 0) ||
+        (c.imageUrl != null && c.imageUrl.trim() !== "");
+      if (hasImages) return item.key;
+    }
+    return null;
+  }, [visibleItems]);
+
+  // Deep link: show the post/thread in the "all" feed and widen the first fetch if needed.
   useEffect(() => {
-    if (!focusPostId || !user) return;
+    if ((!focusPostId && focusThreadId == null) || !user) return;
     setFeedScope("all");
-  }, [focusPostId, user]);
+  }, [focusPostId, focusThreadId, user]);
 
   useEffect(() => {
-    if (!focusPostId || !user) return;
-    if (posts.some((p) => p.id === focusPostId) || focusExpandDoneRef.current) return;
+    if ((!focusPostId && focusThreadId == null) || !user) return;
+    if (focusExpandDoneRef.current) return;
+    const found =
+      (focusPostId != null && posts.some((p) => p.id === focusPostId)) ||
+      (focusThreadId != null && threads.some((t) => t.id === focusThreadId));
+    if (found) return;
     focusExpandDoneRef.current = true;
     void (async () => {
       try {
-        const rows = await fetchLatestPosts(120, 0);
+        const [rows, threadRows] = await Promise.all([
+          fetchLatestPosts(120, 0),
+          fetchForumThreads(120, 0),
+        ]);
         setPosts(dedupePosts(rows));
-        setHasMore(rows.length === 120);
+        setThreads(dedupeThreads(threadRows));
+        setHasMoreCatches(rows.length === 120);
+        setHasMoreThreads(threadRows.length === 120);
       } catch {
-        /* keep existing */
+        focusExpandDoneRef.current = false;
       }
     })();
-  }, [focusPostId, user, posts]);
+  }, [focusPostId, focusThreadId, user, posts, threads]);
 
   useEffect(() => {
-    if (!focusPostId) {
+    const focusKey =
+      focusPostId ?? (focusThreadId != null ? `thread-${focusThreadId}` : null);
+    if (!focusKey) {
       focusScrollKeyRef.current = null;
       return;
     }
-    if (!visiblePosts.some((p) => p.id === focusPostId)) return;
-    const key = focusPostId;
-    if (focusScrollKeyRef.current === key) return;
-    const el = document.getElementById(`feed-post-${focusPostId}`);
+    const isVisible =
+      (focusPostId &&
+        visibleItems.some(
+          (item) => item.kind === "catch" && item.post.id === focusPostId,
+        )) ||
+      (focusThreadId != null &&
+        visibleItems.some(
+          (item) => item.kind === "thread" && item.thread.id === focusThreadId,
+        ));
+    if (!isVisible) return;
+    if (focusScrollKeyRef.current === focusKey) return;
+    const el = document.getElementById(
+      focusPostId
+        ? `feed-post-${focusPostId}`
+        : `feed-thread-${focusThreadId}`,
+    );
     if (!el) return;
-    focusScrollKeyRef.current = key;
+    focusScrollKeyRef.current = focusKey;
     requestAnimationFrame(() => {
       // scrollIntoView can scroll the window / outer flex shell and shove the sticky nav off-screen.
       // Only scroll the app <main> (the real scroll container).
@@ -877,7 +1019,7 @@ function HomeFeed() {
         );
       }, 2200);
     });
-  }, [focusPostId, visiblePosts]);
+  }, [focusPostId, focusThreadId, visibleItems]);
 
   if (!isReady) {
     return null;
@@ -960,19 +1102,31 @@ function HomeFeed() {
             >
               {loading ? t("home.refreshing") : t("home.refresh")}
             </button>
-            <Link
-              href="/map"
+            <button
+              type="button"
+              onClick={() => setPostChooserOpen(true)}
               className="inline-flex min-h-11 flex-1 items-center justify-center rounded-xl bg-sky-600 px-4 py-2 text-center text-sm font-semibold text-white transition hover:bg-sky-700 sm:min-h-0 sm:flex-initial"
             >
-              {t("home.addCatch")}
-            </Link>
+              {t("home.post")}
+            </button>
           </div>
         </div>
       </div>
 
+      <PostChooserDialog
+        open={postChooserOpen}
+        onClose={() => setPostChooserOpen(false)}
+        onStartDiscussion={() => setCreateThreadOpen(true)}
+      />
+      <CreateThreadDialog
+        open={createThreadOpen}
+        onClose={() => setCreateThreadOpen(false)}
+        onCreated={handleThreadCreated}
+      />
+
       {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
-      {!loading && !error && visiblePosts.length === 0 && (
+      {!loading && !error && visibleItems.length === 0 && (
         <p className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/40">
           {feedScope === "friends"
             ? t("home.noPosts.friends")
@@ -983,17 +1137,31 @@ function HomeFeed() {
       )}
 
       <div className="space-y-4">
-        {visiblePosts.map((post) => (
-          <FeedCard
-            key={post.id}
-            post={post}
-            currentUserId={user.id}
-            isAdmin={isAdmin}
-            onDeletePost={handleDeletePost}
-            onDeleteError={handleDeleteError}
-            onUpdatePost={handleUpdatePost}
-          />
-        ))}
+        {visibleItems.map((item) =>
+          item.kind === "catch" ? (
+            <FeedCard
+              key={item.key}
+              post={item.post}
+              currentUserId={user.id}
+              isAdmin={isAdmin}
+              priorityImage={item.key === lcpFeedPostKey}
+              onDeletePost={handleDeletePost}
+              onDeleteError={handleDeleteError}
+              onUpdatePost={handleUpdatePost}
+            />
+          ) : (
+            <ThreadFeedCard
+              key={item.key}
+              thread={item.thread}
+              currentUserId={user.id}
+              isAdmin={isAdmin}
+              focusComments={focusThreadId === item.thread.id}
+              onDeleteThread={handleDeleteThread}
+              onDeleteError={handleDeleteError}
+              onUpdateThread={handleUpdateThread}
+            />
+          ),
+        )}
       </div>
 
       {hasMore && feedScope === "all" && (
@@ -1006,7 +1174,7 @@ function HomeFeed() {
         </div>
       )}
 
-      {!loading && !error && visiblePosts.length > 0 && (!hasMore || feedScope !== "all") && (
+      {!loading && !error && visibleItems.length > 0 && (!hasMore || feedScope !== "all") && (
         <div className="pt-2 text-center">
           <p className="text-xs text-zinc-400 dark:text-zinc-500">{t("home.reachedBottom")}</p>
         </div>

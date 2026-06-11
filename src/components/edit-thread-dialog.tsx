@@ -1,0 +1,186 @@
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import { useLocale } from "@/contexts/locale-context";
+import {
+  getDisplayErrorMessage,
+  updateForumThread,
+  type ForumThreadPost,
+  type PostVisibility,
+} from "@/lib/api";
+
+type EditThreadDialogProps = {
+  thread: ForumThreadPost | null;
+  open: boolean;
+  onClose: () => void;
+  onUpdated: (thread: ForumThreadPost) => void;
+};
+
+export function EditThreadDialog({
+  thread,
+  open,
+  onClose,
+  onUpdated,
+}: EditThreadDialogProps) {
+  const { t } = useLocale();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!thread || !open) return;
+    setTitle(thread.title);
+    setBody(thread.body);
+    setVisibility(thread.visibility ?? "PUBLIC");
+    setError("");
+  }, [thread, open]);
+
+  if (!open || !thread) return null;
+
+  const inputClass =
+    "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 shadow-sm outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50";
+
+  const visibilityOptions: { value: PostVisibility; label: string }[] = [
+    { value: "PUBLIC", label: t("catch.visibility.public") },
+    { value: "FRIENDS", label: t("catch.visibility.friends") },
+    { value: "PRIVATE", label: t("catch.visibility.private") },
+  ];
+
+  async function onSubmit(e: FormEvent) {
+    e.preventDefault();
+    if (!thread) return;
+    const threadId = thread.id;
+    const trimmedTitle = title.trim();
+    const trimmedBody = body.trim();
+    if (!trimmedTitle || !trimmedBody) return;
+
+    setPending(true);
+    setError("");
+    try {
+      const updated = await updateForumThread(threadId, {
+        title: trimmedTitle,
+        body: trimmedBody,
+        visibility,
+      });
+      onUpdated({ ...thread, ...updated });
+      onClose();
+    } catch (err) {
+      setError(getDisplayErrorMessage(err, t("home.editThread.error")));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="edit-thread-title"
+    >
+      <div className="max-h-[min(90dvh,90vh)] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex items-start justify-between gap-3">
+          <h2
+            id="edit-thread-title"
+            className="text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+          >
+            {t("home.editThread.title")}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={pending}
+            className="rounded-lg p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+            aria-label={t("home.editThread.cancel")}
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+              <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
+            </svg>
+          </button>
+        </div>
+
+        <form onSubmit={(e) => void onSubmit(e)} className="mt-5 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              {t("home.createThread.titleLabel")}
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className={inputClass}
+              maxLength={200}
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              {t("home.createThread.bodyLabel")}
+            </label>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className={`${inputClass} min-h-[140px] resize-y`}
+              maxLength={5000}
+              required
+            />
+          </div>
+
+          <fieldset>
+            <legend className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              {t("home.createThread.visibilityLabel")}
+            </legend>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {visibilityOptions.map((opt) => (
+                <label
+                  key={opt.value}
+                  className={[
+                    "cursor-pointer rounded-lg border px-3 py-2 text-sm font-medium transition",
+                    visibility === opt.value
+                      ? "border-sky-500 bg-sky-50 text-sky-800 dark:border-sky-600 dark:bg-sky-950/40 dark:text-sky-200"
+                      : "border-zinc-300 text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:bg-zinc-800",
+                  ].join(" ")}
+                >
+                  <input
+                    type="radio"
+                    name="edit-thread-visibility"
+                    value={opt.value}
+                    checked={visibility === opt.value}
+                    onChange={() => setVisibility(opt.value)}
+                    className="sr-only"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+
+          {error ? (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={pending}
+              className="flex-1 rounded-xl border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            >
+              {t("home.editThread.cancel")}
+            </button>
+            <button
+              type="submit"
+              disabled={pending || !title.trim() || !body.trim()}
+              className="flex-1 rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700 disabled:opacity-60"
+            >
+              {pending ? t("home.editThread.saving") : t("home.editThread.save")}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

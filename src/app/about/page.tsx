@@ -35,7 +35,7 @@ export default function AboutPage() {
         {/* Brand mark for the page; `priority` keeps it snappy since it's above the fold. */}
         <div className="mt-4">
           <Image
-            src="/ChatGPT%20Image%20Mar%2031%2C%202026%2C%2010_26_18%20PM.png"
+            src="/logo.png"
             alt="FishList logo"
             width={88}
             height={88}

@@ -9,6 +9,9 @@ import {
   fetchCatchLike,
   fetchLatestPosts,
   fetchCommentReplyNotifications,
+  fetchForumThreadComments,
+  fetchForumThreads,
+  fetchThreadCommentReplyNotifications,
   type FeedPost,
 } from "@/lib/api";
 
@@ -20,6 +23,7 @@ type NotificationItem = {
   postId?: string;
   locationId?: number;
   catchId?: number;
+  threadId?: number;
   createdAtMs: number;
   message: string;
   href: string;
@@ -42,9 +46,22 @@ type StoredNotifState = {
   readIds?: string[];
   /** Reply comment ids already surfaced or suppressed (dedupe / first-load snapshot). */
   seenReplyCommentIds?: number[];
+  /** Per-thread snapshot for discussion notifications. */
+  byThread?: Record<
+    string,
+    {
+      likesCount?: number;
+      commentsCount?: number;
+      seenCommentIds?: number[];
+    }
+  >;
+  seenThreadReplyCommentIds?: number[];
 };
 
 const STORAGE_KEY = "fishlist-notifications-v1";
+const NOTIF_CATCH_POSTS_LIMIT = 15;
+const NOTIF_THREAD_POLL_LIMIT = 12;
+const NOTIF_FEED_FETCH_LIMIT = 40;
 
 function safeParseState(raw: string | null): StoredNotifState {
   if (!raw) return { lastSeenAtMs: 0, byPost: {} };
@@ -65,7 +82,17 @@ function safeParseState(raw: string | null): StoredNotifState {
       ? (parsed.seenReplyCommentIds as unknown[]).filter((x): x is number => typeof x === "number")
       : undefined;
 
-    return { lastSeenAtMs, byPost, seenReplyCommentIds };
+    const byThread =
+      parsed.byThread && typeof parsed.byThread === "object"
+        ? (parsed.byThread as StoredNotifState["byThread"])
+        : {};
+    const seenThreadReplyCommentIds = Array.isArray(parsed.seenThreadReplyCommentIds)
+      ? (parsed.seenThreadReplyCommentIds as unknown[]).filter(
+          (x): x is number => typeof x === "number",
+        )
+      : undefined;
+
+    return { lastSeenAtMs, byPost, seenReplyCommentIds, byThread, seenThreadReplyCommentIds };
   } catch {
     return { lastSeenAtMs: 0, byPost: {} };
   }
@@ -109,6 +136,11 @@ function postCatchKey(p: FeedPost): { postId: string; locationId: number; catchI
 }
 
 /** Deep-link to home feed card (`FeedPost.id` is `${locationId}-${catchId}`). */
+function feedThreadHref(threadId?: number): string {
+  if (threadId == null || !Number.isFinite(threadId)) return "/";
+  return `/?thread=${threadId}`;
+}
+
 function feedPostHref(postId?: string, locationId?: number, catchId?: number): string {
   const id =
     postId ??
@@ -130,6 +162,7 @@ export function NotificationsButton() {
   /** Bumps when localStorage readIds change so `readIds` memo recomputes (Mark read / tap row). */
   const [readEpoch, setReadEpoch] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const pollInFlightRef = useRef(false);
 
   const canRun = isReady && !!user;
 
@@ -159,7 +192,7 @@ export function NotificationsButton() {
     <div className="px-3 py-8 text-center">
       <p className="text-sm font-medium text-zinc-800 dark:text-zinc-100">No notifications yet</p>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Likes, comments, replies to your comments, and new friends will show up here.
+        Likes, comments, discussion replies, and new friends will show up here.
       </p>
     </div>
   );
@@ -192,6 +225,8 @@ export function NotificationsButton() {
   async function pollOnce(): Promise<void> {
     if (!canRun) return;
     if (typeof window === "undefined") return;
+    if (pollInFlightRef.current) return;
+    pollInFlightRef.current = true;
     setBusy(true);
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -244,11 +279,39 @@ export function NotificationsButton() {
         prevSeenReply.add(r.replyCommentId);
       }
 
-      // Limit work: only look at the most recent posts by the current user.
-      const feed = await fetchLatestPosts(80);
-      const myPosts = feed.filter((p) => p.accountId === user!.id).slice(0, 25);
+      const threadReplies = await fetchThreadCommentReplyNotifications(30).catch(() => []);
+      const prevSeenThreadReply = new Set<number>(state.seenThreadReplyCommentIds ?? []);
+      const firstThreadReplySnapshot = state.seenThreadReplyCommentIds === undefined;
+      for (const r of threadReplies) {
+        if (!Number.isFinite(r.replyCommentId)) continue;
+        if (prevSeenThreadReply.has(r.replyCommentId)) continue;
+        const createdAtMs = toMs(r.createdAt);
+        if (firstThreadReplySnapshot) {
+          prevSeenThreadReply.add(r.replyCommentId);
+          continue;
+        }
+        if (state.lastSeenAtMs && createdAtMs && createdAtMs <= state.lastSeenAtMs) {
+          prevSeenThreadReply.add(r.replyCommentId);
+          continue;
+        }
+        newReplyItems.push({
+          id: `thread-reply:${r.replyCommentId}`,
+          kind: "reply",
+          threadId: r.threadId,
+          createdAtMs: createdAtMs || Date.now(),
+          message: `@${r.replierUsername} replied on "${r.threadTitle}": ${r.messagePreview}`,
+          href: feedThreadHref(r.threadId),
+        });
+        prevSeenThreadReply.add(r.replyCommentId);
+      }
 
-      const results = await mapWithConcurrency(myPosts, 6, async (p) => {
+      // Limit work: only look at the most recent posts by the current user.
+      const feed = await fetchLatestPosts(NOTIF_FEED_FETCH_LIMIT);
+      const myPosts = feed
+        .filter((p) => p.accountId === user!.id)
+        .slice(0, NOTIF_CATCH_POSTS_LIMIT);
+
+      const catchResults = await mapWithConcurrency(myPosts, 6, async (p) => {
         const { postId, locationId, catchId } = postCatchKey(p);
         const prev = state.byPost[postId] ?? {};
         const isFirstCommentSnapshotForPost = prev.seenCommentIds === undefined;
@@ -325,20 +388,111 @@ export function NotificationsButton() {
         };
       });
 
+      const threadFeed = await fetchForumThreads(NOTIF_FEED_FETCH_LIMIT).catch(() => []);
+      const myThreads = threadFeed
+        .filter((t) => t.accountId === user!.id)
+        .slice(0, NOTIF_THREAD_POLL_LIMIT);
+
+      const threadResults = await mapWithConcurrency(myThreads, 4, async (thread) => {
+        const threadKey = `thread:${thread.id}`;
+        const prev = state.byThread?.[threadKey] ?? {};
+        const isFirstSnapshot = prev.seenCommentIds === undefined;
+        const feedLikes = thread.likesCount ?? prev.likesCount ?? 0;
+        const feedComments = thread.commentsCount ?? prev.commentsCount ?? 0;
+        const nextSeenCommentIds = new Set<number>(prev.seenCommentIds ?? []);
+        const newItems: NotificationItem[] = [];
+
+        if (!isFirstSnapshot && typeof prev.likesCount === "number" && feedLikes > prev.likesCount) {
+          const delta = feedLikes - prev.likesCount;
+          newItems.push({
+            id: `thread-like:${thread.id}:${feedLikes}`,
+            kind: "like",
+            threadId: thread.id,
+            createdAtMs: Date.now(),
+            message: `Your discussion "${thread.title}" got ${delta} new ${delta === 1 ? "like" : "likes"}.`,
+            href: feedThreadHref(thread.id),
+          });
+        }
+
+        const shouldFetchComments =
+          feedComments > 0 &&
+          (isFirstSnapshot || feedComments > (prev.commentsCount ?? 0));
+
+        if (shouldFetchComments) {
+          const commentsPage = await fetchForumThreadComments(
+            thread.id,
+            0,
+            6,
+            "desc",
+          ).catch(() => null);
+
+          if (commentsPage) {
+            for (const c of commentsPage.comments) {
+              if (isFirstSnapshot) {
+                nextSeenCommentIds.add(c.id);
+                continue;
+              }
+              if (c.ownedByMe) continue;
+              if (
+                c.parentCommentId != null &&
+                c.inReplyToUsername &&
+                user!.username.toLowerCase() === c.inReplyToUsername.toLowerCase()
+              ) {
+                nextSeenCommentIds.add(c.id);
+                continue;
+              }
+              if (nextSeenCommentIds.has(c.id)) continue;
+              const createdAtMs = toMs(c.createdAt);
+              if (state.lastSeenAtMs && createdAtMs && createdAtMs <= state.lastSeenAtMs) {
+                nextSeenCommentIds.add(c.id);
+                continue;
+              }
+              newItems.push({
+                id: `thread-comment:${thread.id}:${c.id}`,
+                kind: "comment",
+                threadId: thread.id,
+                createdAtMs: createdAtMs || Date.now(),
+                message: `@${c.username} commented on "${thread.title}": ${c.message}`,
+                href: feedThreadHref(thread.id),
+              });
+              nextSeenCommentIds.add(c.id);
+            }
+          }
+        }
+
+        return {
+          threadKey,
+          nextLikesCount: feedLikes,
+          nextCommentsCount: feedComments,
+          nextSeenCommentIds: Array.from(nextSeenCommentIds).slice(0, 50),
+          newItems,
+        };
+      });
+
       const nextState: StoredNotifState = {
         ...state,
         byPost: { ...state.byPost },
+        byThread: { ...(state.byThread ?? {}) },
         friendIds: nextFriendIds,
         seenReplyCommentIds: Array.from(prevSeenReply).slice(0, 200),
+        seenThreadReplyCommentIds: Array.from(prevSeenThreadReply).slice(0, 200),
       };
 
       const discovered: NotificationItem[] = [];
       discovered.push(...newFriendItems);
       discovered.push(...newReplyItems);
-      for (const r of results) {
+      for (const r of catchResults) {
         discovered.push(...r.newItems);
         nextState.byPost[r.postId] = {
           likesCount: r.nextLikesCount,
+          seenCommentIds: r.nextSeenCommentIds,
+        };
+      }
+      for (const r of threadResults) {
+        discovered.push(...r.newItems);
+        nextState.byThread![r.threadKey] = {
+          likesCount: r.nextLikesCount,
+          commentsCount: r.nextCommentsCount,
           seenCommentIds: r.nextSeenCommentIds,
         };
       }
@@ -353,6 +507,7 @@ export function NotificationsButton() {
         });
       }
     } finally {
+      pollInFlightRef.current = false;
       setBusy(false);
     }
   }

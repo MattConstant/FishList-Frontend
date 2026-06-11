@@ -19,3 +19,19 @@ export function formatAppShortDate(iso: string, appLocale: string): string {
     day: "numeric",
   });
 }
+
+/** Relative time for comments and notifications (e.g. "5m", "2h"). */
+export function formatAppRelativeTime(iso: string, appLocale: string): string {
+  const parsed = Date.parse(iso);
+  if (Number.isNaN(parsed)) return iso;
+  const diffMs = Date.now() - parsed;
+  const sec = Math.max(0, Math.floor(diffMs / 1000));
+  if (sec < 60) return appLocale === "fr" ? `${sec}s` : `${sec}s`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return appLocale === "fr" ? `${min} min` : `${min}m`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return appLocale === "fr" ? `${hr} h` : `${hr}h`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return appLocale === "fr" ? `${day} j` : `${day}d`;
+  return formatAppShortDate(iso, appLocale);
+}

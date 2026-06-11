@@ -524,12 +524,9 @@ export async function resetPassword(
 }
 
 export async function requestPasswordReset(): Promise<{ message: string }> {
-  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/request-password-reset`, {
+  return authJson<{ message: string }>("/api/auth/request-password-reset", {
     method: "POST",
-    headers: authHeaders(),
   });
-  await throwIfNotOk(res);
-  return parseResponseJson<{ message: string }>(res);
 }
 
 export function isEmailNotVerifiedError(err: unknown): boolean {
@@ -1370,6 +1367,189 @@ export async function deleteCatch(
   catchId: number,
 ): Promise<void> {
   await authVoid(`/api/locations/${locationId}/catches/${catchId}`, {
+    method: "DELETE",
+  });
+}
+
+// ── Forum threads ───────────────────────────────────────────────────
+
+export type ForumThreadPost = {
+  id: number;
+  accountId: number;
+  username: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  visibility?: PostVisibility | null;
+  commentsCount?: number;
+  likesCount?: number;
+};
+
+export type ThreadCommentReplyNotificationResponse = {
+  replyCommentId: number;
+  threadId: number;
+  threadTitle: string;
+  replierUsername: string;
+  messagePreview: string;
+  createdAt: string;
+};
+
+export type ForumThreadLikeResponse = {
+  threadId: number;
+  likesCount: number;
+  likedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+};
+
+export type ForumThreadCommentResponse = {
+  id: number;
+  threadId: number;
+  accountId: number;
+  username: string;
+  message: string;
+  createdAt: string;
+  ownedByMe: boolean;
+  unlockedAchievements?: UnlockedAchievementSummary[];
+  parentCommentId?: number | null;
+  inReplyToUsername?: string | null;
+};
+
+export type ForumThreadCommentsPageResponse = {
+  comments: ForumThreadCommentResponse[];
+  totalCount: number;
+  offset: number;
+  limit: number;
+};
+
+export async function fetchForumThreads(
+  limit = 20,
+  offset = 0,
+): Promise<ForumThreadPost[]> {
+  const MAX_PAGE = 100;
+  let remaining = Math.max(0, limit);
+  let currentOffset = Math.max(0, offset);
+  const allRows: ForumThreadPost[] = [];
+
+  while (remaining > 0) {
+    const pageSize = Math.min(MAX_PAGE, remaining);
+    const rows = await authJson<ForumThreadPost[]>(
+      `/api/threads/feed?offset=${currentOffset}&limit=${pageSize}`,
+    );
+    allRows.push(...rows);
+    if (rows.length < pageSize) break;
+    remaining -= rows.length;
+    currentOffset += rows.length;
+  }
+
+  return allRows;
+}
+
+export async function createForumThread(payload: {
+  title: string;
+  body: string;
+  visibility?: PostVisibility;
+}): Promise<ForumThreadPost> {
+  return authJson<ForumThreadPost>("/api/threads", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function updateForumThread(
+  threadId: number,
+  payload: {
+    title: string;
+    body: string;
+    visibility?: PostVisibility;
+  },
+): Promise<ForumThreadPost> {
+  return authJson<ForumThreadPost>(`/api/threads/${threadId}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function fetchThreadCommentReplyNotifications(
+  limit = 25,
+): Promise<ThreadCommentReplyNotificationResponse[]> {
+  return authJson<ThreadCommentReplyNotificationResponse[]>(
+    `/api/accounts/me/thread-comment-replies?limit=${limit}`,
+  );
+}
+
+export async function deleteForumThread(threadId: number): Promise<void> {
+  await authVoid(`/api/threads/${threadId}`, { method: "DELETE" });
+}
+
+export async function fetchForumThreadLike(
+  threadId: number,
+): Promise<ForumThreadLikeResponse> {
+  return authJson<ForumThreadLikeResponse>(`/api/threads/${threadId}/like`);
+}
+
+export async function likeForumThread(
+  threadId: number,
+): Promise<ForumThreadLikeResponse> {
+  const res = await authJson<ForumThreadLikeResponse>(
+    `/api/threads/${threadId}/like`,
+    { method: "POST" },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
+}
+
+export async function unlikeForumThread(
+  threadId: number,
+): Promise<ForumThreadLikeResponse> {
+  return authJson<ForumThreadLikeResponse>(`/api/threads/${threadId}/like`, {
+    method: "DELETE",
+  });
+}
+
+export async function fetchForumThreadComments(
+  threadId: number,
+  offset = 0,
+  limit = 3,
+  order: "asc" | "desc" = "asc",
+): Promise<ForumThreadCommentsPageResponse> {
+  const params = new URLSearchParams({
+    offset: String(offset),
+    limit: String(limit),
+    order,
+  });
+  return authJson<ForumThreadCommentsPageResponse>(
+    `/api/threads/${threadId}/comments?${params.toString()}`,
+  );
+}
+
+export async function createForumThreadComment(
+  threadId: number,
+  message: string,
+  parentCommentId?: number | null,
+): Promise<ForumThreadCommentResponse> {
+  const body: { message: string; parentCommentId?: number } = { message };
+  if (parentCommentId != null && parentCommentId > 0) {
+    body.parentCommentId = parentCommentId;
+  }
+  const res = await authJson<ForumThreadCommentResponse>(
+    `/api/threads/${threadId}/comments`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+  dispatchUnlocks(res.unlockedAchievements);
+  return res;
+}
+
+export async function deleteForumThreadComment(
+  threadId: number,
+  commentId: number,
+): Promise<void> {
+  await authVoid(`/api/threads/${threadId}/comments/${commentId}`, {
     method: "DELETE",
   });
 }
