@@ -21,7 +21,7 @@ function VerifyEmailShell({
 }) {
   return (
     <div className="login-page__backdrop relative flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+      <div className="login-page__card w-full max-w-md p-8">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">{title}</h1>
         {status === "working" ? (
           <p className="mt-4 text-sm text-zinc-600 dark:text-zinc-400">{workingLabel}</p>

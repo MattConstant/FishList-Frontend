@@ -16,6 +16,8 @@ export default {
   "achievements.progress": "{{current}} / {{target}}",
   "achievements.viewAll": "View all achievements",
   "achievements.viewLess": "Show fewer",
+  "achievements.expand": "Show achievements",
+  "achievements.collapse": "Hide achievements",
   "achievements.tab.all": "All",
   "achievements.tab.unlocked": "Unlocked",
   "achievements.tab.locked": "In progress",

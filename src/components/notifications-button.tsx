@@ -147,7 +147,7 @@ export function NotificationsButton() {
   );
 
   const bellBtnClass =
-    "relative flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 transition hover:bg-zinc-100 active:bg-zinc-200/80 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-700/80";
+    "relative flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 transition hover:bg-zinc-100 active:bg-zinc-200/80 md:h-10 md:w-10 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-700/80";
 
   const badge = unreadCount > 0 ? (
     <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 text-[11px] font-semibold leading-none text-white">
@@ -405,7 +405,7 @@ export function NotificationsButton() {
   }
 
   if (!isReady) {
-    return <div className="h-11 w-11 shrink-0" aria-hidden />;
+    return <div className="h-11 w-11 shrink-0 md:h-10 md:w-10" aria-hidden />;
   }
   if (!user) return null;
 

@@ -14,6 +14,7 @@ import {
   getDisplayErrorMessage,
   getImageUrl,
   patchMyProfile,
+  requestPasswordReset,
   saveSession,
   uploadImage,
   validateImageFileForUpload,
@@ -41,6 +42,8 @@ export default function ProfilePage() {
   const [photoBusy, setPhotoBusy] = useState(false);
   const [actionError, setActionError] = useState("");
   const [showSaved, setShowSaved] = useState(false);
+  const [passwordResetBusy, setPasswordResetBusy] = useState(false);
+  const [passwordResetMessage, setPasswordResetMessage] = useState("");
 
   const loadCatches = useCallback(async () => {
     if (!user) return;
@@ -192,6 +195,20 @@ export default function ProfilePage() {
       setActionError(getDisplayErrorMessage(e, t("profile.photoError")));
     } finally {
       setPhotoBusy(false);
+    }
+  }
+
+  async function handleRequestPasswordReset() {
+    setPasswordResetMessage("");
+    setActionError("");
+    setPasswordResetBusy(true);
+    try {
+      const res = await requestPasswordReset();
+      setPasswordResetMessage(res.message);
+    } catch (e) {
+      setActionError(getDisplayErrorMessage(e, t("profile.passwordResetFailed")));
+    } finally {
+      setPasswordResetBusy(false);
     }
   }
 
@@ -361,6 +378,34 @@ export default function ProfilePage() {
                     </button>
                   ) : null}
                 </div>
+
+                {user.hasRegisteredEmail ? (
+                  <div className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-800/40">
+                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                      {t("profile.passwordResetTitle")}
+                    </p>
+                    <p className="mt-1 text-xs text-zinc-500">
+                      {t("profile.passwordResetDesc", {
+                        email: user.emailHint ?? t("profile.passwordResetEmailFallback"),
+                      })}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => void handleRequestPasswordReset()}
+                      disabled={passwordResetBusy}
+                      className="mt-3 rounded-xl border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    >
+                      {passwordResetBusy
+                        ? t("profile.passwordResetSending")
+                        : t("profile.passwordResetButton")}
+                    </button>
+                    {passwordResetMessage ? (
+                      <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-400" role="status">
+                        {passwordResetMessage}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -425,7 +470,7 @@ export default function ProfilePage() {
           <p className="text-sm text-red-600 dark:text-red-400">{refreshError}</p>
         )}
 
-        <AchievementsPanel variant="self" initialPreviewCount={6} />
+        <AchievementsPanel variant="self" initialPreviewCount={6} defaultExpanded={false} />
 
         <section>
           <div className="mb-4 flex items-end justify-between gap-4">
@@ -472,7 +517,7 @@ export default function ProfilePage() {
           {locations.length > 0 && (
             <div className="space-y-3">
               {locations.map((loc) => (
-                <LocationCard key={loc.id} loc={loc} />
+                <LocationCard key={loc.id} loc={loc} variant="profile" />
               ))}
             </div>
           )}

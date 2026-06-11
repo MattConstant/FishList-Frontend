@@ -18,6 +18,8 @@ type AchievementsPanelProps = {
   variant?: "self" | "public";
   /** Compact mode: trims to the most relevant badges and shows a "view all" expander. */
   initialPreviewCount?: number;
+  /** When false, only the summary header is shown until expanded. */
+  defaultExpanded?: boolean;
 };
 
 type FilterTab = "all" | "unlocked" | "locked";
@@ -32,6 +34,7 @@ export function AchievementsPanel({
   accountId,
   variant = "self",
   initialPreviewCount = 6,
+  defaultExpanded = true,
 }: AchievementsPanelProps) {
   const { t } = useLocale();
   const { unlockTick } = useAchievementToasts();
@@ -40,6 +43,7 @@ export function AchievementsPanel({
   const [error, setError] = useState("");
   const [tab, setTab] = useState<FilterTab>("all");
   const [showAll, setShowAll] = useState(false);
+  const [panelExpanded, setPanelExpanded] = useState(defaultExpanded);
 
   // Re-fetches on initial mount, when the viewed account changes, and when a new unlock
   // is pushed via the global toast dispatcher (so the panel reflects the latest state
@@ -90,16 +94,33 @@ export function AchievementsPanel({
       aria-label={t("achievements.section.title")}
       className="overflow-hidden rounded-[24px] border border-zinc-200 bg-white/95 shadow-md shadow-zinc-900/5 dark:border-zinc-800 dark:bg-zinc-900/80"
     >
-      <header className="flex flex-col gap-4 border-b border-zinc-200/80 bg-gradient-to-br from-sky-50 via-indigo-50 to-violet-50 px-5 py-5 dark:border-zinc-800/80 dark:from-sky-950/40 dark:via-indigo-950/40 dark:to-violet-950/40 sm:flex-row sm:items-center sm:justify-between">
-        <div>
+      <header
+        className={[
+          "flex flex-col gap-4 bg-gradient-to-br from-sky-50 via-indigo-50 to-violet-50 px-5 py-5 dark:from-sky-950/40 dark:via-indigo-950/40 dark:to-violet-950/40 sm:flex-row sm:items-center sm:justify-between",
+          panelExpanded
+            ? "border-b border-zinc-200/80 dark:border-zinc-800/80"
+            : "",
+        ].join(" ")}
+      >
+        <div className="min-w-0 flex-1">
           <p className="text-[0.7rem] font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">
             {t("achievements.section.title")}
           </p>
-          {variant === "self" && (
+          {variant === "self" && panelExpanded && (
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
               {t("achievements.section.subtitle")}
             </p>
           )}
+          {!panelExpanded && !loading && data ? (
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-300">
+              {t("achievements.summary.unlocked", {
+                unlocked: data.unlockedCount,
+                total: data.totalCount,
+              })}
+              {" · "}
+              {data.xp} XP
+            </p>
+          ) : null}
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -128,9 +149,30 @@ export function AchievementsPanel({
               <span>{t(roleLabelKey)}</span>
             </span>
           )}
+          <button
+            type="button"
+            onClick={() => setPanelExpanded((open) => !open)}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-zinc-300 bg-white px-3 py-1.5 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
+            aria-expanded={panelExpanded}
+          >
+            {panelExpanded ? t("achievements.collapse") : t("achievements.expand")}
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 transition-transform ${panelExpanded ? "rotate-180" : ""}`}
+              aria-hidden
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
         </div>
       </header>
 
+      {panelExpanded ? (
       <div className="px-5 py-5">
         {loading && (
           <p className="py-8 text-center text-sm text-zinc-500">
@@ -228,6 +270,7 @@ export function AchievementsPanel({
           </>
         )}
       </div>
+      ) : null}
     </section>
   );
 }

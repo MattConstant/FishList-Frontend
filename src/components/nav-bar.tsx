@@ -106,6 +106,57 @@ export function NavBar() {
         </nav>
 
         <div className="flex min-w-0 shrink-0 items-center justify-end gap-1.5 sm:gap-2.5">
+          <NotificationsButton />
+          <NavLangThemeGroup className="max-md:hidden md:flex" />
+
+          {!user ? (
+            <div className="flex h-11 items-center justify-center">
+              {isReady ? (
+                <Link
+                  href="/login"
+                  className="touch-manipulation rounded-lg px-2 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50 active:bg-sky-100/80 dark:text-sky-400 dark:hover:bg-sky-950/50 dark:active:bg-sky-950 sm:px-3"
+                >
+                  {t("nav.login")}
+                </Link>
+              ) : (
+                <span
+                  className="invisible px-2 py-2 text-sm font-medium sm:px-3"
+                  aria-hidden
+                >
+                  {t("nav.login")}
+                </span>
+              )}
+            </div>
+          ) : null}
+          <Link
+            href="/profile"
+            className={[
+              "flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border transition-colors active:opacity-90 md:h-10 md:w-10",
+              pathname === "/profile"
+                ? user
+                  ? "overflow-hidden border-sky-500 p-0 ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:border-sky-400 dark:ring-sky-400 dark:ring-offset-zinc-950"
+                  : "border-sky-600 bg-sky-600 text-white"
+                : user
+                  ? "overflow-hidden border-zinc-300 p-0 hover:border-sky-500 dark:border-zinc-600 dark:hover:border-sky-500"
+                  : "border-zinc-300 text-zinc-600 hover:border-sky-500 hover:text-sky-700 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:text-sky-300",
+            ].join(" ")}
+            aria-label={t("nav.profile")}
+            title={t("nav.profile")}
+          >
+            {user ? (
+              <UserAvatar
+                accountId={user.id}
+                profileImageKey={user.profileImageKey}
+                size="md"
+                label={t("nav.profile")}
+                className="!ring-0"
+                loadWhenVisible={false}
+              />
+            ) : (
+              <ProfileIcon className="h-5 w-5" />
+            )}
+          </Link>
+
           <button
             type="button"
             className="flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-lg border border-zinc-300 text-zinc-700 transition hover:bg-zinc-100 active:bg-zinc-200/80 md:hidden dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800 dark:active:bg-zinc-700/80"
@@ -132,57 +183,6 @@ export function NavBar() {
               </svg>
             )}
           </button>
-
-          <NotificationsButton />
-          <NavLangThemeGroup className="max-md:hidden md:flex" />
-
-          {!user ? (
-            <div className="flex h-11 min-w-[5.25rem] items-center justify-center sm:min-w-[4.75rem]">
-              {isReady ? (
-                <Link
-                  href="/login"
-                  className="touch-manipulation rounded-lg px-2 py-2 text-sm font-medium text-sky-700 hover:bg-sky-50 active:bg-sky-100/80 dark:text-sky-400 dark:hover:bg-sky-950/50 dark:active:bg-sky-950 sm:px-3"
-                >
-                  {t("nav.login")}
-                </Link>
-              ) : (
-                <span
-                  className="invisible px-2 py-2 text-sm font-medium sm:px-3"
-                  aria-hidden
-                >
-                  {t("nav.login")}
-                </span>
-              )}
-            </div>
-          ) : null}
-          <Link
-            href="/profile"
-            className={[
-              "flex h-11 w-11 shrink-0 touch-manipulation items-center justify-center rounded-full border transition-colors active:opacity-90 sm:h-10 sm:w-10",
-              pathname === "/profile"
-                ? user
-                  ? "overflow-hidden border-sky-500 p-0 ring-2 ring-sky-500 ring-offset-2 ring-offset-white dark:border-sky-400 dark:ring-sky-400 dark:ring-offset-zinc-950"
-                  : "border-sky-600 bg-sky-600 text-white"
-                : user
-                  ? "overflow-hidden border-zinc-300 p-0 hover:border-sky-500 dark:border-zinc-600 dark:hover:border-sky-500"
-                  : "border-zinc-300 text-zinc-600 hover:border-sky-500 hover:text-sky-700 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:text-sky-300",
-            ].join(" ")}
-            aria-label={t("nav.profile")}
-            title={t("nav.profile")}
-          >
-            {user ? (
-              <UserAvatar
-                accountId={user.id}
-                profileImageKey={user.profileImageKey}
-                size="md"
-                label={t("nav.profile")}
-                className="!ring-0"
-                loadWhenVisible={false}
-              />
-            ) : (
-              <ProfileIcon className="h-5 w-5" />
-            )}
-          </Link>
         </div>
       </div>
 
@@ -212,6 +212,7 @@ export function NavBar() {
                 {t("nav.admin")}
               </Link>
             )}
+            <NavLangThemeGroup variant="menu" />
           </nav>
         </div>
       ) : null}

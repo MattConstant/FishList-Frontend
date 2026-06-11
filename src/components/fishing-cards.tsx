@@ -23,6 +23,146 @@ function isObjectKey(url: string) {
   return !url.startsWith("http://") && !url.startsWith("https://");
 }
 
+function catchMetaLine(c: CatchResponse): string {
+  if (c.fishDetails && c.fishDetails.length > 0) {
+    return `${c.fishDetails.length} fish in this post`;
+  }
+  const parts = [
+    c.quantity && c.quantity > 1 ? `×${c.quantity}` : null,
+    formatLengthFromCm(c.lengthCm),
+    formatWeightFromKg(c.weightKg),
+  ].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "No measurements";
+}
+
+function ProfileCatchCard({ c }: { c: CatchResponse }) {
+  const { t } = useLocale();
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const imageCandidates = useMemo(
+    () =>
+      c.imageUrls && c.imageUrls.length > 0
+        ? c.imageUrls.slice(0, 8)
+        : c.imageUrl
+          ? [c.imageUrl]
+          : [],
+    [c.imageUrls, c.imageUrl],
+  );
+  const [resolvedUrls, setResolvedUrls] = useState<string[]>([]);
+  const [imgError, setImgError] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const hasPhotos = imageCandidates.length > 0;
+
+  useEffect(() => {
+    if (!photosOpen || imageCandidates.length === 0) return;
+
+    let cancelled = false;
+    Promise.all(
+      imageCandidates.map(async (value) => {
+        if (!isObjectKey(value)) return value;
+        return getImageUrl(value);
+      }),
+    )
+      .then((urls) => {
+        if (!cancelled) setResolvedUrls(urls.filter(Boolean));
+      })
+      .catch(() => {
+        if (!cancelled) setImgError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [photosOpen, imageCandidates]);
+
+  return (
+    <div className="border-b border-zinc-200/90 last:border-b-0 dark:border-zinc-700/80">
+      <div className="flex items-start gap-2 py-2.5">
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{c.species}</p>
+          <p className="mt-0.5 text-xs text-zinc-500">{catchMetaLine(c)}</p>
+          {c.fishingType ? (
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[10px] font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+              <span aria-hidden>🎣</span>
+              {t(fishingTypeLabelKey(c.fishingType))}
+            </span>
+          ) : null}
+        </div>
+        {hasPhotos ? (
+          <button
+            type="button"
+            onClick={() => setPhotosOpen((open) => !open)}
+            aria-expanded={photosOpen}
+            className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-sky-700 transition hover:bg-sky-50 active:bg-sky-100/80 dark:text-sky-300 dark:hover:bg-sky-950/40"
+          >
+            {photosOpen
+              ? t("profile.hidePhotos")
+              : t("profile.viewPhotos", { n: imageCandidates.length })}
+            <svg
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className={`h-4 w-4 transition-transform ${photosOpen ? "rotate-180" : ""}`}
+              aria-hidden
+            >
+              <path
+                fillRule="evenodd"
+                d="M5.22 8.22a.75.75 0 011.06 0L10 11.94l3.72-3.72a.75.75 0 111.06 1.06l-4.25 4.25a.75.75 0 01-1.06 0L5.22 9.28a.75.75 0 010-1.06z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        ) : null}
+      </div>
+
+      {photosOpen && hasPhotos ? (
+        <div className="pb-3">
+          {resolvedUrls.length > 0 && !imgError ? (
+            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {resolvedUrls.map((url, imageIndex) => (
+                <button
+                  key={url}
+                  type="button"
+                  onClick={() => setLightboxIndex(imageIndex)}
+                  className="h-20 w-20 shrink-0 cursor-zoom-in overflow-hidden rounded-lg border border-zinc-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-zinc-700"
+                  aria-label={t("home.imageLightbox.open")}
+                >
+                  <Image
+                    src={url}
+                    alt={c.species}
+                    width={160}
+                    height={160}
+                    className="h-full w-full object-cover"
+                    unoptimized
+                    onError={() => setImgError(true)}
+                  />
+                </button>
+              ))}
+            </div>
+          ) : imgError ? (
+            <p className="text-xs text-zinc-400">{t("profile.photoLoadError")}</p>
+          ) : (
+            <p className="text-xs text-zinc-400">{t("profile.loadingPhotos")}</p>
+          )}
+        </div>
+      ) : null}
+
+      {lightboxIndex != null && resolvedUrls.length > 0 ? (
+        <PostImageLightbox
+          urls={resolvedUrls}
+          index={lightboxIndex}
+          alt={c.species}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+          labels={{
+            close: t("home.imageLightbox.close"),
+            prev: t("home.imageLightbox.prev"),
+            next: t("home.imageLightbox.next"),
+            imageOf: t("home.imageLightbox.imageOf"),
+          }}
+        />
+      ) : null}
+    </div>
+  );
+}
+
 export function CatchCard({ c }: { c: CatchResponse }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
@@ -115,20 +255,10 @@ export function CatchCard({ c }: { c: CatchResponse }) {
           )}
         </div>
         <div className="min-w-0 flex-1 pt-0.5">
-          <p className="truncate w-64 font-semibold text-zinc-900 dark:text-zinc-50 ">
+          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
             {c.species}
           </p>
-          <p className="mt-0.5 text-xs text-zinc-500">
-            {c.fishDetails && c.fishDetails.length > 0
-              ? `${c.fishDetails.length} fish in this post`
-              : [
-                    c.quantity && c.quantity > 1 ? `×${c.quantity}` : null,
-                    formatLengthFromCm(c.lengthCm),
-                    formatWeightFromKg(c.weightKg),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ") || "No measurements"}
-          </p>
+          <p className="mt-0.5 text-xs text-zinc-500">{catchMetaLine(c)}</p>
           {c.fishingType && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-100 px-2 py-0.5 text-[11px] font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
               <span aria-hidden>🎣</span>
@@ -268,11 +398,18 @@ export function CatchCard({ c }: { c: CatchResponse }) {
   );
 }
 
-export function LocationCard({ loc }: { loc: LocationWithCatches }) {
+export function LocationCard({
+  loc,
+  variant = "default",
+}: {
+  loc: LocationWithCatches;
+  variant?: "default" | "profile";
+}) {
   const { t, locale } = useLocale();
   const [expanded, setExpanded] = useState(false);
   const [catchPage, setCatchPage] = useState(0);
   const totalCatches = loc.catches.length;
+  const isProfile = variant === "profile";
 
   const catchTotalPages =
     totalCatches === 0 ? 0 : Math.ceil(totalCatches / CATCHES_PER_PAGE);
@@ -286,17 +423,33 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
   }, [loc.catches, catchPageIndex]);
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50">
+    <div
+      className={
+        isProfile
+          ? "overflow-hidden rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40"
+          : "rounded-2xl border border-zinc-200 bg-zinc-50/80 dark:border-zinc-800 dark:bg-zinc-900/50"
+      }
+    >
       <button
         type="button"
         onClick={() => setExpanded((e) => !e)}
-        className="flex w-full items-center gap-3 px-5 py-4 text-left"
+        className={
+          isProfile
+            ? "flex w-full items-center gap-2.5 px-3.5 py-3 text-left"
+            : "flex w-full items-center gap-3 px-5 py-4 text-left"
+        }
       >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg dark:bg-sky-900/40">
+        <span
+          className={
+            isProfile
+              ? "flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-base dark:bg-sky-900/40"
+              : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-sky-100 text-lg dark:bg-sky-900/40"
+          }
+        >
           📍
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate font-semibold text-zinc-900 dark:text-zinc-50">
+          <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
             {loc.locationName}
           </p>
           <p className="text-xs text-zinc-500">
@@ -307,7 +460,7 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
         <svg
           viewBox="0 0 20 20"
           fill="currentColor"
-          className={`h-5 w-5 shrink-0 text-zinc-400 transition-transform ${expanded ? "rotate-180" : ""}`}
+          className={`h-4 w-4 shrink-0 text-zinc-400 transition-transform ${expanded ? "rotate-180" : ""}`}
         >
           <path
             fillRule="evenodd"
@@ -318,30 +471,42 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
       </button>
 
       {expanded && (
-        <div className="space-y-2 border-t border-zinc-200 px-5 pb-5 pt-4 dark:border-zinc-800">
-          <p className="text-xs text-zinc-500">
-            {loc.latitude}, {loc.longitude}
-          </p>
+        <div
+          className={
+            isProfile
+              ? "border-t border-zinc-200 px-3.5 pb-3 pt-1 dark:border-zinc-800"
+              : "space-y-2 border-t border-zinc-200 px-5 pb-5 pt-4 dark:border-zinc-800"
+          }
+        >
+          {!isProfile ? (
+            <p className="text-xs text-zinc-500">
+              {loc.latitude}, {loc.longitude}
+            </p>
+          ) : null}
           {loc.catches.length === 0 ? (
             <p className="py-2 text-sm text-zinc-400">No catches recorded.</p>
           ) : (
             <>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {catchesOnPage.map((c) => (
-                  <CatchCard key={c.id} c={c} />
-                ))}
+              <div className={isProfile ? "divide-y divide-zinc-100 dark:divide-zinc-800" : "grid gap-3 sm:grid-cols-2"}>
+                {catchesOnPage.map((c) =>
+                  isProfile ? (
+                    <ProfileCatchCard key={c.id} c={c} />
+                  ) : (
+                    <CatchCard key={c.id} c={c} />
+                  ),
+                )}
               </div>
               {catchTotalPages > 1 && (
-                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
                   <button
                     type="button"
                     onClick={() => setCatchPage((p) => Math.max(0, p - 1))}
                     disabled={catchPageIndex <= 0}
-                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   >
                     {t("profile.pagePrev")}
                   </button>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
                     {t("profile.pageStatus", {
                       current: catchPageIndex + 1,
                       total: catchTotalPages,
@@ -355,7 +520,7 @@ export function LocationCard({ loc }: { loc: LocationWithCatches }) {
                       )
                     }
                     disabled={catchPageIndex >= catchTotalPages - 1}
-                    className="rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-xs font-medium text-zinc-800 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-100 dark:hover:bg-zinc-800"
                   >
                     {t("profile.pageNext")}
                   </button>

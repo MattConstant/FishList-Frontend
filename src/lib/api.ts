@@ -161,6 +161,10 @@ export type AccountResponse = {
   username: string;
   /** S3/MinIO object key; resolve with {@link getImageUrl} when present. */
   profileImageKey?: string | null;
+  /** Present on GET /api/accounts/me when the account has an email on file. */
+  hasRegisteredEmail?: boolean | null;
+  /** Masked email hint from GET /api/accounts/me. */
+  emailHint?: string | null;
 };
 
 // ── Achievements + roles ─────────────────────────────────────────────
@@ -489,6 +493,40 @@ export async function resendVerificationEmail(email: string): Promise<{ message:
     headers: { "Content-Type": "application/json" },
     credentials: "omit",
     body: JSON.stringify({ email: email.trim() }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<{ message: string }>(res);
+}
+
+export async function forgotPassword(email: string): Promise<{ message: string }> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<{ message: string }>(res);
+}
+
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<{ message: string }> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "omit",
+    body: JSON.stringify({ token, password }),
+  });
+  await throwIfNotOk(res);
+  return parseResponseJson<{ message: string }>(res);
+}
+
+export async function requestPasswordReset(): Promise<{ message: string }> {
+  const res = await backendFetch(`${getApiBaseUrl()}/api/auth/request-password-reset`, {
+    method: "POST",
+    headers: authHeaders(),
   });
   await throwIfNotOk(res);
   return parseResponseJson<{ message: string }>(res);

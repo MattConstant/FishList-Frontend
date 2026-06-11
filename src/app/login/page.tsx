@@ -27,7 +27,7 @@ export default function LoginPage() {
   if (user) {
     return (
       <div className="login-page__backdrop relative flex flex-1 items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+        <div className="login-page__card w-full max-w-md p-8">
           <p className="text-center text-zinc-600 dark:text-zinc-400">
             {t("login.signedInAs", { username: user.username })}
           </p>
@@ -58,7 +58,7 @@ export default function LoginPage() {
 
   return (
     <div className="login-page__backdrop relative flex flex-1 items-center justify-center px-6 py-16">
-      <div className="w-full max-w-md rounded-2xl border border-white/30 bg-white/90 p-8 shadow-xl backdrop-blur dark:border-zinc-700 dark:bg-zinc-900/90">
+      <div className="login-page__card w-full max-w-md p-8">
         <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50">
           {t("login.title.login")}
         </h1>
@@ -100,6 +100,14 @@ export default function LoginPage() {
               className={inputClassName}
               disabled={pending}
             />
+            <p className="mt-2 text-right">
+              <Link
+                href="/forgot-password"
+                className="text-xs font-medium text-sky-700 hover:underline dark:text-sky-400"
+              >
+                {t("login.forgotPasswordLink")}
+              </Link>
+            </p>
           </div>
           <button
             type="submit"
@@ -127,7 +135,7 @@ export default function LoginPage() {
                   <div className="w-full border-t border-zinc-200 dark:border-zinc-600" />
                 </div>
                 <div className="relative flex justify-center">
-                  <span className="bg-white/90 px-3 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-900/90 dark:text-zinc-400">
+                  <span className="relative z-10 bg-white px-3 text-xs font-medium uppercase tracking-wide text-zinc-500 dark:bg-zinc-900 dark:text-zinc-400">
                     {t("login.orGoogle")}
                   </span>
                 </div>

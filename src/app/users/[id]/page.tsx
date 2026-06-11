@@ -251,6 +251,7 @@ export default function UserProfilePage() {
           accountId={account.id}
           variant="public"
           initialPreviewCount={6}
+          defaultExpanded={false}
         />
       )}
 
@@ -264,7 +265,7 @@ export default function UserProfilePage() {
           ) : (
             <div className="space-y-3">
               {locations.map((loc) => (
-                <LocationCard key={loc.id} loc={loc} />
+                <LocationCard key={loc.id} loc={loc} variant="profile" />
               ))}
             </div>
           )}

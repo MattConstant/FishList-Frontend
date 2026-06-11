@@ -165,15 +165,16 @@ export function LandingCoverflow() {
           ))}
         </div>
 
-        <div className="home-landing__cf-meta">
-          <p className="home-landing__cf-num">
-            {String(active + 1).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}
-          </p>
-          <p className="home-landing__cf-title">{slide.species}</p>
-          <p className="home-landing__cf-desc">
-            @{slide.username} · {slide.location}
-          </p>
-        </div>
+      </div>
+
+      <div className="home-landing__cf-meta">
+        <p className="home-landing__cf-num">
+          {String(active + 1).padStart(2, "0")} / {String(TOTAL).padStart(2, "0")}
+        </p>
+        <p className="home-landing__cf-title">{slide.species}</p>
+        <p className="home-landing__cf-desc">
+          @{slide.username} · {slide.location}
+        </p>
       </div>
 
       <div className="home-landing__cf-controls">
