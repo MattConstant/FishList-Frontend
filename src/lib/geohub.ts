@@ -195,11 +195,3 @@ export function allDistricts(records: StockingRecord[]): string[] {
   );
 }
 
-/**
- * Returns distinct developmental stages across records.
- */
-export function allDevelopmentalStages(records: StockingRecord[]): string[] {
-  return [...new Set(records.map((r) => r.developmentalStage))].sort(
-    compareLocaleStrings,
-  );
-}

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { memo, useEffect, useRef, useState } from "react";
 import { EditThreadDialog } from "@/components/edit-thread-dialog";
 import { UserAvatar } from "@/components/user-avatar";
+import { VisibilityPill } from "@/components/visibility-pill";
 import { useLocale } from "@/contexts/locale-context";
 import {
   createForumThreadComment,
@@ -16,28 +17,11 @@ import {
   unlikeForumThread,
   type ForumThreadCommentResponse,
   type ForumThreadPost,
-  type PostVisibility,
 } from "@/lib/api";
 import { formatAppRelativeTime, formatAppShortDate } from "@/lib/format-app-locale";
 
 const TOP_COMMENTS_LIMIT = 3;
 const COMMENTS_CHUNK_SIZE = 8;
-
-function visibilityPill(vis: PostVisibility | null | undefined) {
-  const v = vis ?? "PUBLIC";
-  const label = v === "FRIENDS" ? "Friends" : v === "PRIVATE" ? "Private" : "Public";
-  const cls =
-    v === "FRIENDS"
-      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
-      : v === "PRIVATE"
-        ? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
-      {label}
-    </span>
-  );
-}
 
 export const ThreadFeedCard = memo(function ThreadFeedCard({
   thread,
@@ -291,7 +275,7 @@ export const ThreadFeedCard = memo(function ThreadFeedCard({
                 <span className="rounded-full bg-violet-100 px-2 py-0.5 text-[11px] font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">
                   {t("home.thread.badge")}
                 </span>
-                {isOwnPost || isAdmin ? visibilityPill(thread.visibility) : null}
+                {isOwnPost || isAdmin ? <VisibilityPill visibility={thread.visibility} /> : null}
               </div>
               <p className="text-xs text-zinc-500">
                 {formatAppShortDate(thread.createdAt, locale)}

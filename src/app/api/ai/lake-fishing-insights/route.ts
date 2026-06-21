@@ -1,19 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getApiBaseUrl } from "@/lib/api";
 
 export const runtime = "nodejs";
 
 /** Prevents arbitrary-large POST abuse against your backend proxy. */
 const MAX_BODY_BYTES = 64 * 1024;
 
-const DEFAULT_PRODUCTION_API_BASE = "https://fishlist-backend.onrender.com";
-
+/** Server-to-server base: prefer a private internal URL, else the shared public resolver. */
 function backendBase(): string {
-  const fromEnv =
-    process.env.BACKEND_INTERNAL_URL?.replace(/\/$/, "") ||
-    process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
-  if (fromEnv) return fromEnv;
-  if (process.env.NODE_ENV === "production") return DEFAULT_PRODUCTION_API_BASE;
-  return "http://localhost:8080";
+  const internal = process.env.BACKEND_INTERNAL_URL?.replace(/\/$/, "");
+  return internal || getApiBaseUrl();
 }
 
 /**

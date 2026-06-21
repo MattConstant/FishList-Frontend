@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo } from "react";
+import { formatZonedHourMinute } from "@/lib/format-app-locale";
 
 type Trend = "rising" | "falling" | "steady" | "unknown";
 
@@ -41,18 +42,6 @@ const TREND_COLOR: Record<Trend, { stroke: string; fillTop: string; fillBottom: 
     pointFill: "rgb(2 132 199)",
   },
 };
-
-function formatHourLabel(iso: string, timeZone: string, intlLocale: string) {
-  try {
-    return new Intl.DateTimeFormat(intlLocale, {
-      timeZone,
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return new Date(iso).toLocaleString(intlLocale);
-  }
-}
 
 export function FishingPressureChart({
   timeIso,
@@ -207,7 +196,7 @@ export function FishingPressureChart({
           r={3.5}
           fill={palette.pointFill}
         >
-          <title>{`${formatHourLabel(s.time, timeZone, intlLocale)} · ${s.p.toFixed(0)} hPa`}</title>
+          <title>{`${formatZonedHourMinute(s.time, timeZone, intlLocale)} · ${s.p.toFixed(0)} hPa`}</title>
         </circle>
       ))}
 
@@ -220,7 +209,7 @@ export function FishingPressureChart({
           textAnchor="middle"
           className="fill-zinc-600 text-[10px] dark:fill-zinc-300"
         >
-          {formatHourLabel(series[idx]!.time, timeZone, intlLocale)}
+          {formatZonedHourMinute(series[idx]!.time, timeZone, intlLocale)}
         </text>
       ))}
 

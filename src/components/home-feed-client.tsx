@@ -18,6 +18,7 @@ import { PostChooserDialog } from "@/components/post-chooser-dialog";
 import { PostImageLightbox } from "@/components/post-image-lightbox";
 import { ThreadFeedCard } from "@/components/thread-feed-card";
 import { UserAvatar } from "@/components/user-avatar";
+import { VisibilityPill } from "@/components/visibility-pill";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import { LANDING_SESSION_HTML_CLASS } from "@/lib/landing-session-hide";
@@ -49,6 +50,21 @@ const FEED_PAGE_SIZE = 24;
 type HomeFeedItem =
   | { kind: "catch"; key: string; timeStamp: string; post: FeedPost }
   | { kind: "thread"; key: string; timeStamp: string; thread: ForumThreadPost };
+
+type FeedSort = "newest" | "oldest" | "mostLiked" | "mostCommented";
+type FeedType = "all" | "catches" | "threads";
+
+function itemLikeCount(item: HomeFeedItem): number {
+  return item.kind === "catch"
+    ? item.post.likesCount
+    : (item.thread.likesCount ?? 0);
+}
+
+function itemCommentCount(item: HomeFeedItem): number {
+  return item.kind === "catch"
+    ? item.post.commentsCount
+    : (item.thread.commentsCount ?? 0);
+}
 
 function dedupeThreads(list: ForumThreadPost[]): ForumThreadPost[] {
   const seen = new Set<number>();
@@ -91,22 +107,6 @@ function dedupePosts(list: FeedPost[]): FeedPost[] {
     out.push(p);
   }
   return out;
-}
-
-function visibilityPill(vis: FeedPost["visibility"]) {
-  const v = vis ?? "PUBLIC";
-  const label = v === "FRIENDS" ? "Friends" : v === "PRIVATE" ? "Private" : "Public";
-  const cls =
-    v === "FRIENDS"
-      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200"
-      : v === "PRIVATE"
-        ? "bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-        : "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200";
-  return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>
-      {label}
-    </span>
-  );
 }
 
 function isObjectKey(url: string) {
@@ -427,7 +427,7 @@ const FeedCard = memo(function FeedCard({
               {post.locationName}
             </p>
           ) : null}
-          {isOwnPost || isAdmin ? visibilityPill(post.visibility) : null}
+          {isOwnPost || isAdmin ? <VisibilityPill visibility={post.visibility} /> : null}
           {isOwnPost && (
             <button
               type="button"
@@ -753,6 +753,8 @@ function HomeFeed() {
   const [threads, setThreads] = useState<ForumThreadPost[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [feedScope, setFeedScope] = useState<"all" | "friends" | "mine">("all");
+  const [feedSort, setFeedSort] = useState<FeedSort>("newest");
+  const [feedType, setFeedType] = useState<FeedType>("all");
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMoreCatches, setHasMoreCatches] = useState(true);
@@ -903,24 +905,43 @@ function HomeFeed() {
   }, [user, feedScope, hasMore, loading, loadingMore, loadMore]);
 
   const visibleItems = useMemo(() => {
-    const merged = mergeFeedItems(posts, threads);
-    if (!user) return merged;
-    if (feedScope === "mine") {
-      return merged.filter((item) =>
+    let merged = mergeFeedItems(posts, threads);
+    if (user && feedScope === "mine") {
+      merged = merged.filter((item) =>
         item.kind === "catch"
           ? item.post.accountId === user.id
           : item.thread.accountId === user.id,
       );
-    }
-    if (feedScope === "friends") {
-      return merged.filter((item) =>
+    } else if (user && feedScope === "friends") {
+      merged = merged.filter((item) =>
         item.kind === "catch"
           ? friendIds.has(item.post.accountId)
           : friendIds.has(item.thread.accountId),
       );
     }
+
+    if (feedType === "catches") {
+      merged = merged.filter((item) => item.kind === "catch");
+    } else if (feedType === "threads") {
+      merged = merged.filter((item) => item.kind === "thread");
+    }
+
+    // mergeFeedItems already returns newest-first; only re-sort for other modes.
+    const byNewest = (a: HomeFeedItem, b: HomeFeedItem) =>
+      b.timeStamp.localeCompare(a.timeStamp);
+    if (feedSort === "oldest") {
+      merged = [...merged].sort((a, b) => a.timeStamp.localeCompare(b.timeStamp));
+    } else if (feedSort === "mostLiked") {
+      merged = [...merged].sort(
+        (a, b) => itemLikeCount(b) - itemLikeCount(a) || byNewest(a, b),
+      );
+    } else if (feedSort === "mostCommented") {
+      merged = [...merged].sort(
+        (a, b) => itemCommentCount(b) - itemCommentCount(a) || byNewest(a, b),
+      );
+    }
     return merged;
-  }, [posts, threads, feedScope, friendIds, user]);
+  }, [posts, threads, feedScope, friendIds, user, feedSort, feedType]);
 
   const lcpFeedPostKey = useMemo(() => {
     for (const item of visibleItems) {
@@ -1110,6 +1131,40 @@ function HomeFeed() {
               {t("home.post")}
             </button>
           </div>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+          <div className="inline-flex max-w-full min-w-0 flex-wrap rounded-xl border border-zinc-300 bg-white p-1 dark:border-zinc-600 dark:bg-zinc-900">
+            {(["all", "catches", "threads"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setFeedType(type)}
+                className={[
+                  "rounded-lg px-3 py-2 text-xs font-medium transition sm:py-1.5",
+                  feedType === type
+                    ? "bg-sky-600 text-white"
+                    : "text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800",
+                ].join(" ")}
+              >
+                {t(`home.type.${type}`)}
+              </button>
+            ))}
+          </div>
+
+          <label className="inline-flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-300">
+            {t("home.sort.label")}
+            <select
+              value={feedSort}
+              onChange={(e) => setFeedSort(e.target.value as FeedSort)}
+              className="min-h-9 rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-xs font-medium text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+            >
+              <option value="newest">{t("home.sort.newest")}</option>
+              <option value="oldest">{t("home.sort.oldest")}</option>
+              <option value="mostLiked">{t("home.sort.mostLiked")}</option>
+              <option value="mostCommented">{t("home.sort.mostCommented")}</option>
+            </select>
+          </label>
         </div>
       </div>
 

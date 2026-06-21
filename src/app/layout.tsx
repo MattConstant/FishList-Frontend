@@ -92,10 +92,10 @@ export default async function RootLayout({
       lang={initialLocale}
       // Some providers (theme/locale) update attributes on the client; suppress warnings for those.
       suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full min-h-dvh antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} h-full min-h-dvh overflow-hidden antialiased`}
     >
       <body
-        className="flex min-h-dvh flex-col font-sans"
+        className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden font-sans"
         // ThemeProvider toggles classes client-side; avoid noisy hydration warnings.
         suppressHydrationWarning
       >

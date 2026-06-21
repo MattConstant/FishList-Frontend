@@ -70,7 +70,7 @@ Guests can browse the map and landing page. Create a free account to post, comme
 |-------|--------|
 | Framework | [Next.js 16](https://nextjs.org/) (App Router) |
 | UI | React 19, TypeScript, Tailwind CSS 4 |
-| Maps | Leaflet, react-leaflet, Esri tiles, Ontario GeoHub |
+| Maps | Leaflet, Esri Leaflet, marker clustering, Ontario GeoHub |
 | i18n | Custom locale dictionaries (`en` / `fr`) |
 | Analytics | Vercel Analytics & Speed Insights |
 | Hosting | [Vercel](https://vercel.com/) (frontend) |

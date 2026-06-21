@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { FishingConditionStars } from "@/components/fishing-condition-stars";
 import { FishingPressureChart } from "@/components/fishing-pressure-chart";
 import { useLocale } from "@/contexts/locale-context";
+import { formatZonedHourMinute } from "@/lib/format-app-locale";
 import {
   computeConditionStars,
   pressureQualityFromHpa,
@@ -55,22 +56,6 @@ const MOON_PHASE_GLYPH: Record<MoonPhaseKey, string> = {
   last_quarter: "🌗",
   waning_crescent: "🌘",
 };
-
-function formatTime(
-  iso: string,
-  timeZone: string,
-  intlLocale: string,
-): string {
-  try {
-    return new Intl.DateTimeFormat(intlLocale, {
-      timeZone,
-      hour: "numeric",
-      minute: "2-digit",
-    }).format(new Date(iso));
-  } catch {
-    return new Date(iso).toLocaleString(intlLocale);
-  }
-}
 
 /** 8-point compass from meteorological degrees (0 = N, clockwise). */
 function windCardinal8(deg: number): string {
@@ -421,8 +406,8 @@ export function FishingForecastPanel({ data, compact }: Props) {
                   }
                 >
                   {t("forecast.window", {
-                    start: formatTime(w.start, data.timezone, intlLocale),
-                    end: formatTime(w.end, data.timezone, intlLocale),
+                    start: formatZonedHourMinute(w.start, data.timezone, intlLocale),
+                    end: formatZonedHourMinute(w.end, data.timezone, intlLocale),
                   })}
                 </span>
               </li>
@@ -470,25 +455,25 @@ export function FishingForecastPanel({ data, compact }: Props) {
             <dt className="text-zinc-500">{t("forecast.sunrise")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.sunrise
-                ? formatTime(data.sunMoon.sunrise, data.timezone, intlLocale)
+                ? formatZonedHourMinute(data.sunMoon.sunrise, data.timezone, intlLocale)
                 : "-"}
             </dd>
             <dt className="text-zinc-500">{t("forecast.sunset")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.sunset
-                ? formatTime(data.sunMoon.sunset, data.timezone, intlLocale)
+                ? formatZonedHourMinute(data.sunMoon.sunset, data.timezone, intlLocale)
                 : "-"}
             </dd>
             <dt className="text-zinc-500">{t("forecast.moonrise")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.moonrise
-                ? formatTime(data.sunMoon.moonrise, data.timezone, intlLocale)
+                ? formatZonedHourMinute(data.sunMoon.moonrise, data.timezone, intlLocale)
                 : t("forecast.noMoon")}
             </dd>
             <dt className="text-zinc-500">{t("forecast.moonset")}</dt>
             <dd className="text-right text-zinc-900 dark:text-zinc-100">
               {data.sunMoon.moonset
-                ? formatTime(data.sunMoon.moonset, data.timezone, intlLocale)
+                ? formatZonedHourMinute(data.sunMoon.moonset, data.timezone, intlLocale)
                 : t("forecast.noMoon")}
             </dd>
           </dl>

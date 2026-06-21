@@ -53,36 +53,3 @@ export function saveMapFavorites(spots: FavoriteSpot[]): void {
     /* ignore quota */
   }
 }
-
-export function isFavoriteId(id: string, list: FavoriteSpot[]): boolean {
-  return list.some((f) => f.id === id);
-}
-
-export function toggleMapFavorite(
-  list: FavoriteSpot[],
-  lat: number,
-  lng: number,
-  label: string,
-): FavoriteSpot[] {
-  const id = makeFavoriteSpotId(lat, lng);
-  if (isFavoriteId(id, list)) {
-    return list.filter((f) => f.id !== id);
-  }
-  return [
-    ...list,
-    {
-      id,
-      lat: roundCoord(lat),
-      lng: roundCoord(lng),
-      label: label.trim() || "Saved spot",
-      createdAt: Date.now(),
-    },
-  ];
-}
-
-export function removeMapFavoriteById(
-  list: FavoriteSpot[],
-  id: string,
-): FavoriteSpot[] {
-  return list.filter((f) => f.id !== id);
-}

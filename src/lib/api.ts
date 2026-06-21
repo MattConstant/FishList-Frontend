@@ -529,10 +529,6 @@ export async function requestPasswordReset(): Promise<{ message: string }> {
   });
 }
 
-export function isEmailNotVerifiedError(err: unknown): boolean {
-  return err instanceof ApiHttpError && err.code === "EMAIL_NOT_VERIFIED";
-}
-
 export function loadSession(): StoredSession | null {
   if (typeof window === "undefined") return null;
   try {
@@ -1016,38 +1012,10 @@ export type CatchResponse = {
   fishingType?: FishingType | null;
 };
 
-export async function createLocation(
-  loc: LocationPayload,
-): Promise<string> {
-  const res = await authenticatedFetch("/api/locations", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(loc),
-  });
-  await throwIfNotOk(res);
-  return res.text();
-}
-
 type AddCatchApiResponse = {
   catch: CatchResponse;
   unlockedAchievements?: UnlockedAchievementSummary[];
 };
-
-/** Adds one catch to an existing location (same trip / coordinates). */
-export async function addCatchToLocation(
-  locationId: string,
-  catchData: AddCatchPayload,
-): Promise<CatchResponse> {
-  const catchRes = await authenticatedFetch(`/api/locations/${locationId}/catches`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(catchData),
-  });
-  await throwIfNotOk(catchRes);
-  const data = await parseResponseJson<AddCatchApiResponse>(catchRes);
-  dispatchUnlocks(data.unlockedAchievements);
-  return data.catch;
-}
 
 export async function createLocationAndCatch(
   loc: LocationPayload,
@@ -1127,6 +1095,9 @@ export type FeedPost = {
   profileImageKey?: string | null;
   /** Visibility of the underlying location/post (PUBLIC / FRIENDS / PRIVATE). */
   visibility?: PostVisibility | null;
+  /** Like/comment totals from the feed API (used for sorting). */
+  likesCount: number;
+  commentsCount: number;
   catch: CatchResponse;
 };
 
@@ -1151,6 +1122,8 @@ type FeedPostResponse = {
   fishDetailsJson?: string | null;
   fishingType?: FishingType | null;
   visibility?: PostVisibility | null;
+  likesCount?: number;
+  commentsCount?: number;
 };
 
 /** Feed JSON may use numbers or alternate keys (`lat` / `lng` / `lon`) depending on the API serializer. */
@@ -1255,6 +1228,8 @@ export async function fetchLatestPosts(limit = 20, offset = 0): Promise<FeedPost
     username: row.username,
     profileImageKey: row.profileImageKey,
     visibility: row.visibility ?? null,
+    likesCount: row.likesCount ?? 0,
+    commentsCount: row.commentsCount ?? 0,
     catch: {
       id: row.catchId,
       locationId: row.locationId,

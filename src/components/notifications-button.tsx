@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
+import { useLocale } from "@/contexts/locale-context";
+import { formatAppRelativeTimeMs } from "@/lib/format-app-locale";
 import {
   fetchMyFriends,
   fetchCatchComments,
@@ -98,17 +100,6 @@ function safeParseState(raw: string | null): StoredNotifState {
   }
 }
 
-function formatRelativeShort(msAgo: number): string {
-  const s = Math.max(0, Math.floor(msAgo / 1000));
-  if (s < 60) return `${s}s`;
-  const m = Math.floor(s / 60);
-  if (m < 60) return `${m}m`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h`;
-  const d = Math.floor(h / 24);
-  return `${d}d`;
-}
-
 async function mapWithConcurrency<T, R>(
   list: T[],
   limit: number,
@@ -156,6 +147,7 @@ function feedPostHref(postId?: string, locationId?: number, catchId?: number): s
 
 export function NotificationsButton() {
   const { user, isReady } = useAuth();
+  const { locale } = useLocale();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [items, setItems] = useState<NotificationItem[]>([]);
@@ -658,7 +650,7 @@ export function NotificationsButton() {
                         <div className="min-w-0 flex-1">
                           <p className="text-sm text-zinc-800 dark:text-zinc-100">{n.message}</p>
                           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                            {formatRelativeShort(Date.now() - n.createdAtMs)} ago
+                            {formatAppRelativeTimeMs(Date.now() - n.createdAtMs, locale)}
                           </p>
                         </div>
                       </div>
