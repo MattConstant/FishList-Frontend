@@ -131,6 +131,7 @@ export default function MapPage() {
   const [placing, setPlacing] = useState(false);
   const [placingMode, setPlacingMode] = useState<"catch" | "camp">("catch");
   const [logMenuOpen, setLogMenuOpen] = useState(false);
+  const [highlightLog, setHighlightLog] = useState(false);
   const [mapSheet, setMapSheet] = useState<MapSheetState>(null);
   const [sheetExpanded, setSheetExpanded] = useState(false);
   const [forecastAreaLabel, setForecastAreaLabel] = useState<string | null>(null);
@@ -827,6 +828,29 @@ export default function MapPage() {
 
   const mapOnboardingReady = hydrated && !loading && species.length > 0;
 
+  // Arriving from "Post a catch" on the home page: pulse the Log button so the jump to the map makes sense.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("log") !== "1") return;
+    setHighlightLog(true);
+    // Strip the param so a refresh / back navigation doesn't re-trigger the pulse.
+    params.delete("log");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${query ? `?${query}` : ""}`,
+    );
+    const timer = window.setTimeout(() => setHighlightLog(false), 4500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Stop the pulse as soon as the user opens the Log menu (they found it).
+  useEffect(() => {
+    if (logMenuOpen) setHighlightLog(false);
+  }, [logMenuOpen]);
+
   return (
     <div className="map-page__root">
       <MapOnboardingDialog t={t} ready={mapOnboardingReady} />
@@ -858,6 +882,7 @@ export default function MapPage() {
         setCatchScope={setCatchScope}
         logMenuOpen={logMenuOpen}
         setLogMenuOpen={setLogMenuOpen}
+        highlightLog={highlightLog}
         onLogCatch={handleLogCatchClick}
         onLogCamp={handleLogCampClick}
         onCancelPlacing={() => setPlacing(false)}

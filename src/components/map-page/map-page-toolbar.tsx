@@ -13,6 +13,8 @@ type Props = {
   setCatchScope: (v: "all" | "friends" | "mine") => void;
   logMenuOpen: boolean;
   setLogMenuOpen: (v: boolean | ((p: boolean) => boolean)) => void;
+  /** Pulse the Log button (e.g. when arriving from "Post a catch" on the home page). */
+  highlightLog?: boolean;
   onLogCatch: () => void;
   onLogCamp: () => void;
   onCancelPlacing: () => void;
@@ -29,6 +31,7 @@ export function MapPageToolbar({
   setCatchScope,
   logMenuOpen,
   setLogMenuOpen,
+  highlightLog,
   onLogCatch,
   onLogCamp,
   onCancelPlacing,
@@ -76,6 +79,7 @@ export function MapPageToolbar({
               className={[
                 "map-page__log-catch",
                 placing ? "map-page__log-catch--placing" : "",
+                highlightLog && !placing ? "map-page__log-catch--highlight" : "",
               ]
                 .filter(Boolean)
                 .join(" ")}
@@ -102,7 +106,7 @@ export function MapPageToolbar({
             </button>
 
             {logMenuOpen && !placing ? (
-              <div className="absolute right-0 z-50 mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="absolute right-0 z-[2000] mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
                 <button
                   type="button"
                   className="flex w-full items-center gap-2 px-3 py-2 text-sm text-zinc-800 hover:bg-zinc-50 dark:text-zinc-100 dark:hover:bg-zinc-800"

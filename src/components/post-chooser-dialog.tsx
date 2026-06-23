@@ -56,7 +56,7 @@ export function PostChooserDialog({
             type="button"
             onClick={() => {
               onClose();
-              router.push("/map");
+              router.push("/map?log=1");
             }}
             className="rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-left transition hover:border-sky-300 hover:bg-sky-50 dark:border-zinc-700 dark:bg-zinc-800/60 dark:hover:border-sky-700 dark:hover:bg-sky-950/30"
           >

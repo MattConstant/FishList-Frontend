@@ -50,6 +50,28 @@
   @apply bg-amber-500 text-white hover:bg-amber-500;
 }
 
+/* Pulse to draw the eye after arriving from "Post a catch" on the home page. */
+.map-page__log-catch--highlight {
+  animation: map-page-log-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes map-page-log-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgb(2 132 199 / 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 9px rgb(2 132 199 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-page__log-catch--highlight {
+    animation: none;
+    box-shadow: 0 0 0 3px rgb(2 132 199 / 0.55);
+  }
+}
+
 .map-page__login-link {
   @apply inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition;
   @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800/70 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-700 dark:hover:text-white;
