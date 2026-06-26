@@ -2,6 +2,7 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { lockPageScroll } from "@/lib/page-scroll-lock";
 
 export type PostImageLightboxLabels = {
   close: string;
@@ -18,24 +19,6 @@ type PostImageLightboxProps = {
   onIndexChange: (index: number) => void;
   labels: PostImageLightboxLabels;
 };
-
-/** Lock page scroll while the viewer is open (app scrolls on `<main>`, not always `body`). */
-function lockPageScroll() {
-  const html = document.documentElement;
-  const main = document.querySelector("main");
-  const prevHtml = html.style.overflow;
-  const prevMain = main instanceof HTMLElement ? main.style.overflow : "";
-  html.style.overflow = "hidden";
-  if (main instanceof HTMLElement) {
-    main.style.overflow = "hidden";
-  }
-  return () => {
-    html.style.overflow = prevHtml;
-    if (main instanceof HTMLElement) {
-      main.style.overflow = prevMain;
-    }
-  };
-}
 
 export function PostImageLightbox({
   urls,

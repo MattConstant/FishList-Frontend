@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { ModalShell } from "@/components/modal-shell";
 import { useLocale } from "@/contexts/locale-context";
 import {
   FISHING_TYPE_OPTIONS,
@@ -124,8 +125,6 @@ export function EditPostDialog({ post, open, onClose, onSaved }: EditPostDialogP
     setError("");
   }, [open, post]);
 
-  if (!open) return null;
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError("");
@@ -187,15 +186,14 @@ export function EditPostDialog({ post, open, onClose, onSaved }: EditPostDialogP
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[1200] flex items-end justify-center bg-black/50 p-4 sm:items-center"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-post-title"
-      onClick={onClose}
+    <ModalShell
+      open={open}
+      labelledBy="edit-post-title"
+      onBackdropClick={onClose}
+      className="fixed inset-0 z-[1200] flex touch-none items-end justify-center overscroll-contain bg-black/50 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] sm:items-center sm:touch-auto"
     >
       <div
-        className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
+        className="max-h-[min(90dvh,90vh)] w-full max-w-lg touch-auto overflow-y-auto overscroll-contain rounded-2xl border border-zinc-200 bg-white p-5 shadow-xl dark:border-zinc-700 dark:bg-zinc-900"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3">
@@ -415,6 +413,6 @@ export function EditPostDialog({ post, open, onClose, onSaved }: EditPostDialogP
           </div>
         </form>
       </div>
-    </div>
+    </ModalShell>
   );
 }

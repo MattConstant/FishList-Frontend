@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
+import { ModalShell } from "@/components/modal-shell";
 import { useLocale } from "@/contexts/locale-context";
 import {
   getDisplayErrorMessage,
@@ -37,8 +38,6 @@ export function EditThreadDialog({
     setError("");
   }, [thread, open]);
 
-  if (!open || !thread) return null;
-
   const inputClass =
     "w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base text-zinc-900 shadow-sm outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-50";
 
@@ -74,13 +73,9 @@ export function EditThreadDialog({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="edit-thread-title"
-    >
-      <div className="max-h-[min(90dvh,90vh)] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+    <ModalShell open={open && thread != null} labelledBy="edit-thread-title">
+      {thread ? (
+      <div className="max-h-[min(90dvh,90vh)] w-full max-w-lg touch-auto overflow-y-auto overscroll-contain rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="flex items-start justify-between gap-3">
           <h2
             id="edit-thread-title"
@@ -181,6 +176,7 @@ export function EditThreadDialog({
           </div>
         </form>
       </div>
-    </div>
+      ) : null}
+    </ModalShell>
   );
 }
