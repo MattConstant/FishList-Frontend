@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { ModalShell } from "@/components/modal-shell";
 import { useLocale } from "@/contexts/locale-context";
 
 type PostChooserDialogProps = {
@@ -17,16 +18,9 @@ export function PostChooserDialog({
   const { t } = useLocale();
   const router = useRouter();
 
-  if (!open) return null;
-
   return (
-    <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="post-chooser-title"
-    >
-      <div className="w-full max-w-md rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
+    <ModalShell open={open} labelledBy="post-chooser-title">
+      <div className="w-full max-w-md touch-auto rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2
@@ -93,6 +87,6 @@ export function PostChooserDialog({
           {t("home.postChooser.cancel")}
         </button>
       </div>
-    </div>
+    </ModalShell>
   );
 }

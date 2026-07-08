@@ -100,6 +100,7 @@ export default {
   "home.imageLightbox.prev": "Previous photo",
   "home.imageLightbox.next": "Next photo",
   "home.imageLightbox.imageOf": "{{current}} / {{total}}",
+  "home.noPhotos": "No photos",
   "home.feedLocationMap": "Open this place on the map",
   "home.comments.title": "Comments",
   "home.comments.loading": "Loading comments…",

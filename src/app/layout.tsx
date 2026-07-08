@@ -106,10 +106,10 @@ export default async function RootLayout({
         />
         <Providers initialLocale={initialLocale}>
           {/* h-dvh gives main a real height so flex-1 children (e.g. map) don’t collapse to 0 */}
-          <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden">
+          <div className="flex h-dvh max-h-dvh min-h-0 flex-col overflow-hidden bg-background">
             <NavBar />
             <ConnectionBanner />
-            <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto pb-[env(safe-area-inset-bottom)]">
+            <main className="flex min-h-0 flex-1 flex-col overflow-x-hidden overflow-y-auto overscroll-y-contain bg-background pb-[env(safe-area-inset-bottom)]">
               {children}
             </main>
           </div>

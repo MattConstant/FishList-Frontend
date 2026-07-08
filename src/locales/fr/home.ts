@@ -104,6 +104,7 @@ export default {
   "home.imageLightbox.prev": "Photo precedente",
   "home.imageLightbox.next": "Photo suivante",
   "home.imageLightbox.imageOf": "{{current}} / {{total}}",
+  "home.noPhotos": "Aucune photo",
   "home.feedLocationMap": "Ouvrir ce lieu sur la carte",
   "home.comments.title": "Commentaires",
   "home.comments.loading": "Chargement des commentaires…",

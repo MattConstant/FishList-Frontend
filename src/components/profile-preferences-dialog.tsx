@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
+import { lockPageScroll } from "@/lib/page-scroll-lock";
 import { useTheme } from "next-themes";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -159,11 +160,7 @@ export function ProfilePreferencesDialog({ open, onClose }: ProfilePreferencesDi
 
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
-    };
+    return lockPageScroll();
   }, [open]);
 
   const handleCancel = useCallback(() => {

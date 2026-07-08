@@ -129,6 +129,32 @@ function feedPostMapHref(post: FeedPost): string | null {
   return `/map?${u.toString()}`;
 }
 
+function FeedNoPhotosStrip({ label }: { label: string }) {
+  return (
+    <div
+      className="flex items-center justify-center gap-2 border-b border-zinc-100 bg-zinc-50/80 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-800/40"
+      aria-label={label}
+    >
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500"
+        aria-hidden
+      >
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <circle cx="8.5" cy="10.5" r="1.5" fill="currentColor" stroke="none" />
+        <path d="M21 16l-5.5-5.5a1.5 1.5 0 00-2.12 0L3 18" />
+        <path d="M3 3l18 18" />
+      </svg>
+      <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{label}</span>
+    </div>
+  );
+}
+
 const FeedCard = memo(function FeedCard({
   post,
   currentUserId,
@@ -389,44 +415,43 @@ const FeedCard = memo(function FeedCard({
       ref={cardRef}
       className="overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
     >
-      <div className="flex items-center justify-between px-4 py-3">
-        <div className="flex min-w-0 flex-1 items-center gap-3">
+      <div className="flex items-start gap-3 px-4 py-3">
+        <Link
+          href={`/users/${post.accountId}`}
+          className="shrink-0 self-start pt-0.5"
+          aria-label={`@${post.username}`}
+        >
+          <UserAvatar
+            accountId={post.accountId}
+            profileImageKey={post.profileImageKey}
+            size="md"
+            label={t("home.avatarLabel", { username: post.username })}
+          />
+        </Link>
+        <div className="min-w-0 flex-1">
           <Link
             href={`/users/${post.accountId}`}
-            className="shrink-0 self-start pt-0.5"
-            aria-label={`@${post.username}`}
+            className="block truncate text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
+            title={`@${post.username}`}
           >
-            <UserAvatar
-              accountId={post.accountId}
-              profileImageKey={post.profileImageKey}
-              size="md"
-              label={t("home.avatarLabel", { username: post.username })}
-            />
+            @{post.username}
           </Link>
-          <div className="min-w-0">
-            <Link
-              href={`/users/${post.accountId}`}
-              className="text-sm font-semibold text-zinc-900 hover:underline dark:text-zinc-100"
-            >
-              @{post.username}
-            </Link>
-            <p className="text-xs text-zinc-500">{formatAppShortDate(post.timeStamp, locale)}</p>
-          </div>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5 sm:flex-row sm:items-center sm:gap-3">
+          <p className="text-xs text-zinc-500">{formatAppShortDate(post.timeStamp, locale)}</p>
           {mapHref ? (
             <Link
               href={mapHref}
-              className="max-w-[10rem] truncate text-right text-xs font-medium text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 hover:decoration-emerald-700 dark:text-emerald-400 dark:decoration-emerald-400/40 dark:hover:text-emerald-300 sm:max-w-[12rem]"
-              title={t("home.feedLocationMap")}
+              className="mt-0.5 block truncate text-xs font-medium text-emerald-700 underline decoration-emerald-600/40 underline-offset-2 hover:text-emerald-800 hover:decoration-emerald-700 dark:text-emerald-400 dark:decoration-emerald-400/40 dark:hover:text-emerald-300"
+              title={post.locationName.trim() || t("home.feedLocationMap")}
             >
               {post.locationName.trim() || t("home.feedLocationMap")}
             </Link>
           ) : post.locationName.trim() ? (
-            <p className="max-w-[10rem] truncate text-right text-xs text-zinc-500 sm:max-w-[12rem]">
+            <p className="mt-0.5 truncate text-xs text-zinc-500" title={post.locationName}>
               {post.locationName}
             </p>
           ) : null}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
           {isOwnPost || isAdmin ? <VisibilityPill visibility={post.visibility} /> : null}
           {isOwnPost && (
             <button
@@ -482,15 +507,15 @@ const FeedCard = memo(function FeedCard({
               </button>
             ))}
           </div>
-        ) : (
+        ) : !imgError ? (
           <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
             <p className="text-sm text-zinc-400">Loading image…</p>
           </div>
+        ) : (
+          <FeedNoPhotosStrip label={t("home.noPhotos")} />
         )
       ) : (
-        <div className="flex aspect-square w-full items-center justify-center bg-zinc-100 dark:bg-zinc-800">
-          <span className="text-5xl">🐟</span>
-        </div>
+        <FeedNoPhotosStrip label={t("home.noPhotos")} />
       )}
 
       {lightboxIndex != null && resolvedUrls.length > 0 ? (

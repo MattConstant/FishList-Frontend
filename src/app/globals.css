@@ -32,6 +32,7 @@ html.dark {
 
 html {
   height: 100%;
+  background-color: var(--background);
   /* Prevent iOS Safari from inflating small text */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
