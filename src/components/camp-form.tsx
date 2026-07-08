@@ -28,6 +28,7 @@ export default function CampForm({
 }) {
   const { t } = useLocale();
   const [name, setName] = useState("");
+  const [notes, setNotes] = useState("");
   const [visibility, setVisibility] = useState<PostVisibility>("PUBLIC");
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -153,6 +154,7 @@ export default function CampForm({
         timeStamp: new Date().toISOString(),
         visibility,
         imageUrls,
+        notes: notes.trim() || undefined,
       });
       onSuccess(saved);
     } catch (e2) {
@@ -206,6 +208,20 @@ export default function CampForm({
               className={inputClass}
               placeholder="e.g. Island site, north bay"
               required
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+              Notes
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className={`${inputClass} min-h-[80px] resize-y`}
+              placeholder="Access, terrain, water source, hazards, tips…"
+              maxLength={2000}
+              rows={3}
             />
           </div>
 

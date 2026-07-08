@@ -153,9 +153,9 @@ function araFishIcon(): L.Icon {
 function catchPinIcon(): L.Icon {
   return L.icon({
     iconUrl: "/catch.png",
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -14],
+    iconSize: [26, 26],
+    iconAnchor: [13, 13],
+    popupAnchor: [0, -12],
   });
 }
 

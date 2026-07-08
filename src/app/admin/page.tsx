@@ -10,9 +10,10 @@ import {
   fetchAdminSummary,
   getDisplayErrorMessage,
   type AdminAccountRowResponse,
+  type AdminAccountSort,
   type AdminSummaryResponse,
 } from "@/lib/api";
-import { formatAppInteger } from "@/lib/format-app-locale";
+import { formatAppInteger, formatAppShortDate } from "@/lib/format-app-locale";
 
 const MIN_ACCOUNT_SEARCH_LEN = 2;
 const ACCOUNTS_PAGE_SIZE = 25;
@@ -30,6 +31,7 @@ export default function AdminPage() {
 
   const [accountsModalOpen, setAccountsModalOpen] = useState(false);
   const [modalQuery, setModalQuery] = useState("");
+  const [modalSort, setModalSort] = useState<AdminAccountSort>("username");
   const [modalPage, setModalPage] = useState(0);
   const [modalAccounts, setModalAccounts] = useState<AdminAccountRowResponse[]>([]);
   const [modalTotalPages, setModalTotalPages] = useState(0);
@@ -69,17 +71,17 @@ export default function AdminPage() {
   }, [user, t]);
 
   const loadAccountsPage = useCallback(
-    async (page: number, q: string) => {
+    async (page: number, q: string, sort: AdminAccountSort) => {
       setModalLoading(true);
       setModalError("");
       try {
-        const data = await fetchAdminAccountsPage(q, page, ACCOUNTS_PAGE_SIZE);
+        const data = await fetchAdminAccountsPage(q, page, ACCOUNTS_PAGE_SIZE, sort);
         let nextPage = data.page;
         let rows = data.content;
         let totalPages = data.totalPages;
         let totalEl = data.totalElements;
         if (rows.length === 0 && nextPage > 0 && totalEl > 0) {
-          const prev = await fetchAdminAccountsPage(q, nextPage - 1, ACCOUNTS_PAGE_SIZE);
+          const prev = await fetchAdminAccountsPage(q, nextPage - 1, ACCOUNTS_PAGE_SIZE, sort);
           nextPage = prev.page;
           rows = prev.content;
           totalPages = prev.totalPages;
@@ -87,6 +89,7 @@ export default function AdminPage() {
         }
         setModalPage(nextPage);
         setModalQuery(q);
+        setModalSort(sort);
         setModalAccounts(rows);
         setModalTotalPages(totalPages);
         setModalTotalElements(totalEl);
@@ -105,8 +108,8 @@ export default function AdminPage() {
   const openBrowseAllAccounts = useCallback(() => {
     setSearchNotice("");
     setAccountsModalOpen(true);
-    void loadAccountsPage(0, "");
-  }, [loadAccountsPage]);
+    void loadAccountsPage(0, "", modalSort);
+  }, [loadAccountsPage, modalSort]);
 
   const runAccountSearch = useCallback(async () => {
     const q = query.trim();
@@ -116,8 +119,8 @@ export default function AdminPage() {
     }
     setSearchNotice("");
     setAccountsModalOpen(true);
-    await loadAccountsPage(0, q);
-  }, [query, t, loadAccountsPage]);
+    await loadAccountsPage(0, q, modalSort);
+  }, [query, t, loadAccountsPage, modalSort]);
 
   useEffect(() => {
     if (!accountsModalOpen) return;
@@ -137,7 +140,7 @@ export default function AdminPage() {
     setModalError("");
     try {
       await adminDeleteAccount(accountId);
-      await loadAccountsPage(modalPage, modalQuery);
+      await loadAccountsPage(modalPage, modalQuery, modalSort);
     } catch (e) {
       setModalError(getDisplayErrorMessage(e, t("admin.error.delete")));
     } finally {
@@ -185,6 +188,13 @@ export default function AdminPage() {
           <Stat label={t("admin.stats.comments")} value={summary.totalComments} locale={locale} />
           <Stat label={t("admin.stats.likes")} value={summary.totalLikes} locale={locale} />
           <Stat label={t("admin.stats.friendships")} value={summary.totalFriendships} locale={locale} />
+          <Stat label={t("admin.stats.threads")} value={summary.totalThreads} locale={locale} />
+          <Stat label={t("admin.stats.threadComments")} value={summary.totalThreadComments} locale={locale} />
+          <Stat label={t("admin.stats.camps")} value={summary.totalCamps} locale={locale} />
+          <Stat label={t("admin.stats.verified")} value={summary.verifiedAccounts} locale={locale} />
+          <Stat label={t("admin.stats.admins")} value={summary.adminAccounts} locale={locale} />
+          <Stat label={t("admin.stats.new7d")} value={summary.newAccounts7d} locale={locale} />
+          <Stat label={t("admin.stats.new30d")} value={summary.newAccounts30d} locale={locale} />
         </div>
       )}
 
@@ -259,6 +269,29 @@ export default function AdminPage() {
             </div>
 
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <label
+                  htmlFor="admin-accounts-sort"
+                  className="text-sm text-zinc-600 dark:text-zinc-400"
+                >
+                  {t("admin.sortLabel")}
+                </label>
+                <select
+                  id="admin-accounts-sort"
+                  value={modalSort}
+                  disabled={modalLoading}
+                  onChange={(e) => {
+                    const next = e.target.value as AdminAccountSort;
+                    void loadAccountsPage(0, modalQuery, next);
+                  }}
+                  className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 disabled:opacity-60 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
+                >
+                  <option value="username">{t("admin.sort.username")}</option>
+                  <option value="username_desc">{t("admin.sort.usernameDesc")}</option>
+                  <option value="newest">{t("admin.sort.newest")}</option>
+                  <option value="oldest">{t("admin.sort.oldest")}</option>
+                </select>
+              </div>
               {modalError ? (
                 <p className="text-sm text-red-600 dark:text-red-400">{modalError}</p>
               ) : null}
@@ -274,6 +307,7 @@ export default function AdminPage() {
                         <th className="px-2 py-2">{t("admin.table.catches")}</th>
                         <th className="px-2 py-2">{t("admin.table.comments")}</th>
                         <th className="px-2 py-2">{t("admin.table.likes")}</th>
+                        <th className="px-2 py-2">{t("admin.table.created")}</th>
                         <th className="px-2 py-2">{t("admin.table.actions")}</th>
                       </tr>
                     </thead>
@@ -290,6 +324,14 @@ export default function AdminPage() {
                           <td className="px-2 py-2">{account.catches}</td>
                           <td className="px-2 py-2">{account.comments}</td>
                           <td className="px-2 py-2">{account.likes}</td>
+                          <td className="px-2 py-2 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
+                            {account.createdAtEpochMs != null
+                              ? formatAppShortDate(
+                                  new Date(account.createdAtEpochMs).toISOString(),
+                                  locale,
+                                )
+                              : t("admin.table.createdUnknown")}
+                          </td>
                           <td className="px-2 py-2">
                             <button
                               type="button"
@@ -326,7 +368,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   disabled={modalLoading || modalPage <= 0}
-                  onClick={() => void loadAccountsPage(modalPage - 1, modalQuery)}
+                  onClick={() => void loadAccountsPage(modalPage - 1, modalQuery, modalSort)}
                   className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   {t("admin.accountsPrev")}
@@ -334,7 +376,7 @@ export default function AdminPage() {
                 <button
                   type="button"
                   disabled={modalLoading || modalPage >= modalTotalPages - 1 || modalTotalPages === 0}
-                  onClick={() => void loadAccountsPage(modalPage + 1, modalQuery)}
+                  onClick={() => void loadAccountsPage(modalPage + 1, modalQuery, modalSort)}
                   className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
                 >
                   {t("admin.accountsNext")}

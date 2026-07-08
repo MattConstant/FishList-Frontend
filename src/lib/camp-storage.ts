@@ -11,6 +11,8 @@ type StoredCamp = {
   visibility?: PostVisibility | null;
   /** Object keys or absolute URLs (same conventions as catches). */
   imageUrls?: string[];
+  /** Optional free-text notes about the camp. */
+  notes?: string | null;
 };
 
 const STORAGE_KEY = "fishlist-camps-v1";

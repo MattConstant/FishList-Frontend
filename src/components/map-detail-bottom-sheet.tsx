@@ -477,6 +477,15 @@ export function MapDetailBottomSheet({
                 <p className="text-sm text-zinc-500">No photos uploaded.</p>
               )}
 
+              {camp.notes && camp.notes.trim() ? (
+                <div className="rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
+                  <p className="font-medium text-zinc-900 dark:text-zinc-100">Notes</p>
+                  <p className="mt-1 whitespace-pre-wrap break-words text-zinc-600 dark:text-zinc-400">
+                    {camp.notes}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="rounded-xl border border-zinc-200 bg-white p-3 text-sm dark:border-zinc-800 dark:bg-zinc-950">
                 <p className="font-medium text-zinc-900 dark:text-zinc-100">Details</p>
                 <p className="mt-1 text-zinc-600 dark:text-zinc-400">

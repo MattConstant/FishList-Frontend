@@ -292,7 +292,17 @@ export type AdminSummaryResponse = {
   totalComments: number;
   totalLikes: number;
   totalFriendships: number;
+  totalThreads: number;
+  totalThreadComments: number;
+  totalCamps: number;
+  verifiedAccounts: number;
+  adminAccounts: number;
+  newAccounts7d: number;
+  newAccounts30d: number;
 };
+
+/** Sort options for the admin account listing (must match the backend). */
+export type AdminAccountSort = "username" | "username_desc" | "newest" | "oldest";
 
 export type AdminAccountRowResponse = {
   id: number;
@@ -301,6 +311,8 @@ export type AdminAccountRowResponse = {
   catches: number;
   comments: number;
   likes: number;
+  /** Epoch millis of account creation; null for legacy accounts created before this was tracked. */
+  createdAtEpochMs: number | null;
 };
 
 export type StoredSession = {
@@ -744,11 +756,13 @@ export async function fetchAdminAccountsPage(
   query: string,
   page: number,
   size: number,
+  sort: AdminAccountSort = "username",
 ): Promise<AdminAccountPageResponse> {
   const params = new URLSearchParams({
     query,
     page: String(page),
     size: String(size),
+    sort,
   });
   return authJson<AdminAccountPageResponse>(
     `/api/admin/accounts?${params.toString()}`,
@@ -824,6 +838,8 @@ export type CampSpotResponse = {
   visibility?: PostVisibility | null;
   /** Optional photos (object keys or absolute URLs). */
   imageUrls?: string[];
+  /** Optional free-text notes about the camp. */
+  notes?: string | null;
 };
 
 export type CreateCampSpotPayload = {
@@ -833,6 +849,7 @@ export type CreateCampSpotPayload = {
   timeStamp: string;
   visibility?: PostVisibility;
   imageUrls?: string[];
+  notes?: string;
 };
 
 export async function fetchVisibleCampSpots(limit = 500): Promise<CampSpotResponse[]> {
@@ -875,6 +892,7 @@ export async function createCampSpot(body: CreateCampSpotPayload): Promise<CampS
         username: me.username,
         visibility: body.visibility ?? "PUBLIC",
         imageUrls: body.imageUrls ?? [],
+        notes: body.notes && body.notes.trim() ? body.notes.trim() : null,
       };
       upsertLocalCamp(local);
       return toCampSpotResponse(local);
