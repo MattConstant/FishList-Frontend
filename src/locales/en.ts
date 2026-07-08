@@ -2,6 +2,7 @@ import about from "./en/about";
 import achievements from "./en/achievements";
 import admin from "./en/admin";
 import catchDict from "./en/catch";
+import contest from "./en/contest";
 import errors from "./en/errors";
 import forecast from "./en/forecast";
 import friends from "./en/friends";
@@ -20,6 +21,7 @@ const en = {
   ...login,
   ...register,
   ...about,
+  ...contest,
   ...legal,
   ...friends,
   ...profile,

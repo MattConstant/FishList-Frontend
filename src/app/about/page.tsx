@@ -29,6 +29,40 @@ export default function AboutPage() {
       {/* Main content surface: centered card with readable contrast over the background layers. */}
       <article className="relative z-10 mx-auto w-full max-w-4xl rounded-3xl border border-white/40 bg-white/88 p-6 shadow-2xl backdrop-blur md:p-10 dark:border-zinc-700 dark:bg-zinc-900/88">
 
+        {/* Temporary contest banner — remove with /about/contest after August 1st. */}
+        <Link
+          href="/about/contest"
+          className="group flex flex-col items-start gap-3 rounded-2xl bg-gradient-to-r from-sky-600 via-sky-700 to-emerald-600 p-5 text-white shadow-lg transition hover:shadow-xl sm:flex-row sm:items-center sm:justify-between"
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-400 text-amber-950 shadow-sm">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5">
+                <path
+                  fillRule="evenodd"
+                  d="M5 2a1 1 0 011 1v1h1a3 3 0 013 3v1h2V7a3 3 0 013-3h1V3a1 1 0 112 0v1a3 3 0 01-3 3h-1v1a5.002 5.002 0 01-4 4.9V14h2a1 1 0 110 2h-2v1a1 1 0 11-2 0v-1H6a1 1 0 110-2h2v-3.1A5.002 5.002 0 014 8V7H3a3 3 0 01-3-3V3a1 1 0 112 0v1a1 1 0 001 1h1V3a1 1 0 011-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </span>
+            <div>
+              <p className="text-sm font-bold md:text-base">{t("about.contest.banner.title")}</p>
+              <p className="mt-0.5 text-xs leading-5 text-sky-100 md:text-sm">
+                {t("about.contest.banner.body")}
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold backdrop-blur-sm transition group-hover:bg-white/25">
+            {t("about.contest.banner.cta")}
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4 transition group-hover:translate-x-0.5">
+              <path
+                fillRule="evenodd"
+                d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </span>
+        </Link>
+
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-zinc-900 md:text-4xl dark:text-zinc-50">
           {t("about.title")}
         </h1>
