@@ -15,14 +15,6 @@
   @apply flex shrink-0 flex-col gap-3 px-4 py-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4 sm:px-6 sm:py-4;
 }
 
-.map-page__toolbar-title {
-  @apply text-xl font-semibold text-zinc-900 dark:text-zinc-50;
-}
-
-.map-page__toolbar-desc {
-  @apply mt-1 text-sm text-zinc-600 dark:text-zinc-400;
-}
-
 .map-page__toolbar-actions {
   @apply flex shrink-0 flex-wrap items-center gap-2 pt-0.5;
 }
@@ -72,9 +64,11 @@
   }
 }
 
-.map-page__login-link {
-  @apply inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50/80 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition;
-  @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600 dark:bg-zinc-800/70 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-700 dark:hover:text-white;
+/* Floating login pill for logged-out visitors (top-center of the map, clear of the layers panel). */
+.map-page__login-float {
+  @apply absolute left-1/2 top-3 z-[1200] -translate-x-1/2 whitespace-nowrap;
+  @apply inline-flex items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/95 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-md backdrop-blur-sm transition;
+  @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-800 dark:hover:text-white;
 }
 
 .map-page__cancel-btn {

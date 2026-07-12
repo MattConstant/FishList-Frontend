@@ -63,7 +63,6 @@ export default function ProfilePage() {
     void loadCatches();
   }, [loadCatches]);
 
-  /** Deleted posts on the feed were still visible here when the API response was cached or the tab was restored from bfcache. */
   useEffect(() => {
     function onVisible() {
       if (document.visibilityState === "visible") void loadCatches();

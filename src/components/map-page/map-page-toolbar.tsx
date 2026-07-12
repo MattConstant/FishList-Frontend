@@ -1,11 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import type { ReactNode } from "react";
 import { segmentBtnClass } from "@/components/map-page/map-page-classes";
 
 type Props = {
-  toolbarSubtitle: ReactNode;
   placing: boolean;
   mapSheetExists: boolean;
   userPresent: boolean;
@@ -23,7 +20,6 @@ type Props = {
 };
 
 export function MapPageToolbar({
-  toolbarSubtitle,
   placing,
   mapSheetExists,
   userPresent,
@@ -38,13 +34,14 @@ export function MapPageToolbar({
   onCloseSheet,
   clearPinLabel,
 }: Props) {
+  // Logged out with nothing to act on: no toolbar at all. The map page shows a
+  // floating "Log in to add catches" pill on the map instead.
+  if (!userPresent && !placing && !mapSheetExists) {
+    return null;
+  }
   return (
     <div className="map-page__toolbar map-page__chrome">
-      <div className="min-w-0">
-        <h1 className="map-page__toolbar-title">Stocked Lakes Map</h1>
-        <p className="map-page__toolbar-desc">{toolbarSubtitle}</p>
-      </div>
-      <div className="map-page__toolbar-actions">
+      <div className="map-page__toolbar-actions sm:ml-auto">
         {userPresent && (
           <div className="map-page__segment-wrap">
             <button
@@ -70,7 +67,7 @@ export function MapPageToolbar({
             </button>
           </div>
         )}
-        {userPresent ? (
+        {userPresent && (
           <div className="relative">
             <button
               type="button"
@@ -130,10 +127,6 @@ export function MapPageToolbar({
               </div>
             ) : null}
           </div>
-        ) : (
-          <Link href="/login" className="map-page__login-link">
-            Log in to add catches
-          </Link>
         )}
         {placing && (
           <button type="button" onClick={onCancelPlacing} className="map-page__cancel-btn">

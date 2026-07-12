@@ -1,7 +1,5 @@
 export default {
   "forecast.mapHint": "Click the map for a fishing forecast at that spot.",
-  "forecast.mapHintBottomSheet":
-    "Tap the map to open a forecast in the panel below. Expand it for the full card.",
   "forecast.clearPin": "Clear forecast pin",
   "forecast.popupTitle": "Fishing forecast",
   "forecast.weatherSummaryTitle": "Weather snapshot (today’s hours)",

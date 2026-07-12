@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   Suspense,
   useCallback,
@@ -858,23 +859,7 @@ export default function MapPage() {
         <MapUrlLakePinLoader setLakeSearchPin={setLakeSearchPin} />
       </Suspense>
       <MapPageToolbar
-        toolbarSubtitle={
-          <>
-            {loading
-              ? `Loading Ontario fish stocking data… ${formatAppInteger(loaded, locale)} records`
-              : error
-                ? error
-                : `${formatAppInteger(records.length, locale)} stocking records across ${formatAppInteger(groups.length, locale)} waterbodies (last 5 years)`}
-            {!loading && !error && !placing ? (
-              <>
-                {" "}
-                <span className="text-sky-700 dark:text-sky-400">
-                  {t("forecast.mapHintBottomSheet")}
-                </span>
-              </>
-            ) : null}
-          </>
-        }
+
         placing={placing}
         mapSheetExists={!!mapSheet}
         userPresent={!!user}
@@ -951,6 +936,13 @@ export default function MapPage() {
 
         {/* Placing-mode banner */}
         {placing ? <MapPagePlacingBanner placingMode={placingMode} /> : null}
+
+        {/* Logged out: small floating login pill instead of the old toolbar row */}
+        {!user ? (
+          <Link href="/login" className="map-page__login-float">
+            Log in to add catches
+          </Link>
+        ) : null}
 
         <StockingMapDynamic
           groups={displayStockingGroups}
