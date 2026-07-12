@@ -64,9 +64,10 @@
   }
 }
 
-/* Floating login pill for logged-out visitors (top-center of the map, clear of the layers panel). */
+/* Floating login pill for logged-out visitors. Bottom-center on phones (the top edge is
+   taken by zoom controls and the layers panel); top-center on larger screens. */
 .map-page__login-float {
-  @apply absolute left-1/2 top-3 z-[1200] -translate-x-1/2 whitespace-nowrap;
+  @apply absolute bottom-4 left-1/2 z-[1200] -translate-x-1/2 whitespace-nowrap sm:bottom-auto sm:top-3;
   @apply inline-flex items-center gap-1.5 rounded-full border border-zinc-200/90 bg-white/95 px-4 py-2 text-sm font-semibold text-zinc-700 shadow-md backdrop-blur-sm transition;
   @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-800 dark:hover:text-white;
 }
