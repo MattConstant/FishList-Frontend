@@ -8,15 +8,36 @@ import {
   fetchAdminAccountsPage,
   fetchAdminMe,
   fetchAdminSummary,
+  fetchAdminUsageEvents,
+  fetchAdminUsageSummary,
   getDisplayErrorMessage,
   type AdminAccountRowResponse,
   type AdminAccountSort,
   type AdminSummaryResponse,
+  type AdminUsageEventRow,
+  type AdminUsageSummaryResponse,
 } from "@/lib/api";
 import { formatAppInteger, formatAppShortDate } from "@/lib/format-app-locale";
 
 const MIN_ACCOUNT_SEARCH_LEN = 2;
 const ACCOUNTS_PAGE_SIZE = 25;
+const USAGE_LOG_LIMIT = 100;
+
+/** Human labels for the whitelisted usage event types; unknown types fall back to the raw key. */
+const USAGE_TYPE_LABEL_KEYS: Record<string, string> = {
+  landing_map_cta: "admin.usage.type.landingMapCta",
+  landing_signup_cta: "admin.usage.type.landingSignupCta",
+  map_visit: "admin.usage.type.mapVisit",
+  map_filter_species: "admin.usage.type.mapFilterSpecies",
+  map_filter_district: "admin.usage.type.mapFilterDistrict",
+  map_filter_years: "admin.usage.type.mapFilterYears",
+  map_filter_min_fish: "admin.usage.type.mapFilterMinFish",
+  map_filter_min_species: "admin.usage.type.mapFilterMinSpecies",
+  map_layer: "admin.usage.type.mapLayer",
+  map_search: "admin.usage.type.mapSearch",
+  map_anon_pin: "admin.usage.type.mapAnonPin",
+  map_login_pill: "admin.usage.type.mapLoginPill",
+};
 
 export default function AdminPage() {
   const { user, isReady } = useAuth();
@@ -29,6 +50,11 @@ export default function AdminPage() {
   const [summary, setSummary] = useState<AdminSummaryResponse | null>(null);
   const [busyAccountId, setBusyAccountId] = useState<number | null>(null);
 
+  const [usageSummary, setUsageSummary] = useState<AdminUsageSummaryResponse | null>(null);
+  const [usageEvents, setUsageEvents] = useState<AdminUsageEventRow[]>([]);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageError, setUsageError] = useState("");
+
   const [accountsModalOpen, setAccountsModalOpen] = useState(false);
   const [modalQuery, setModalQuery] = useState("");
   const [modalSort, setModalSort] = useState<AdminAccountSort>("username");
@@ -38,6 +64,23 @@ export default function AdminPage() {
   const [modalTotalElements, setModalTotalElements] = useState(0);
   const [modalLoading, setModalLoading] = useState(false);
   const [modalError, setModalError] = useState("");
+
+  const loadUsage = useCallback(async () => {
+    setUsageLoading(true);
+    setUsageError("");
+    try {
+      const [nextSummary, nextEvents] = await Promise.all([
+        fetchAdminUsageSummary(),
+        fetchAdminUsageEvents(USAGE_LOG_LIMIT),
+      ]);
+      setUsageSummary(nextSummary);
+      setUsageEvents(nextEvents);
+    } catch (e) {
+      setUsageError(getDisplayErrorMessage(e, t("admin.error.load")));
+    } finally {
+      setUsageLoading(false);
+    }
+  }, [t]);
 
   useEffect(() => {
     if (!user) {
@@ -59,6 +102,7 @@ export default function AdminPage() {
         const nextSummary = await fetchAdminSummary();
         if (cancelled) return;
         setSummary(nextSummary);
+        void loadUsage();
       } catch (e) {
         if (!cancelled) setError(getDisplayErrorMessage(e, t("admin.error.load")));
       } finally {
@@ -68,7 +112,7 @@ export default function AdminPage() {
     return () => {
       cancelled = true;
     };
-  }, [user, t]);
+  }, [user, t, loadUsage]);
 
   const loadAccountsPage = useCallback(
     async (page: number, q: string, sort: AdminAccountSort) => {
@@ -183,7 +227,6 @@ export default function AdminPage() {
       {summary && (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
           <Stat label={t("admin.stats.accounts")} value={summary.totalAccounts} locale={locale} />
-          <Stat label={t("admin.stats.locations")} value={summary.totalLocations} locale={locale} />
           <Stat label={t("admin.stats.catches")} value={summary.totalCatches} locale={locale} />
           <Stat label={t("admin.stats.comments")} value={summary.totalComments} locale={locale} />
           <Stat label={t("admin.stats.likes")} value={summary.totalLikes} locale={locale} />
@@ -197,6 +240,120 @@ export default function AdminPage() {
           <Stat label={t("admin.stats.new30d")} value={summary.newAccounts30d} locale={locale} />
         </div>
       )}
+
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+            {t("admin.usage.title")}
+          </h2>
+          <button
+            type="button"
+            onClick={() => void loadUsage()}
+            disabled={usageLoading}
+            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            {usageLoading ? t("admin.usage.loading") : t("admin.usage.refresh")}
+          </button>
+        </div>
+
+        {usageError ? (
+          <p className="mb-3 text-sm text-red-600 dark:text-red-400">{usageError}</p>
+        ) : null}
+
+        {usageSummary && usageSummary.totals.length === 0 && !usageLoading ? (
+          <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
+        ) : null}
+
+        {usageSummary && usageSummary.totals.length > 0 ? (
+          <div className="grid gap-4 lg:grid-cols-2">
+            <div>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {t("admin.usage.totalsHeading")}
+              </h3>
+              <div className="overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="text-zinc-500">
+                    <tr>
+                      <th className="px-2 py-1.5">{t("admin.usage.table.event")}</th>
+                      <th className="px-2 py-1.5">{t("admin.usage.table.total")}</th>
+                      <th className="px-2 py-1.5">{t("admin.usage.table.last7d")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {usageSummary.totals.map((row) => (
+                      <tr key={row.type} className="border-t border-zinc-200 dark:border-zinc-800">
+                        <td className="px-2 py-1.5 text-zinc-900 dark:text-zinc-100">
+                          {usageTypeLabel(row.type, t)}
+                        </td>
+                        <td className="px-2 py-1.5">{formatAppInteger(row.total, locale)}</td>
+                        <td className="px-2 py-1.5">{formatAppInteger(row.last7d, locale)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {usageSummary.topDetails.length > 0 ? (
+                <>
+                  <h3 className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    {t("admin.usage.topDetailsHeading")}
+                  </h3>
+                  <ul className="space-y-1 text-sm">
+                    {usageSummary.topDetails.map((row) => (
+                      <li
+                        key={`${row.type}:${row.detail}`}
+                        className="flex items-center justify-between gap-3 rounded-md bg-zinc-50 px-2 py-1 dark:bg-zinc-900"
+                      >
+                        <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">
+                          <span className="text-zinc-500">{usageTypeLabel(row.type, t)}</span>
+                          {" · "}
+                          {row.detail}
+                        </span>
+                        <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-100">
+                          {formatAppInteger(row.count, locale)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </div>
+
+            <div>
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {t("admin.usage.recentHeading")}
+              </h3>
+              {usageEvents.length > 0 ? (
+                <ul className="max-h-96 space-y-1 overflow-y-auto pr-1 text-xs">
+                  {usageEvents.map((event) => (
+                    <li
+                      key={event.id}
+                      className="flex flex-wrap items-baseline gap-x-2 rounded-md border border-zinc-100 px-2 py-1 dark:border-zinc-800"
+                    >
+                      <span className="whitespace-nowrap text-zinc-400">
+                        {formatUsageTimestamp(event.createdAtEpochMs, locale)}
+                      </span>
+                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                        {usageTypeLabel(event.type, t)}
+                      </span>
+                      {event.detail ? (
+                        <span className="min-w-0 truncate text-zinc-600 dark:text-zinc-400">
+                          {event.detail}
+                        </span>
+                      ) : null}
+                      <span className="ml-auto whitespace-nowrap text-zinc-500">
+                        {event.username ? `@${event.username}` : t("admin.usage.guest")}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
@@ -388,6 +545,24 @@ export default function AdminPage() {
       ) : null}
     </div>
   );
+}
+
+function usageTypeLabel(
+  type: string,
+  t: (key: string, vars?: Record<string, string | number>) => string,
+): string {
+  const key = USAGE_TYPE_LABEL_KEYS[type];
+  return key ? t(key) : type;
+}
+
+function formatUsageTimestamp(epochMs: number, locale: string): string {
+  if (!epochMs) return "-";
+  return new Date(epochMs).toLocaleString(locale === "fr" ? "fr-CA" : "en-CA", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 function Stat({ label, value, locale }: { label: string; value: number; locale: string }) {

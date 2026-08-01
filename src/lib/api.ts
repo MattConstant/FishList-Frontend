@@ -775,6 +775,43 @@ export async function adminDeleteAccount(accountId: number): Promise<void> {
   });
 }
 
+// ── Usage tracking (admin read side; events are sent via lib/usage-tracking.ts) ──
+
+export type AdminUsageTypeCount = {
+  type: string;
+  total: number;
+  last7d: number;
+};
+
+export type AdminUsageDetailCount = {
+  type: string;
+  detail: string;
+  count: number;
+};
+
+export type AdminUsageSummaryResponse = {
+  totals: AdminUsageTypeCount[];
+  /** Most popular detail values (filters, button placements) over the last 30 days. */
+  topDetails: AdminUsageDetailCount[];
+};
+
+export type AdminUsageEventRow = {
+  id: number;
+  type: string;
+  detail: string | null;
+  /** Null for logged-out visitors. */
+  username: string | null;
+  createdAtEpochMs: number;
+};
+
+export async function fetchAdminUsageSummary(): Promise<AdminUsageSummaryResponse> {
+  return authJson<AdminUsageSummaryResponse>("/api/admin/usage/summary");
+}
+
+export async function fetchAdminUsageEvents(limit = 100): Promise<AdminUsageEventRow[]> {
+  return authJson<AdminUsageEventRow[]>(`/api/admin/usage/events?limit=${limit}`);
+}
+
 /**
  * Calls the API with the stored Bearer token. Clears session on 401.
  */

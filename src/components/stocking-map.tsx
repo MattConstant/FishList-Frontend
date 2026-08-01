@@ -9,6 +9,7 @@ import "leaflet.markercluster";
 import type { FishEntryPayload } from "@/lib/api";
 import { waterbodyGroupKey, type WaterbodyGroup } from "@/lib/geohub";
 import { refineLakePin } from "@/lib/lake-geocode";
+import { trackUsage } from "@/lib/usage-tracking";
 import type { AraMapPoint, AraViewport } from "@/lib/ara-fish";
 import {
   LIO_BATHYMETRY_FEATURE_LAYER_URL,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/lio-bathymetry";
 import type { FavoriteSpot } from "@/lib/map-favorites";
 import type { CampSpotResponse } from "@/lib/api";
+import type { PublicCatchRegion } from "@/lib/public-catch-regions";
 
 const ONTARIO_CENTER: [number, number] = [51, -85];
 /** SW / NE corners — initial view frames the province on any screen size. */
@@ -159,6 +161,24 @@ function catchPinIcon(): L.Icon {
   });
 }
 
+/**
+ * Catch icon with an optional count badge for the anonymous (logged-out) catch regions layer.
+ * Also used as the cluster icon with the summed count when zoomed out.
+ */
+function anonCatchDivIcon(count: number, cluster: boolean): L.DivIcon {
+  const size = cluster ? 34 : 26;
+  const badge = count > 1 ? `<b>${count > 99 ? "99+" : count}</b>` : "";
+  return L.divIcon({
+    className: "map-page__anon-catch-wrap",
+    html:
+      `<span class="map-page__anon-catch${cluster ? " map-page__anon-catch--cluster" : ""}">` +
+      `<img src="/catch.png" alt=""/>${badge}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2 - 2],
+  });
+}
+
 /** {@link /public/camp.png} - raw image, centered on the coordinates. */
 function campPinIcon(): L.Icon {
   return L.icon({
@@ -217,6 +237,27 @@ export type CatchMapMarker = {
   }[];
 };
 
+/** Localized strings for the anonymous catch pins; "{{n}}" is replaced with the catch count. */
+export type AnonCatchLabels = {
+  tooltipOne: string;
+  tooltipMany: string;
+  popupTitle: string;
+  popupBodyOne: string;
+  popupBody: string;
+  popupCta: string;
+};
+
+const DEFAULT_ANON_CATCH_LABELS: AnonCatchLabels = {
+  tooltipOne: "A catch was logged in this area",
+  tooltipMany: "{{n}} catches logged in this area",
+  popupTitle: "Anglers caught fish around here!",
+  popupBodyOne: "A catch has been logged in this area.",
+  popupBody: "{{n}} catches have been logged in this area.",
+  popupCta: "Log in to view catches",
+};
+
+type AnonCatchMarkerOptions = L.MarkerOptions & { catchCount?: number };
+
 type StockingMapProps = {
   groups: WaterbodyGroup[];
   activeSpecies: Set<string>;
@@ -228,6 +269,9 @@ type StockingMapProps = {
   catchScope?: "all" | "friends" | "mine";
   friendIds?: Set<number>;
   currentUserId?: number;
+  /** Anonymized public catch regions for logged-out visitors (clustered when zoomed out). */
+  anonCatchRegions?: PublicCatchRegion[];
+  anonCatchLabels?: AnonCatchLabels;
   /** Stocking marker clicked - open lake detail in parent UI (no Leaflet popup). */
   onStockingLakeClick?: (payload: {
     group: WaterbodyGroup;
@@ -267,6 +311,8 @@ export default function StockingMap({
   catchScope = "all",
   friendIds = new Set<number>(),
   currentUserId,
+  anonCatchRegions = [],
+  anonCatchLabels,
   onStockingLakeClick,
   araMarkers = [],
   onAraMarkerClick,
@@ -290,6 +336,7 @@ export default function StockingMap({
   const araLayerRef = useRef<L.LayerGroup | null>(null);
   const favoriteLayerRef = useRef<L.LayerGroup | null>(null);
   const campLayerRef = useRef<L.LayerGroup | null>(null);
+  const anonLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const onCampMarkerClickRef = useRef(onCampMarkerClick);
   onCampMarkerClickRef.current = onCampMarkerClick;
   const onViewportChangeRef = useRef(onViewportChange);
@@ -969,6 +1016,70 @@ export default function StockingMap({
     layer.addTo(map);
     userLayerRef.current = layer;
   }, [filteredCatchMarkers, currentUserId]);
+
+  // Anonymous catch regions (logged-out): clustered pins with a login CTA, no account info.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (anonLayerRef.current) {
+      map.removeLayer(anonLayerRef.current);
+      anonLayerRef.current = null;
+    }
+    if (anonCatchRegions.length === 0) return;
+
+    const labels = { ...DEFAULT_ANON_CATCH_LABELS, ...anonCatchLabels };
+    const fill = (tpl: string, n: number) => tpl.replace("{{n}}", String(n));
+
+    const cluster = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 64,
+      spiderfyOnMaxZoom: false,
+      zoomToBoundsOnClick: true,
+      showCoverageOnHover: false,
+      disableClusteringAtZoom: 12,
+      iconCreateFunction: (c) => {
+        let total = 0;
+        for (const m of c.getAllChildMarkers()) {
+          total += (m.options as AnonCatchMarkerOptions).catchCount ?? 1;
+        }
+        return anonCatchDivIcon(total, true);
+      },
+    });
+
+    for (const region of anonCatchRegions) {
+      if (!Number.isFinite(region.latitude) || !Number.isFinite(region.longitude)) continue;
+      const options: AnonCatchMarkerOptions = {
+        icon: anonCatchDivIcon(region.catchCount, false),
+        catchCount: region.catchCount,
+      };
+      const marker = L.marker([region.latitude, region.longitude], options);
+      marker.on("click", () => trackUsage("map_anon_pin", String(region.catchCount)));
+      marker.bindTooltip(
+        region.catchCount === 1 ? labels.tooltipOne : fill(labels.tooltipMany, region.catchCount),
+        {
+          direction: "top",
+          offset: L.point(0, -12),
+          opacity: 1,
+          className: "map-page__stocking-tooltip",
+        },
+      );
+      const body =
+        region.catchCount === 1 ? labels.popupBodyOne : fill(labels.popupBody, region.catchCount);
+      marker.bindPopup(
+        `<div class="map-page__anon-popup">` +
+          `<strong>${labels.popupTitle}</strong>` +
+          `<p>${body}</p>` +
+          `<a href="/login">${labels.popupCta}</a>` +
+          `</div>`,
+        { maxWidth: 260 },
+      );
+      cluster.addLayer(marker);
+    }
+
+    map.addLayer(cluster);
+    anonLayerRef.current = cluster;
+  }, [anonCatchRegions, anonCatchLabels]);
 
   return (
     <div

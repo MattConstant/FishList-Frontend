@@ -44,19 +44,6 @@ export default {
   "home.deleteThreadConfirm": "Supprimer cette discussion ? Action irreversible.",
   "home.deleteThreadError": "Impossible de supprimer la discussion.",
   "home.welcome": "Bienvenue",
-  "home.heroTitle": "Votre journal de peche ontarien, au meme endroit",
-  "home.heroBody":
-    "FishList aide les pecheurs canadiens a suivre leurs prises et leurs spots en Ontario. Ouvrez la carte pour l'ensemencement MNRF et les lacs provinciaux, ou connectez-vous pour voir les prises recentes sur les memes eaux.",
-  "home.landing.heroKicker": "Cartographiez l'eau. Enregistrez la prise. Racontez l'histoire.",
-  "home.landing.heroExtra":
-    "Carte pensee pour l'Ontario : couches MNRF, reperes provinciaux, recherche de lacs, photos de prises, amis et confidentialite pour chaque sortie au Canada.",
-  "home.landing.heroCtaHint":
-    "Parcourez les eaux de l'Ontario sur la carte en invite. Creez un compte gratuit pour enregistrer des prises, commenter et construire votre profil.",
-  "home.landing.stats.catches": "prises enregistrees au Canada",
-  "home.landing.stats.lakes": "lacs ontariens sur la carte",
-  "home.landing.stats.species": "especes suivies",
-  "home.landing.stats.trips": "sorties planifiees",
-  "home.landing.scrollHint": "Voir la suite",
   "home.openMap": "Ouvrir la carte",
   "home.getStarted": "Commencer",
   "home.login": "Connexion",
@@ -118,97 +105,67 @@ export default {
   "home.comment.placeholder": "Ajouter un commentaire…",
   "home.comment.post": "Publier",
   "home.comment.delete": "Supprimer",
-  "home.preview.prev": "Diapositive precedente",
-  "home.preview.next": "Diapositive suivante",
-  "home.preview.carouselLabel": "Exemples de publications",
-  "home.preview.dotsLabel": "Diapositive",
-  "home.preview.goToSlide": "Aller a la diapositive {{n}}",
-  "home.preview.engagementLikes": "{{n}} j'aime",
-  "home.preview.engagementComments": "{{n}} commentaires",
-  "home.preview.likePost": "J'aime",
-  "home.preview.commentPost": "Commenter",
-  "home.preview.sharePost": "Partager",
-  "home.preview.savePost": "Enregistrer",
-  "home.preview.moreOptions": "Plus d'options",
-  "home.preview.viewAllComments": "Voir les {{n}} commentaires",
-  "home.landing.carouselPanelTitle": "Dernieres publications",
-  "home.landing.storiesLabel": "Stories",
-  "home.landing.feedShellSubtitle": "Apercu",
   "home.avatarLabel": "Photo de profil de @{{username}}",
 
-  "home.landing.logoAlt": "Logo FishList",
-  "home.landing.heroBackdropAlt":
-    "Aurores boreales et ciel etoile au-dessus d'un lac canadien",
-  "home.landing.heroBackdropAltLight": "Lac ensoleille, ciel et eau ouverte",
-  "home.landing.featuresTitle": "Ce que FishList offre",
-  "home.landing.featuresSubtitle":
-    "Planifiez en Ontario sur la carte, activez l'ensemencement MNRF et les reperes provinciaux (GeoHub Ontario), enregistrez prises et camps, debloquez des succes, avec confidentialite.",
+  "home.landing.heroTitleLead": "Arretez de deviner",
+  "home.landing.heroTitleAccent": "ou ca mord.",
+  "home.landing.heroSub":
+    "FishList reunit les donnees d'ensemencement MNRF de l'Ontario sur une seule carte gratuite. Voyez ce qui a ete ensemence pres de chez vous et quand, choisissez le bon lac et enregistrez la prise quand elle mord.",
+  "home.landing.heroCta": "Ouvrir la carte gratuite",
+  "home.landing.heroHint":
+    "Fonctionne dans votre navigateur, tout de suite. Pas d'inscription, pas de carte de credit, rien a installer.",
+  "home.landing.heroSecondaryQ": "Envie de garder vos prises ?",
+  "home.landing.heroSecondaryLink": "Creez un compte gratuit",
 
-  "home.landing.map.eyebrow": "Explorer l'Ontario",
-  "home.landing.map.title": "Les eaux stockees de l’Ontario sur une carte",
-  "home.landing.map.body":
-    "Parcourez l'ensemencement MNRF et la presence d'especes provinciale a travers l'Ontario sur une carte interactive. Filtrez par espece, district MNRF et plus. Recherchez les lacs ontariens, gardez des favoris et planifiez votre prochaine sortie au Canada.",
-  "home.landing.map.placeholderLabel": "Carte et couches d’ensemencement",
+  "home.landing.problem.titleLead": "Vous n'avez pas un probleme de peche.",
+  "home.landing.problem.titleAccent": "Vous avez un probleme d'information.",
+  "home.landing.problem.item1":
+    "Un matin de libre, trois lacs a moins d'une heure, et aucune idee duquel mord vraiment.",
+  "home.landing.problem.item2":
+    "Quelqu'un au quai jure que le lac a ete ensemence la semaine passee. Personne ne sait d'ou ca vient.",
+  "home.landing.problem.item3":
+    "Vos plus belles prises dorment dans votre galerie photo. Pas de lac, pas de date, aucune idee du leurre.",
+  "home.landing.problem.pivot":
+    "Les donnees d'ensemencement ont toujours ete publiques. Elles etaient juste eparpillees sur des sites gouvernementaux et penibles a consulter. FishList les met sur une carte et les offre gratuitement.",
 
-  "home.landing.catch.eyebrow": "Journal",
-  "home.landing.catch.title": "Enregistrez vos prises avec photos et details",
-  "home.landing.catch.body":
-    "Sauvegardez espece, taille, photos et notes du plan d'eau ontarien ou vous avez peche. Une IA optionnelle peut suggerer l’espece a partir de la photo. Vous decidez ce qui est publie.",
-  "home.landing.catch.placeholderLabel": "Flux « Enregistrer une prise »",
+  "home.landing.map.titleLead": "Tous les lacs ensemences de l'Ontario,",
+  "home.landing.map.titleAccent": "sur un seul ecran.",
+  "home.landing.map.point1":
+    "Les ensemencements MNRF avec espece et annee, directement des donnees provinciales.",
+  "home.landing.map.point2":
+    "Filtrez par espece ou district, cherchez un lac par son nom, gardez vos favoris.",
+  "home.landing.map.point3":
+    "Verifiez la meteo du lac qui vous tente avant de prendre la route.",
+  "home.landing.map.cta": "Voir la carte des lacs ensemences",
+  "home.landing.map.imageAlt": "Carte FishList montrant les lacs ensemences en Ontario",
 
-  "home.landing.social.eyebrow": "Connexion",
-  "home.landing.social.title": "Amis et profils",
-  "home.landing.social.body":
-    "Trouvez des pecheurs canadiens, ajoutez des amis et consultez leurs prises publiques et leurs spots en Ontario.",
-  "home.landing.social.placeholderLabel": "Amis et profils",
+  "home.landing.steps.title": "Du salon au lac en trois etapes.",
+  "home.landing.steps.s1Title": "Ouvrez la carte",
+  "home.landing.steps.s1Body":
+    "Aucun compte requis. Tous les lacs ensemences de l'Ontario sont la.",
+  "home.landing.steps.s2Title": "Choisissez votre plan d'eau",
+  "home.landing.steps.s2Body":
+    "Filtrez par espece recherchee et voyez ce qui a ete ensemence pres de chez vous.",
+  "home.landing.steps.s3Title": "Enregistrez la prise",
+  "home.landing.steps.s3Body":
+    "Creez un compte gratuit quand vous voulez garder photos, spots et histoires au meme endroit.",
 
-  "home.landing.feed.eyebrow": "Ce que les pecheurs publient",
-  "home.landing.feed.title": "Un fil des prises recentes",
-  "home.landing.feed.body":
-    "Une fois connecte, vous voyez les prises recentes de pecheurs sur les eaux de l'Ontario et du Canada : feliciter un beau doré, demander le leurre utilise sur la riviere des Outaouais, ou noter un coin pour la prochaine fin de semaine.",
-  "home.landing.feed.carouselCaption":
-    "Exemples de sorties en Ontario ci-dessous; sur FishList, ce sont de vraies publications de vraies sorties canadiennes.",
+  "home.landing.catches.titleLead": "De vraies prises,",
+  "home.landing.catches.titleAccent": "de vraies sorties.",
+  "home.landing.catches.lede":
+    "Le genre de publications qui arrivent dans le fil une fois qu'on a trouve son lac sur la carte.",
 
-  "home.landing.ctaTitle": "Commencez gratuitement sur les eaux ontariennes",
-  "home.landing.ctaBody":
-    "Ouvrez la carte de l'Ontario quand vous voulez, avec ensemencement MNRF, recherche de lacs et reperes provinciaux inclus. Inscrivez-vous en quelques secondes pour enregistrer des prises, ajouter des amis et discuter.",
+  "home.landing.free.title": "Gratuit veut dire gratuit.",
+  "home.landing.free.body":
+    "Pas d'essai qui expire. Pas de version pro qui cache les bonnes couches. Pas de carte de credit a la derniere etape. FishList est fait par des pecheurs en Ontario et tout est gratuit.",
+  "home.landing.free.cta": "Ouvrez la carte et voyez par vous-meme",
 
-  "home.landing.bento.headlineLead": "Cartographiez, enregistrez, partagez",
-  "home.landing.bento.headlineAccent": "votre peche ontarienne, au meme endroit.",
-  "home.landing.bento.subhead":
-    "Planifiez des sorties au Canada, gardez chaque prise sur les eaux provinciales et restez proche de vos amis : un point central pense pour les pecheurs de l'Ontario.",
-  "home.landing.section.pill": "Pourquoi FishList",
-  "home.landing.section.title": "Tout ce qu'il faut sur l'eau de l'Ontario",
-  "home.landing.section.titleLead": "Tout ce qu'il faut",
-  "home.landing.section.titleAccent": "sur l'eau de l'Ontario",
-  "home.landing.solutions.pill": "Pourquoi FishList",
-  "home.landing.solutions.title": "Tout ce qu'il faut sur l'eau de l'Ontario",
-  "home.landing.solutions.col1Title": "Carte ontarienne et infos lac",
-  "home.landing.solutions.col1Body":
-    "Recherche de lacs ontariens, favoris, ensemencement MNRF (GeoHub), presence provinciale et camps, sur une carte pensee pour le Canada.",
-  "home.landing.solutions.col2Title": "Journal de prises",
-  "home.landing.solutions.col2Body":
-    "Photos, espece, taille et notes liees au plan d'eau ontarien ou vous avez peche. Sans tremper le cahier dans l'eau.",
-  "home.landing.solutions.col3Title": "Amis et fil",
-  "home.landing.solutions.col3Body":
-    "Publiez vos prises de sorties canadiennes, commentez, gagnez des succes et gardez votre equipe ontarienne au courant.",
-  "home.landing.solutions.explore": "Explorer",
-  "home.landing.solutions.learnMore": "En savoir plus",
-  "home.landing.features.pill": "Pense pour les pecheurs canadiens",
-  "home.landing.features.titleLead": "Un outil discret,",
-  "home.landing.features.titleAccent": "pas un autre fil",
-  "home.landing.features.lede":
-    "FishList, c'est la petite appli pensee pour le Canada que vous vouliez au quai en Ontario. Compatible MNRF, rapide pour noter, simple a partager, calme a parcourir.",
-  "home.landing.bento.featuresPill": "Fonctionnalites",
-  "home.landing.bento.chipCamp": "Camps",
-  "home.landing.bento.featuresTitle": "Toute votre saison au meme endroit",
-  "home.landing.bento.featuresSub":
-    "Finies les captures d'ecran et les applis centrees sur les Etats-Unis. FishList relie la carte de l'Ontario, les donnees MNRF, vos camps et prises, les succes et vos amis au meme endroit.",
-  "home.landing.carousel.lede":
-    "Carte de l'Ontario, ensemencement MNRF, journal, previsions, succes et fil. Les outils penses pour le Canada que vous utilisez sur l'eau, en ecrans mobiles cibles.",
-  "home.landing.mockup.title": "Le genre de choses qui apparaissent sur votre fil",
-  "home.landing.mockup.subtitle":
-    "Une photo du bateau, un petit mot sur celle qui est rentree (ou pas), parfois une question sur ou ca mord: comme une discussion entre amis, sans le bruit habituel des reseaux.",
+  "home.landing.cta.title": "Les poissons sont deja la.",
+  "home.landing.cta.body":
+    "Les camions d'ensemencement ont travaille toute la saison. Decouvrez ou ils se sont arretes.",
+  "home.landing.cta.primary": "Ouvrir la carte gratuite",
+  "home.landing.cta.secondary": "Creer un compte gratuit",
+
   "home.landing.quote1":
     "Enfin une appli pensee pour le Canada avec l'ensemencement MNRF et mes photos de prises. La carte ontarienne m'a fait gagner des heures a choisir le lac.",
   "home.landing.quote1By": "Jordan P.",
@@ -221,8 +178,6 @@ export default {
     "Les reglages de confidentialite sont clairs. Je montre les trophees de la baie Georgienne mais garde mes camps du nord ontarien pour les amis.",
   "home.landing.quote3By": "Samira L.",
   "home.landing.quote3Role": "Campeuse en nature, Ontario",
-  "home.landing.testimonials.pill": "Communaute canadienne",
-  "home.landing.testimonials.title": "Les pecheurs de l'Ontario utilisent deja FishList",
-  "home.landing.testimonials.titleLead": "Les pecheurs de l'Ontario utilisent deja",
-  "home.landing.testimonials.titleAccent": "FishList",
+  "home.landing.testimonials.titleLead": "Ne nous croyez pas",
+  "home.landing.testimonials.titleAccent": "sur parole.",
 } as const;

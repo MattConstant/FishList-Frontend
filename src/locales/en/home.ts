@@ -44,19 +44,6 @@ export default {
   "home.deleteThreadConfirm": "Delete this discussion? This cannot be undone.",
   "home.deleteThreadError": "Could not delete discussion.",
   "home.welcome": "Welcome",
-  "home.heroTitle": "Your Ontario fishing list, in one place",
-  "home.heroBody":
-    "FishList helps Canadian anglers track catches and Ontario spots. Open the map for MNRF stocking and provincial lake data, or sign in to see recent catches from anglers on the same waters.",
-  "home.landing.heroKicker": "Map the water. Log the bite. Share the story.",
-  "home.landing.heroExtra":
-    "Ontario-first map: MNRF stocking layers, provincial species records, lake search, catch photos, friends, and privacy controls for every Canadian trip.",
-  "home.landing.heroCtaHint":
-    "Browse Ontario waters on the map as a guest. Create a free account to log catches, comment, and build your angler profile.",
-  "home.landing.stats.catches": "catches logged in Canada",
-  "home.landing.stats.lakes": "Ontario lakes on the map",
-  "home.landing.stats.species": "species tracked",
-  "home.landing.stats.trips": "trips planned",
-  "home.landing.scrollHint": "Explore below",
   "home.openMap": "Open map",
   "home.getStarted": "Get started",
   "home.login": "Log in",
@@ -114,97 +101,56 @@ export default {
   "home.comment.placeholder": "Add a comment…",
   "home.comment.post": "Post",
   "home.comment.delete": "Delete",
-  "home.preview.prev": "Previous slide",
-  "home.preview.next": "Next slide",
-  "home.preview.carouselLabel": "Sample community posts",
-  "home.preview.dotsLabel": "Slide",
-  "home.preview.goToSlide": "Go to slide {{n}}",
-  "home.preview.engagementLikes": "{{n}} likes",
-  "home.preview.engagementComments": "{{n}} comments",
-  "home.preview.likePost": "Like",
-  "home.preview.commentPost": "Comment",
-  "home.preview.sharePost": "Share",
-  "home.preview.savePost": "Save",
-  "home.preview.moreOptions": "More options",
-  "home.preview.viewAllComments": "View all {{n}} comments",
-  "home.landing.carouselPanelTitle": "Latest from the community",
-  "home.landing.storiesLabel": "Stories",
-  "home.landing.feedShellSubtitle": "Preview",
   "home.avatarLabel": "Profile photo for @{{username}}",
 
-  "home.landing.logoAlt": "FishList logo",
-  "home.landing.heroBackdropAlt":
-    "Northern lights and stars over a Canadian lake at night",
-  "home.landing.heroBackdropAltLight": "Sunlit lake, sky, and open water",
-  "home.landing.featuresTitle": "What FishList offers",
-  "home.landing.featuresSubtitle":
-    "Plan Ontario trips on the map, layer MNRF stocking and provincial fish records from GeoHub Ontario, log catches and camps, unlock achievements, with privacy controls.",
+  "home.landing.heroTitleLead": "Stop guessing",
+  "home.landing.heroTitleAccent": "where the fish are.",
+  "home.landing.heroSub":
+    "FishList puts all of Ontario's MNRF data on one free map. See what was stocked near you and when, pick the right lake, and log the catch when you land it.",
+  "home.landing.heroCta": "Open the Free Map",
+  "home.landing.heroHint":
+    "Works in your browser right now. No signup, no credit card, nothing to install.",
+  "home.landing.heroSecondaryQ": "Want to keep your catches?",
+  "home.landing.heroSecondaryLink": "Create a free account",
 
-  "home.landing.map.eyebrow": "Explore Ontario",
-  "home.landing.map.title": "Ontario stocked waters on one map",
-  "home.landing.map.body":
-    "Browse MNRF stocking events and provincial species presence across Ontario on an interactive map. Filter by species, MNRF district, and more. Search Ontario lakes by name, save favourites, and plan your next Canadian trip.",
-  "home.landing.map.placeholderLabel": "Map & stocking layers",
+  "home.landing.problem.titleLead": "You don't have a fishing problem.",
+  "home.landing.problem.titleAccent": "You have an information problem.",
+  "home.landing.problem.item1":
+    "One free morning, three lakes within an hour, and no idea which one is actually holding fish.",
+  "home.landing.problem.item2":
+    "Someone at the launch swears it got stocked last week. Nobody can tell you where they heard it.",
+  "home.landing.problem.item3":
+    "Your best catches are buried in your camera roll. No lake, no date, no clue what you were throwing.",
+  "home.landing.problem.pivot":
+    "The stocking data was public all along. It was just scattered across government sites and painful to use. FishList puts it on one map and gives it away for free.",
 
-  "home.landing.catch.eyebrow": "Log",
-  "home.landing.catch.title": "Record catches with photos and details",
-  "home.landing.catch.body":
-    "Save species, size, photos, and notes from the Ontario waterbody where you fished. Optional AI can suggest a species from your picture. You stay in control of what gets posted.",
-  "home.landing.catch.placeholderLabel": "Log a catch flow",
+  "home.landing.map.titleLead": "Every stocked lake in Ontario,",
+  "home.landing.map.titleAccent": "on one screen.",
+  "home.landing.map.point1":
+    "MNRF stocking events with species and year, straight from provincial data.",
+  "home.landing.map.point2":
+    "Filter by species or district, search any lake by name, save your favourites.",
+  "home.landing.map.point3":
+    "Check the forecast for the lake you're eyeing before you commit to the drive.",
+  "home.landing.map.cta": "See the stocked lakes map",
+  "home.landing.map.imageAlt": "FishList map showing stocked lakes across Ontario",
 
-  "home.landing.social.eyebrow": "Connect",
-  "home.landing.social.title": "Friends and profiles",
-  "home.landing.social.body":
-    "Find Canadian anglers, add friends, and visit profiles to see their public catches and Ontario fishing spots.",
-  "home.landing.social.placeholderLabel": "Friends & profiles",
+  "home.landing.steps.title": "From the couch to the lake in three steps.",
+  "home.landing.steps.s1Title": "Open the map",
+  "home.landing.steps.s1Body":
+    "No account needed. Every stocked lake in Ontario is right there.",
+  "home.landing.steps.s2Title": "Pick your water",
+  "home.landing.steps.s2Body":
+    "Filter by the species you're after and see what was stocked near you.",
+  "home.landing.steps.s3Title": "Log the catch",
+  "home.landing.steps.s3Body":
+    "Sign up free when you're ready to keep photos, spots, and stories in one place.",
 
-  "home.landing.feed.eyebrow": "What anglers are posting",
-  "home.landing.feed.title": "A feed of recent catches",
-  "home.landing.feed.body":
-    "Sign in and you'll see recent catches from anglers on Ontario and Canadian waters: nod at a nice walleye, ask what they used on the Ottawa River, or save a spot for next weekend.",
-  "home.landing.feed.carouselCaption":
-    "Sample Ontario trips below; on FishList it's real posts from real Canadian outings.",
+  "home.landing.catches.titleLead": "Real catches,",
+  "home.landing.catches.titleAccent": "real trips.",
+  "home.landing.catches.lede":
+    "The kind of posts that end up in the feed once people find their lake on the map.",
 
-  "home.landing.ctaTitle": "Start free on Ontario waters",
-  "home.landing.ctaBody":
-    "Open the Ontario map anytime, with MNRF stocking, lake search, and provincial records included. When you're ready, sign up in seconds to log catches, add friends, and join the conversation.",
-
-  "home.landing.bento.headlineLead": "Map, log, and share",
-  "home.landing.bento.headlineAccent": "your Ontario fishing life in one place.",
-  "home.landing.bento.subhead":
-    "Plan Canadian trips, remember every catch on provincial waters, and connect with friends: one calm home base built for Ontario anglers.",
-  "home.landing.section.pill": "Why FishList",
-  "home.landing.section.title": "Everything you need on Ontario water",
-  "home.landing.section.titleLead": "Everything you need",
-  "home.landing.section.titleAccent": "on Ontario water",
-  "home.landing.solutions.pill": "Why FishList",
-  "home.landing.solutions.title": "Everything you need on Ontario water",
-  "home.landing.solutions.col1Title": "Ontario map & lake intel",
-  "home.landing.solutions.col1Body":
-    "Search Ontario lakes, save spots, MNRF stocking from GeoHub, provincial species presence, and camp pins, all on one Canada-first map.",
-  "home.landing.solutions.col2Title": "Catch log",
-  "home.landing.solutions.col2Body":
-    "Photos, species, size, and notes tied to the Ontario waterbody you fished. Your trip journal that doesn't get soggy.",
-  "home.landing.solutions.col3Title": "Friends & feed",
-  "home.landing.solutions.col3Body":
-    "Post catches from Canadian trips, comment, earn achievements, and keep your Ontario crew in the loop.",
-  "home.landing.solutions.explore": "Explore",
-  "home.landing.solutions.learnMore": "Learn more",
-  "home.landing.features.pill": "Built for Canadian anglers",
-  "home.landing.features.titleLead": "A quiet toolkit,",
-  "home.landing.features.titleAccent": "not another feed",
-  "home.landing.features.lede":
-    "FishList is the small, Canada-first app you wish you had at the dock. MNRF-aware, fast to log, easy to share, calm to scroll.",
-  "home.landing.bento.featuresPill": "Features",
-  "home.landing.bento.chipCamp": "Camp spots",
-  "home.landing.bento.featuresTitle": "Keep every trip in one place",
-  "home.landing.bento.featuresSub":
-    "Forget scattered screenshots and US-centric apps. FishList ties the Ontario map, MNRF data, your camps and catches, achievements, and your crew in one place.",
-  "home.landing.carousel.lede":
-    "Ontario map, MNRF stocking, catch log, forecast, achievements, and the feed. The Canada-first tools you reach for on the water, in focused phone screens.",
-  "home.landing.mockup.title": "The kind of stuff that shows up on your feed",
-  "home.landing.mockup.subtitle":
-    "A photo from the boat, a quick brag about the one that didn't get away, maybe a question about where the bite was: same energy as group chat, minus the random memes.",
   "home.landing.quote1":
     "Finally one Canada-first app for MNRF stocking and my catch photos. The Ontario map alone saved me hours of guessing which lake to hit.",
   "home.landing.quote1By": "Jordan P.",
@@ -217,8 +163,17 @@ export default {
     "Privacy controls are clear. I share public trophies from Georgian Bay but keep northern Ontario camp spots for friends only.",
   "home.landing.quote3By": "Samira L.",
   "home.landing.quote3Role": "Ontario backcountry camper",
-  "home.landing.testimonials.pill": "Canadian community",
-  "home.landing.testimonials.title": "Ontario anglers are already using FishList",
-  "home.landing.testimonials.titleLead": "Ontario anglers are already using",
-  "home.landing.testimonials.titleAccent": "FishList",
+  "home.landing.testimonials.titleLead": "Don't take our word",
+  "home.landing.testimonials.titleAccent": "for it.",
+
+  "home.landing.free.title": "Free means free.",
+  "home.landing.free.body":
+    "No trial that runs out. No pro tier hiding the good layers. No credit card field on the last step. FishList is built by anglers in Ontario and the whole thing costs nothing to use.",
+  "home.landing.free.cta": "Open the map and see for yourself",
+
+  "home.landing.cta.title": "The fish are already out there.",
+  "home.landing.cta.body":
+    "The stocking trucks have been busy all season. Find out where they stopped.",
+  "home.landing.cta.primary": "Open the Free Map",
+  "home.landing.cta.secondary": "Create a free account",
 } as const;

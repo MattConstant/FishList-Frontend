@@ -639,3 +639,83 @@
 .map-page__onboarding-dismiss {
   @apply flex min-h-11 w-full touch-manipulation items-center justify-center rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700 active:bg-sky-800 dark:bg-sky-500 dark:hover:bg-sky-400;
 }
+
+/* ── Anonymous catch regions (logged-out visitors) ── */
+.map-page__anon-catch-wrap {
+  background: transparent;
+  border: 0;
+}
+
+.map-page__anon-catch {
+  position: relative;
+  display: block;
+  width: 26px;
+  height: 26px;
+}
+
+.map-page__anon-catch img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-page__anon-catch--cluster {
+  width: 34px;
+  height: 34px;
+  filter: drop-shadow(0 2px 4px rgb(2 60 90 / 0.4));
+}
+
+.map-page__anon-catch b {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1.5px solid #fff;
+  background: #0284c7;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  font-style: normal;
+}
+
+.map-page__anon-popup {
+  max-width: 240px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.map-page__anon-popup strong {
+  display: block;
+  font-size: 14px;
+}
+
+.map-page__anon-popup p {
+  margin: 4px 0 0;
+  color: #52525b;
+}
+
+.map-page__anon-popup a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #fff !important;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.map-page__anon-popup a:hover {
+  background: #0369a1;
+}

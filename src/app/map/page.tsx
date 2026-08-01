@@ -42,7 +42,9 @@ import { StockingMapDynamic } from "@/components/map-page/map-stock-map";
 import { useMapPlaceSearch } from "@/components/map-page/use-map-place-search";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
-import type { CatchMapMarker } from "@/components/stocking-map";
+import type { AnonCatchLabels, CatchMapMarker } from "@/components/stocking-map";
+import { fetchPublicCatchRegions, type PublicCatchRegion } from "@/lib/public-catch-regions";
+import { trackUsage } from "@/lib/usage-tracking";
 import {
   fetchVisibleCampSpots,
   createMapFavorite,
@@ -89,7 +91,7 @@ import {
 } from "@/lib/map-favorites";
 
 export default function MapPage() {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isReady } = useAuth();
   const { t, locale } = useLocale();
   // Prevent SSR/CSR hydration mismatches for auth-dependent attributes (like `disabled`)
   // by only applying them after the first client mount.
@@ -140,6 +142,7 @@ export default function MapPage() {
   const [pendingCatch, setPendingCatch] = useState<PendingCatch | null>(null);
   const [pendingCamp, setPendingCamp] = useState<PendingCamp | null>(null);
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
+  const [anonCatchRegions, setAnonCatchRegions] = useState<PublicCatchRegion[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
   const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("mine");
   const [filtersExpanded, setFiltersExpanded] = useSyncedBooleanPref(
@@ -343,6 +346,37 @@ export default function MapPage() {
     };
   }, [user]);
 
+  // Logged-out visitors see anonymized "people caught here" pins instead of real catch markers.
+  useEffect(() => {
+    if (user) {
+      setAnonCatchRegions([]);
+      return;
+    }
+    let cancelled = false;
+    fetchPublicCatchRegions()
+      .then((regions) => {
+        if (!cancelled) setAnonCatchRegions(regions);
+      })
+      .catch(() => {
+        // silently fail - anonymous pins are nice-to-have
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const anonCatchLabels = useMemo<AnonCatchLabels>(
+    () => ({
+      tooltipOne: t("map.anonCatches.tooltipOne"),
+      tooltipMany: t("map.anonCatches.tooltipMany"),
+      popupTitle: t("map.anonCatches.popupTitle"),
+      popupBodyOne: t("map.anonCatches.popupBodyOne"),
+      popupBody: t("map.anonCatches.popupBody"),
+      popupCta: t("map.anonCatches.popupCta"),
+    }),
+    [t],
+  );
+
   useEffect(() => {
     if (!user) {
       setFriendIds(new Set());
@@ -362,20 +396,55 @@ export default function MapPage() {
     };
   }, [user]);
 
-  const toggleSpecies = useCallback((sp: string) => {
-    setActiveSpecies((prev) => {
-      const next = new Set(prev);
-      if (next.has(sp)) next.delete(sp);
-      else next.add(sp);
-      return next;
-    });
-  }, []);
+  // Usage analytics: record one map visit per page load once auth state is known.
+  const visitTrackedRef = useRef(false);
+  useEffect(() => {
+    if (!isReady || visitTrackedRef.current) return;
+    visitTrackedRef.current = true;
+    trackUsage("map_visit", user ? "user" : "guest");
+  }, [isReady, user]);
+
+  const toggleSpecies = useCallback(
+    (sp: string) => {
+      trackUsage("map_filter_species", `${sp}:${activeSpecies.has(sp) ? "off" : "on"}`);
+      setActiveSpecies((prev) => {
+        const next = new Set(prev);
+        if (next.has(sp)) next.delete(sp);
+        else next.add(sp);
+        return next;
+      });
+    },
+    [activeSpecies],
+  );
 
   const toggleAll = useCallback(() => {
+    trackUsage(
+      "map_filter_species",
+      activeSpecies.size === species.length ? "all:off" : "all:on",
+    );
     setActiveSpecies((prev) =>
       prev.size === species.length ? new Set() : new Set(species),
     );
-  }, [species]);
+  }, [species, activeSpecies]);
+
+  // Tracked wrappers around the MNRF filter setters so the admin panel can see
+  // which filters people actually reach for.
+  const handleDistrictChange = useCallback((v: string) => {
+    trackUsage("map_filter_district", v);
+    setSelectedDistrict(v);
+  }, []);
+  const handleRecentYearsChange = useCallback((v: 1 | 2 | 5) => {
+    trackUsage("map_filter_years", String(v));
+    setRecentYearsWindow(v);
+  }, []);
+  const handleMinTotalFishChange = useCallback((v: 0 | 500 | 1000 | 5000) => {
+    trackUsage("map_filter_min_fish", String(v));
+    setMinTotalFish(v);
+  }, []);
+  const handleMinSpeciesCountChange = useCallback((v: 1 | 2 | 3) => {
+    trackUsage("map_filter_min_species", String(v));
+    setMinSpeciesCount(v);
+  }, []);
 
   const filteredGroups = useMemo(() => {
     if (activeSpecies.size === 0) return [];
@@ -906,13 +975,13 @@ export default function MapPage() {
           toggleAllSpecies={toggleAll}
           toggleSpecies={toggleSpecies}
           recentYearsWindow={recentYearsWindow}
-          setRecentYearsWindow={setRecentYearsWindow}
+          setRecentYearsWindow={handleRecentYearsChange}
           minTotalFish={minTotalFish}
-          setMinTotalFish={setMinTotalFish}
+          setMinTotalFish={handleMinTotalFishChange}
           minSpeciesCount={minSpeciesCount}
-          setMinSpeciesCount={setMinSpeciesCount}
+          setMinSpeciesCount={handleMinSpeciesCountChange}
           selectedDistrict={selectedDistrict}
-          setSelectedDistrict={setSelectedDistrict}
+          setSelectedDistrict={handleDistrictChange}
           districts={districts}
         />
         <MapAraFiltersSection
@@ -939,7 +1008,11 @@ export default function MapPage() {
 
         {/* Logged out: small floating login pill instead of the old toolbar row */}
         {!user ? (
-          <Link href="/login" className="map-page__login-float">
+          <Link
+            href="/login"
+            className="map-page__login-float"
+            onClick={() => trackUsage("map_login_pill")}
+          >
             Log in to add catches
           </Link>
         ) : null}
@@ -955,6 +1028,8 @@ export default function MapPage() {
           catchScope={catchScope}
           friendIds={friendIds}
           currentUserId={user?.id}
+          anonCatchRegions={user ? [] : anonCatchRegions}
+          anonCatchLabels={anonCatchLabels}
           araMarkers={araPoints}
           onAraMarkerClick={handleAraMarkerClick}
           onViewportChange={loadAra}

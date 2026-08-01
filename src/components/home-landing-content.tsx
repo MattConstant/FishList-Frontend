@@ -1,155 +1,140 @@
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, type ReactNode } from "react";
 import { SiteFooter } from "@/components/site-footer";
-
-const HeroWaterCanvas = dynamic(
-  () =>
-    import("@/components/home-landing/hero-water-canvas").then((mod) => ({
-      default: mod.HeroWaterCanvas,
-    })),
-  { ssr: false },
-);
-import { LandingCoverflowLazy } from "@/components/home-landing/landing-coverflow-lazy";
 import { LandingReveal } from "@/components/home-landing/landing-reveal";
-import { LandingStats } from "@/components/home-landing/landing-stats";
+import { HOME_PREVIEW_SLIDES } from "@/lib/home-preview-slides";
 import { label, type LandingLabels } from "@/lib/landing-labels";
-import type { PublicStatsResponse } from "@/lib/public-stats";
+import { trackUsage } from "@/lib/usage-tracking";
 
 const HOME_LANDING_FOOTER_CLASS =
   "border-zinc-200/90 text-zinc-600 [&_a]:text-sky-700 [&_a:hover]:text-sky-900 [&_p]:text-zinc-500 dark:border-white/25 dark:text-zinc-300 dark:[&_a]:text-sky-200 dark:[&_a:hover]:text-white dark:[&_p]:text-zinc-500";
 
-const SOLUTION_FEATURES = [
-  {
-    titleKey: "home.landing.solutions.col1Title",
-    bodyKey: "home.landing.solutions.col1Body",
-    image: "/home1.png",
-    href: "/map",
-  },
-  {
-    titleKey: "home.landing.solutions.col2Title",
-    bodyKey: "home.landing.solutions.col2Body",
-    image: "/home2.png",
-    href: "/login",
-  },
-  {
-    titleKey: "home.landing.solutions.col3Title",
-    bodyKey: "home.landing.solutions.col3Body",
-    image: "/home3.png",
-    href: "/login",
-  },
-] as const;
-
-/** Animated headline lines from the hero kicker (Map the water. Log the bite. Share the story.) */
-const HERO_LINES = [
-  ["Map", "the", "water."],
-  ["Log", "the", "bite."],
-  ["Share", "the", "story."],
-] as const;
-
-const TITLE_ACCENT_PHRASES = [
-  "on Ontario water",
-  "sur l'eau de l'Ontario",
-  "on the water",
-  "sur l'eau",
-  "not another feed",
-  "pas un autre fil",
-] as const;
-
-function splitTitleWithAccent(
-  labels: LandingLabels,
-  leadKey: string,
-  accentKey: string,
-  fallbackTitleKey: string,
-): { lead: string; accent: string } {
-  const lead = label(labels, leadKey);
-  const accent = label(labels, accentKey);
-  if (lead && accent) return { lead, accent };
-
-  const full = label(labels, fallbackTitleKey);
-  for (const phrase of TITLE_ACCENT_PHRASES) {
-    const idx = full.toLowerCase().lastIndexOf(phrase.toLowerCase());
-    if (idx >= 0) {
-      return {
-        lead: full.slice(0, idx).trim(),
-        accent: full.slice(idx).trim(),
-      };
-    }
-  }
-  return { lead: full, accent: "" };
-}
-
-function FishGlyph({ className }: { className?: string }) {
+/** Organic corner blobs (HubSpot-grader style) for the dark hero and CTA bands. */
+function BlobCluster({ corner }: { corner: "tl" | "br" }) {
   return (
     <svg
-      className={className}
-      width={56}
-      height={28}
-      viewBox="0 0 120 60"
+      className={`home-landing__blob home-landing__blob--${corner}`}
+      width="520"
+      height="520"
+      viewBox="0 0 520 520"
       fill="none"
       aria-hidden
     >
-      <path
-        d="M5 30 Q15 8 50 12 Q90 16 105 30 Q90 44 50 48 Q15 52 5 30 Z"
-        fill="currentColor"
-        opacity={0.35}
-      />
-      <path d="M105 30 L120 18 L120 42 Z" fill="currentColor" opacity={0.35} />
-      <circle cx="92" cy="26" r="2.2" fill="currentColor" opacity={0.5} />
+      {corner === "tl" ? (
+        <>
+          <path
+            d="M118 -60C210 -48 268 22 250 108C234 186 158 218 84 196C6 173 -50 106 -34 24C-20 -46 40 -70 118 -60Z"
+            fill="url(#hl-blob-sky)"
+          />
+          <path
+            d="M290 -120C356 -104 392 -40 372 26C354 86 296 112 240 96C180 78 142 22 158 -40C172 -94 232 -134 290 -120Z"
+            fill="url(#hl-blob-teal)"
+            opacity="0.9"
+          />
+          <path
+            d="M-40 190C20 176 78 212 88 268C97 320 58 366 2 372C-56 378 -108 340 -112 284C-116 232 -96 202 -40 190Z"
+            fill="url(#hl-blob-ice)"
+            opacity="0.95"
+          />
+        </>
+      ) : (
+        <>
+          <path
+            d="M402 520C310 508 252 438 270 352C286 274 362 242 436 264C514 287 570 354 554 436C540 506 480 530 402 520Z"
+            fill="url(#hl-blob-sky)"
+          />
+          <path
+            d="M232 580C166 564 130 500 150 434C168 374 226 348 282 364C342 382 380 438 364 500C350 554 290 594 232 580Z"
+            fill="url(#hl-blob-deep)"
+            opacity="0.9"
+          />
+          <path
+            d="M560 330C500 344 442 308 432 252C423 200 462 154 518 148C576 142 628 180 632 236C636 288 616 318 560 330Z"
+            fill="url(#hl-blob-teal)"
+            opacity="0.95"
+          />
+        </>
+      )}
+      <defs>
+        <linearGradient id="hl-blob-sky" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#0ea5e9" />
+          <stop offset="1" stopColor="#7dd3fc" />
+        </linearGradient>
+        <linearGradient id="hl-blob-teal" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#14b8a6" />
+          <stop offset="1" stopColor="#5eead4" />
+        </linearGradient>
+        <linearGradient id="hl-blob-ice" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#bae6fd" />
+          <stop offset="1" stopColor="#e0f2fe" />
+        </linearGradient>
+        <linearGradient id="hl-blob-deep" x1="0" y1="0" x2="1" y2="1">
+          <stop stopColor="#0369a1" />
+          <stop offset="1" stopColor="#38bdf8" />
+        </linearGradient>
+      </defs>
     </svg>
   );
 }
 
-function SolutionPackageCard({
+function StarRow({ className }: { className?: string }) {
+  return (
+    <span className={`home-landing__stars ${className ?? ""}`.trim()} aria-hidden>
+      {Array.from({ length: 5 }, (_, i) => (
+        <svg key={i} width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5-5.9-3.2-5.9 3.2 1.2-6.5L2.5 9.4l6.6-.9z" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+function MapPinIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+      <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden>
+      <path d="M4 12.5l5.5 5.5L20 6.5" />
+    </svg>
+  );
+}
+
+function SectionHeader({
   title,
-  body,
-  imageSrc,
-  href,
-  exploreLabel,
-  learnMoreLabel,
-  priority,
+  titleAccent,
+  lede,
 }: {
   title: string;
-  body: string;
-  imageSrc: string;
-  href: string;
-  exploreLabel: string;
-  learnMoreLabel: string;
-  priority?: boolean;
+  titleAccent?: string;
+  lede?: string;
 }) {
   return (
-    <article className="home-landing__package-card">
-      <div className="home-landing__package-media">
-        <Image
-          src={imageSrc}
-          alt=""
-          fill
-          priority={priority}
-          className="object-cover"
-          sizes="(max-width: 768px) 100vw, 33vw"
-        />
-      </div>
-      <div className="flex flex-1 flex-col p-5 pt-4">
-        <h3 className="home-landing__package-title">{title}</h3>
-        <p className="home-landing__package-body">{body}</p>
-        <div className="mt-5 flex flex-wrap items-center gap-3">
-          <Link href={href} className="home-landing__package-cta">
-            {exploreLabel}
-          </Link>
-          <Link href={href} className="home-landing__package-link">
-            {learnMoreLabel}
-            <span aria-hidden>→</span>
-          </Link>
-        </div>
-      </div>
-    </article>
+    <div className="home-landing__section-header">
+      <h2 className="home-landing__section-title">
+        {title}
+        {titleAccent ? (
+          <>
+            {" "}
+            <span className="home-landing__accent">{titleAccent}</span>
+          </>
+        ) : null}
+      </h2>
+      {lede ? <p className="home-landing__section-lede">{lede}</p> : null}
+    </div>
   );
 }
 
 function TestimonialCard({ quote, name, role }: { quote: string; name: string; role: string }) {
   return (
     <blockquote className="home-landing__quote-card">
+      <StarRow className="home-landing__quote-stars" />
       <p className="flex-1 text-sm leading-relaxed">{quote}</p>
       <footer className="home-landing__quote-footer">
         <div className="home-landing__quote-avatar" aria-hidden>
@@ -164,228 +149,276 @@ function TestimonialCard({ quote, name, role }: { quote: string; name: string; r
   );
 }
 
-function SectionHeader({
-  eyebrow,
-  title,
-  titleAccent,
-  lede,
-}: {
-  eyebrow: string;
-  title: string;
-  titleAccent?: string;
-  lede?: string;
-}) {
-  return (
-    <div className="home-landing__section-header">
-      <div>
-        <span className="home-landing__section-eyebrow">{eyebrow}</span>
-        <h2 className="home-landing__section-title">
-          {title}
-          {titleAccent ? (
-            <>
-              {" "}
-              <span className="home-landing__accent">{titleAccent}</span>
-            </>
-          ) : null}
-        </h2>
-      </div>
-      {lede ? <p className="home-landing__section-lede">{lede}</p> : null}
-    </div>
-  );
-}
-
 type Props = {
   labels: LandingLabels;
-  initialStats?: PublicStatsResponse;
-  /** @deprecated Coverflow is built-in; slot kept for backwards compatibility. */
-  carouselSlot?: ReactNode;
 };
 
 /** Marketing landing markup (server-renderable for fast LCP on `/`). */
-export function HomeLandingContent({ labels, initialStats }: Props) {
-  const exploreLabel = label(labels, "home.landing.solutions.explore");
-  const learnMoreLabel = label(labels, "home.landing.solutions.learnMore");
-  const sectionPill = label(labels, "home.landing.section.pill");
-  const featuresTitle = splitTitleWithAccent(
-    labels,
-    "home.landing.features.titleLead",
-    "home.landing.features.titleAccent",
-    "home.landing.bento.featuresTitle",
-  );
-  const whyFishListTitle = splitTitleWithAccent(
-    labels,
-    "home.landing.section.titleLead",
-    "home.landing.section.titleAccent",
-    "home.landing.section.title",
-  );
-  const testimonialsTitle = splitTitleWithAccent(
-    labels,
-    "home.landing.testimonials.titleLead",
-    "home.landing.testimonials.titleAccent",
-    "home.landing.testimonials.title",
-  );
-
-  const heroWords = useMemo(
-    () =>
-      HERO_LINES.map((line, lineIdx) => {
-        const wordsBeforeLine = HERO_LINES.slice(0, lineIdx).reduce(
-          (sum, words) => sum + words.length,
-          0,
-        );
-        return (
-          <span
-            key={`line-${lineIdx}`}
-            className={`home-landing__hero-line${lineIdx === 1 ? " home-landing__hero-line--nowrap" : ""}`}
-          >
-            {line.map((word, wordIdx) => {
-              const isAccent = word === "bite.";
-              const delay = 0.15 + (wordsBeforeLine + wordIdx) * 0.08;
-              return (
-                <span
-                  key={`${lineIdx}-${word}`}
-                  className={`home-landing__hero-word${isAccent ? " home-landing__hero-word--accent" : ""}`}
-                  style={{ animationDelay: `${delay}s` }}
-                >
-                  {word}
-                  {wordIdx < line.length - 1 ? "\u00a0" : null}
-                </span>
-              );
-            })}
-          </span>
-        );
-      }),
-    [],
-  );
+export function HomeLandingContent({ labels }: Props) {
+  const problems = [
+    label(labels, "home.landing.problem.item1"),
+    label(labels, "home.landing.problem.item2"),
+    label(labels, "home.landing.problem.item3"),
+  ];
+  const mapPoints = [
+    label(labels, "home.landing.map.point1"),
+    label(labels, "home.landing.map.point2"),
+    label(labels, "home.landing.map.point3"),
+  ];
+  const steps = [
+    {
+      title: label(labels, "home.landing.steps.s1Title"),
+      body: label(labels, "home.landing.steps.s1Body"),
+    },
+    {
+      title: label(labels, "home.landing.steps.s2Title"),
+      body: label(labels, "home.landing.steps.s2Body"),
+    },
+    {
+      title: label(labels, "home.landing.steps.s3Title"),
+      body: label(labels, "home.landing.steps.s3Body"),
+    },
+  ];
 
   return (
     <div className="home-landing">
+      {/* ── Hero: problem-led headline + one bright CTA, everything above the fold ── */}
       <section className="home-landing__hero">
-        <HeroWaterCanvas />
-        <div className="home-landing__hero-decor home-landing__hero-decor--fish-1 text-sky-500">
-          <FishGlyph />
-        </div>
-        <div className="home-landing__hero-decor home-landing__hero-decor--fish-2 text-sky-700">
-          <FishGlyph />
-        </div>
-        <div className="home-landing__hero-decor home-landing__hero-decor--fish-3 text-sky-500">
-          <FishGlyph />
-        </div>
+        <BlobCluster corner="tl" />
+        <BlobCluster corner="br" />
 
         <div className="home-landing__hero-inner">
-          <div>
-            <h1 className="home-landing__hero-title">{heroWords}</h1>
+          <h1 className="home-landing__hero-title">
+            {label(labels, "home.landing.heroTitleLead")}{" "}
+            <span className="home-landing__hero-accent">
+              {label(labels, "home.landing.heroTitleAccent")}
+            </span>
+          </h1>
 
-            <p className="home-landing__hero-sub">{label(labels, "home.landing.bento.subhead")}</p>
+          <p className="home-landing__hero-sub">{label(labels, "home.landing.heroSub")}</p>
+
+          <div className="home-landing__hero-cta">
+            <Link
+              href="/map"
+              className="home-landing__btn-cta"
+              onClick={() => trackUsage("landing_map_cta", "hero")}
+            >
+              <MapPinIcon />
+              {label(labels, "home.landing.heroCta")}
+            </Link>
+            <p className="home-landing__hero-hint">{label(labels, "home.landing.heroHint")}</p>
           </div>
 
-          <div>
-            <div className="home-landing__hero-cta">
-              <Link href="/login" className="home-landing__btn-primary">
-                {label(labels, "home.getStarted")}
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-                  <path d="M5 12h14M13 6l6 6-6 6" />
-                </svg>
-              </Link>
-              <Link href="/map" className="home-landing__btn-secondary">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                  <path d="M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12Z" />
-                  <circle cx="12" cy="9" r="2.5" />
-                </svg>
-                {label(labels, "home.openMap")}
-              </Link>
-            </div>
-            <p className="home-landing__hero-foot">{label(labels, "home.landing.heroCtaHint")}</p>
-          </div>
+          <p className="home-landing__hero-secondary">
+            {label(labels, "home.landing.heroSecondaryQ")}{" "}
+            <Link href="/login" onClick={() => trackUsage("landing_signup_cta", "hero")}>
+              {label(labels, "home.landing.heroSecondaryLink")}
+            </Link>
+          </p>
         </div>
       </section>
 
-      <LandingStats initialStats={initialStats} />
-
+      {/* ── Problem: talk about the reader's Saturday, not the product ── */}
       <section className="home-landing__section">
         <LandingReveal>
           <SectionHeader
-            eyebrow={label(labels, "home.landing.features.pill")}
-            title={featuresTitle.lead}
-            titleAccent={featuresTitle.accent || undefined}
-            lede={label(labels, "home.landing.features.lede")}
+            title={label(labels, "home.landing.problem.titleLead")}
+            titleAccent={label(labels, "home.landing.problem.titleAccent")}
           />
         </LandingReveal>
-        <div className="home-landing__package-grid">
-          {SOLUTION_FEATURES.map((feature, i) => (
-            <LandingReveal key={feature.titleKey} delay={i * 80} className="home-landing__package-reveal">
-              <SolutionPackageCard
-                title={label(labels, feature.titleKey)}
-                body={label(labels, feature.bodyKey)}
-                imageSrc={feature.image}
-                href={feature.href}
-                exploreLabel={exploreLabel}
-                learnMoreLabel={learnMoreLabel}
-                priority={i === 0}
+        <div className="home-landing__problem-grid">
+          {problems.map((text, i) => (
+            <LandingReveal key={text} delay={i * 90}>
+              <div className={`home-landing__problem-card home-landing__problem-card--${i + 1}`}>
+                <span className="home-landing__problem-mark" aria-hidden>
+                  &ldquo;
+                </span>
+                <p>{text}</p>
+              </div>
+            </LandingReveal>
+          ))}
+        </div>
+        <LandingReveal delay={200}>
+          <p className="home-landing__problem-pivot">{label(labels, "home.landing.problem.pivot")}</p>
+        </LandingReveal>
+      </section>
+
+      {/* ── Product proof: the actual map ── */}
+      <section className="home-landing__section home-landing__section--map">
+        <div className="home-landing__map-grid">
+          <LandingReveal>
+            <div className="home-landing__map-copy">
+              <SectionHeader
+                title={label(labels, "home.landing.map.titleLead")}
+                titleAccent={label(labels, "home.landing.map.titleAccent")}
+              />
+              <ul className="home-landing__map-points">
+                {mapPoints.map((point) => (
+                  <li key={point}>
+                    <span className="home-landing__map-check" aria-hidden>
+                      <CheckIcon />
+                    </span>
+                    {point}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/map"
+                className="home-landing__btn-cta home-landing__btn-cta--sm"
+                onClick={() => trackUsage("landing_map_cta", "map_section")}
+              >
+                <MapPinIcon />
+                {label(labels, "home.landing.map.cta")}
+              </Link>
+            </div>
+          </LandingReveal>
+          <LandingReveal delay={120}>
+            <Link
+              href="/map"
+              className="home-landing__map-shot"
+              onClick={() => trackUsage("landing_map_cta", "map_screenshot")}
+            >
+              <Image
+                src="/home1.png"
+                alt={label(labels, "home.landing.map.imageAlt")}
+                width={819}
+                height={546}
+                sizes="(max-width: 900px) 100vw, 50vw"
+              />
+            </Link>
+          </LandingReveal>
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section className="home-landing__section">
+        <LandingReveal>
+          <SectionHeader title={label(labels, "home.landing.steps.title")} />
+        </LandingReveal>
+        <div className="home-landing__steps-grid">
+          {steps.map((step, i) => (
+            <LandingReveal key={step.title} delay={i * 90}>
+              <div className="home-landing__step">
+                <span className="home-landing__step-num" aria-hidden>
+                  0{i + 1}
+                </span>
+                <h3>{step.title}</h3>
+                <p>{step.body}</p>
+              </div>
+            </LandingReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Social proof: real catch photos, scrapbook style ── */}
+      <section className="home-landing__section">
+        <LandingReveal>
+          <SectionHeader
+            title={label(labels, "home.landing.catches.titleLead")}
+            titleAccent={label(labels, "home.landing.catches.titleAccent")}
+            lede={label(labels, "home.landing.catches.lede")}
+          />
+        </LandingReveal>
+        <div className="home-landing__catch-grid">
+          {HOME_PREVIEW_SLIDES.map((slide, i) => (
+            <LandingReveal key={slide.imageSrc} delay={(i % 3) * 90}>
+              <figure className="home-landing__polaroid">
+                <div className="home-landing__polaroid-photo">
+                  <Image
+                    src={slide.imageSrc}
+                    alt={`${slide.species}, ${slide.location}`}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
+                  />
+                </div>
+                <figcaption className="home-landing__polaroid-caption">
+                  <span className="home-landing__polaroid-species">{slide.species}</span>
+                  <span className="home-landing__polaroid-meta">
+                    @{slide.username} · {slide.location}
+                  </span>
+                  <span className="home-landing__polaroid-engage" aria-hidden>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 21s-7.5-4.9-9.7-9.1C.6 8.6 2.6 5 6.2 5c2.1 0 3.6 1.1 4.5 2.6h2.6C14.2 6.1 15.7 5 17.8 5c3.6 0 5.6 3.6 3.9 6.9C19.5 16.1 12 21 12 21Z" />
+                    </svg>
+                    {slide.likes}
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M21 12a8 8 0 0 1-8 8H4l2.3-2.9A8 8 0 1 1 21 12Z" />
+                    </svg>
+                    {slide.comments}
+                  </span>
+                </figcaption>
+              </figure>
+            </LandingReveal>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Testimonials with star ratings ── */}
+      <section className="home-landing__section">
+        <LandingReveal>
+          <SectionHeader
+            title={label(labels, "home.landing.testimonials.titleLead")}
+            titleAccent={label(labels, "home.landing.testimonials.titleAccent")}
+          />
+        </LandingReveal>
+        <div className="home-landing__quotes-grid">
+          {([1, 2, 3] as const).map((n, i) => (
+            <LandingReveal key={n} delay={i * 80}>
+              <TestimonialCard
+                quote={label(labels, `home.landing.quote${n}`)}
+                name={label(labels, `home.landing.quote${n}By`)}
+                role={label(labels, `home.landing.quote${n}Role`)}
               />
             </LandingReveal>
           ))}
         </div>
       </section>
 
-      <section className="home-landing__section home-landing__section--carousel">
-        <LandingReveal>
-          <SectionHeader
-            eyebrow={sectionPill}
-            title={whyFishListTitle.lead}
-            titleAccent={whyFishListTitle.accent || undefined}
-            lede={label(labels, "home.landing.carousel.lede")}
-          />
-        </LandingReveal>
-        <LandingReveal delay={120}>
-          <LandingCoverflowLazy />
-        </LandingReveal>
-      </section>
-
+      {/* ── Free means free ── */}
       <section className="home-landing__section">
         <LandingReveal>
-          <SectionHeader
-            eyebrow={label(labels, "home.landing.testimonials.pill")}
-            title={testimonialsTitle.lead}
-            titleAccent={testimonialsTitle.accent || undefined}
-          />
+          <div className="home-landing__free">
+            <h2 className="home-landing__free-title">{label(labels, "home.landing.free.title")}</h2>
+            <p className="home-landing__free-body">{label(labels, "home.landing.free.body")}</p>
+            <Link
+              href="/map"
+              className="home-landing__free-link"
+              onClick={() => trackUsage("landing_map_cta", "free_section")}
+            >
+              {label(labels, "home.landing.free.cta")}
+              <span aria-hidden>→</span>
+            </Link>
+          </div>
         </LandingReveal>
-        <div className="home-landing__quotes-grid">
-          <LandingReveal delay={0}>
-            <TestimonialCard
-              quote={label(labels, "home.landing.quote1")}
-              name={label(labels, "home.landing.quote1By")}
-              role={label(labels, "home.landing.quote1Role")}
-            />
-          </LandingReveal>
-          <LandingReveal delay={80}>
-            <TestimonialCard
-              quote={label(labels, "home.landing.quote2")}
-              name={label(labels, "home.landing.quote2By")}
-              role={label(labels, "home.landing.quote2Role")}
-            />
-          </LandingReveal>
-          <LandingReveal delay={160}>
-            <TestimonialCard
-              quote={label(labels, "home.landing.quote3")}
-              name={label(labels, "home.landing.quote3By")}
-              role={label(labels, "home.landing.quote3Role")}
-            />
-          </LandingReveal>
-        </div>
       </section>
 
+      {/* ── Final CTA band ── */}
       <section className="home-landing__section">
         <LandingReveal>
           <div className="home-landing__cta-band">
-            <h2 className="home-landing__cta-title">{label(labels, "home.landing.ctaTitle")}</h2>
-            <p className="home-landing__cta-body">{label(labels, "home.landing.ctaBody")}</p>
-            <div className="home-landing__cta-actions">
-              <Link href="/login" className="home-landing__cta-btn home-landing__cta-btn--primary">
-                {label(labels, "home.getStarted")}
-              </Link>
-              <Link href="/map" className="home-landing__cta-btn home-landing__cta-btn--secondary">
-                {label(labels, "home.openMap")}
-              </Link>
+            <BlobCluster corner="tl" />
+            <BlobCluster corner="br" />
+            <div className="home-landing__cta-inner">
+              <h2 className="home-landing__cta-title">{label(labels, "home.landing.cta.title")}</h2>
+              <p className="home-landing__cta-body">{label(labels, "home.landing.cta.body")}</p>
+              <div className="home-landing__cta-actions">
+                <Link
+                  href="/map"
+                  className="home-landing__btn-cta"
+                  onClick={() => trackUsage("landing_map_cta", "footer")}
+                >
+                  <MapPinIcon />
+                  {label(labels, "home.landing.cta.primary")}
+                </Link>
+                <Link
+                  href="/login"
+                  className="home-landing__btn-ghost"
+                  onClick={() => trackUsage("landing_signup_cta", "footer")}
+                >
+                  {label(labels, "home.landing.cta.secondary")}
+                </Link>
+              </div>
             </div>
           </div>
         </LandingReveal>

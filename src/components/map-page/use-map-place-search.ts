@@ -7,6 +7,7 @@ import {
   type GeocodeSearchHit,
 } from "@/lib/geocode-search-types";
 import type { LakeSearchPinState } from "@/components/map-page/map-page-types";
+import { trackUsage } from "@/lib/usage-tracking";
 
 type MapTranslate = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -67,6 +68,7 @@ export function useMapPlaceSearch(
 
   const selectLakeSuggestion = useCallback((s: GeocodeSearchHit) => {
     const label = formatGeocodeHitLabel(s);
+    trackUsage("map_search", label);
     setLakeSearchPin({
       lat: s.latitude,
       lng: s.longitude,

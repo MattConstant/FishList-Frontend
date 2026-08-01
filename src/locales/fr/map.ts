@@ -121,4 +121,12 @@ export default {
     "Touchez l'eau pour la prevision et la fiche du lac. Touchez un poisson bleu ou vert pour les details d'ensemencement ou de presence. Enregistrez un lieu avec le coeur une fois connecte.",
   "map.onboarding.dismiss": "Compris",
   "map.onboarding.close": "Fermer le guide",
+  "map.anonCatches.tooltipOne": "Une prise a ete enregistree dans ce secteur",
+  "map.anonCatches.tooltipMany": "{{n}} prises enregistrees dans ce secteur",
+  "map.anonCatches.popupTitle": "Des pecheurs ont pris du poisson ici !",
+  "map.anonCatches.popupBodyOne":
+    "Une prise a ete enregistree dans ce secteur. Connectez-vous pour voir l'espece, les photos et les details.",
+  "map.anonCatches.popupBody":
+    "{{n}} prises ont ete enregistrees dans ce secteur. Connectez-vous pour voir les especes, les photos et les details.",
+  "map.anonCatches.popupCta": "Se connecter pour voir les prises",
 } as const;

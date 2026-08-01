@@ -2,6 +2,18 @@
 
 import { LIO_BATHYMETRY_MIN_ZOOM } from "@/lib/lio-bathymetry";
 import type { FavoriteSpot } from "@/lib/map-favorites";
+import { trackUsage } from "@/lib/usage-tracking";
+
+/** Toggle handler that also records the change for the admin usage panel. */
+function trackedToggle(
+  layer: string,
+  setter: (v: boolean | ((p: boolean) => boolean)) => void,
+): (checked: boolean) => void {
+  return (checked) => {
+    trackUsage("map_layer", `${layer}:${checked ? "on" : "off"}`);
+    setter(checked);
+  };
+}
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
 
@@ -88,7 +100,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={satelliteImagery}
-              onChange={(e) => setSatelliteImagery(e.target.checked)}
+              onChange={(e) => trackedToggle("satellite", setSatelliteImagery)(e.target.checked)}
               title={t("map.basemap.satelliteBlurb")}
             />
             <span className="map-page__layers-text">
@@ -102,7 +114,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={showStocking}
-              onChange={(e) => setShowStocking(e.target.checked)}
+              onChange={(e) => trackedToggle("stocking", setShowStocking)(e.target.checked)}
             />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.stocking")}</span>
@@ -115,7 +127,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={showAra}
-              onChange={(e) => setShowAra(e.target.checked)}
+              onChange={(e) => trackedToggle("presence", setShowAra)(e.target.checked)}
             />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.presence")}</span>
@@ -128,7 +140,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={showCatches}
-              onChange={(e) => setShowCatches(e.target.checked)}
+              onChange={(e) => trackedToggle("catches", setShowCatches)(e.target.checked)}
               disabled={hydrated ? !userPresent : undefined}
             />
             <span className="map-page__layers-text">
@@ -146,7 +158,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={showCamps}
-              onChange={(e) => setShowCamps(e.target.checked)}
+              onChange={(e) => trackedToggle("camps", setShowCamps)(e.target.checked)}
               disabled={hydrated ? !userPresent : undefined}
             />
             <span className="map-page__layers-text">
@@ -165,7 +177,7 @@ export function MapPageLayersPanel({
                 type="checkbox"
                 className="map-page__layers-check"
                 checked={showBathymetry}
-                onChange={(e) => setShowBathymetry(e.target.checked)}
+                onChange={(e) => trackedToggle("bathymetry", setShowBathymetry)(e.target.checked)}
               />
               <span className="map-page__layers-text">
                 <span className="map-page__layers-name">{t("map.layers.bathymetry")}</span>
@@ -184,7 +196,7 @@ export function MapPageLayersPanel({
               type="checkbox"
               className="map-page__layers-check"
               checked={showMapLegend}
-              onChange={(e) => setShowMapLegend(e.target.checked)}
+              onChange={(e) => trackedToggle("legend", setShowMapLegend)(e.target.checked)}
             />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.legend")}</span>

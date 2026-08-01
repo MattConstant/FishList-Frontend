@@ -118,4 +118,12 @@ export default {
     "Tap open water for a fishing forecast and lake sheet. Tap a blue or green fish pin for stocking or presence details. Save spots with the heart when you are logged in.",
   "map.onboarding.dismiss": "Got it",
   "map.onboarding.close": "Close guide",
+  "map.anonCatches.tooltipOne": "A catch was logged in this area",
+  "map.anonCatches.tooltipMany": "{{n}} catches logged in this area",
+  "map.anonCatches.popupTitle": "Anglers caught fish around here!",
+  "map.anonCatches.popupBodyOne":
+    "A catch has been logged in this area. Log in to see the species, photos, and details.",
+  "map.anonCatches.popupBody":
+    "{{n}} catches have been logged in this area. Log in to see the species, photos, and details.",
+  "map.anonCatches.popupCta": "Log in to view catches",
 } as const;
