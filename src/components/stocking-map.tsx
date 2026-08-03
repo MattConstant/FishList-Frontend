@@ -286,14 +286,15 @@ function areaBoundsFromTap(
       east: center.lng + lngHalf,
     };
   }
+  // Compact default on phones (~12% of the visible map).
   const view = map.getBounds();
   const latHalf = Math.max(
-    0.006,
-    Math.min((view.getNorth() - view.getSouth()) * 0.14, 0.12),
+    0.003,
+    Math.min((view.getNorth() - view.getSouth()) * 0.06, 0.045),
   );
   const lngHalf = Math.max(
-    0.008,
-    Math.min((view.getEast() - view.getWest()) * 0.14, 0.16),
+    0.004,
+    Math.min((view.getEast() - view.getWest()) * 0.06, 0.055),
   );
   return {
     south: center.lat - latHalf,
