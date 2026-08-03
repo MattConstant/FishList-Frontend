@@ -671,17 +671,19 @@ export default function StockingMap({
   // Draw / resize selection rectangle for AI area spots.
   // Pan stays enabled unless Shift is held or "Draw box" is armed.
   useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
+    const mapInstance = mapRef.current;
+    if (!mapInstance) return;
+    // Re-bind with a definite type so nested handlers type-check (TS drops null narrowing in closures).
+    const leafletMap: L.Map = mapInstance;
 
     if (areaLayerRef.current) {
-      map.removeLayer(areaLayerRef.current);
+      leafletMap.removeLayer(areaLayerRef.current);
       areaLayerRef.current = null;
     }
 
     if (!areaSelectMode && !areaBounds) return;
 
-    const layer = L.layerGroup().addTo(map);
+    const layer = L.layerGroup().addTo(leafletMap);
     areaLayerRef.current = layer;
 
     let draftRect: L.Rectangle | null = null;
@@ -697,9 +699,8 @@ export default function StockingMap({
     }
 
     function syncDrawCursor() {
-      const liveMap = mapRef.current;
-      if (!liveMap || !areaSelectMode) return;
-      const container = liveMap.getContainer();
+      if (!areaSelectMode) return;
+      const container = leafletMap.getContainer();
       if (areaDrawArmedRef.current || shiftHeld || areaDrawingRef.current) {
         container.classList.add("map-page__map--area-draw");
         container.style.cursor = "crosshair";
@@ -807,7 +808,7 @@ export default function StockingMap({
 
       areaDrawingRef.current = true;
       startLatLng = e.latlng;
-      map.dragging.disable();
+      leafletMap.dragging.disable();
       L.DomEvent.stop(oe);
       syncDrawCursor();
       if (draftRect) {
@@ -833,7 +834,7 @@ export default function StockingMap({
     function onMouseUp(e: L.LeafletMouseEvent) {
       if (!areaDrawingRef.current || !startLatLng) return;
       areaDrawingRef.current = false;
-      map.dragging.enable();
+      leafletMap.dragging.enable();
       const b = boundsFromCorners(startLatLng, e.latlng);
       startLatLng = null;
       if (draftRect) {
@@ -870,25 +871,25 @@ export default function StockingMap({
     }
 
     if (areaSelectMode) {
-      map.on("mousedown", onMouseDown);
-      map.on("mousemove", onMouseMove);
-      map.on("mouseup", onMouseUp);
+      leafletMap.on("mousedown", onMouseDown);
+      leafletMap.on("mousemove", onMouseMove);
+      leafletMap.on("mouseup", onMouseUp);
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
       syncDrawCursor();
     }
 
     return () => {
-      map.off("mousedown", onMouseDown);
-      map.off("mousemove", onMouseMove);
-      map.off("mouseup", onMouseUp);
+      leafletMap.off("mousedown", onMouseDown);
+      leafletMap.off("mousemove", onMouseMove);
+      leafletMap.off("mouseup", onMouseUp);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
-      map.dragging.enable();
+      leafletMap.dragging.enable();
       areaDrawingRef.current = false;
-      map.getContainer().classList.remove("map-page__map--area-draw");
+      leafletMap.getContainer().classList.remove("map-page__map--area-draw");
       if (areaLayerRef.current) {
-        map.removeLayer(areaLayerRef.current);
+        leafletMap.removeLayer(areaLayerRef.current);
         areaLayerRef.current = null;
       }
     };
