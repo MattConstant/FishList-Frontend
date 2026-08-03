@@ -34,7 +34,7 @@ function securityHeaders(): { key: string; value: string }[] {
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Phone testing on LAN — add your PC IPv4 from ipconfig if it changes.
-  allowedDevOrigins: ["192.168.2.47"],
+  allowedDevOrigins: ["192.168.2.24", "192.168.2.10", "192.168.2.47"],
   images: {
     // Presigned Supabase/MinIO URLs and other HTTPS hosts used in feed photos.
     remotePatterns: [

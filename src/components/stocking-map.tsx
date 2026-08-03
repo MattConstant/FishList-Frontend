@@ -271,15 +271,6 @@ function areaCornerHandleIcon(): L.DivIcon {
   });
 }
 
-/** Tap-to-place only on phones / touch devices — not mouse PCs. */
-function prefersTapToPlaceBox(): boolean {
-  if (typeof window === "undefined") return false;
-  return (
-    window.matchMedia("(pointer: coarse)").matches ||
-    window.matchMedia("(hover: none)").matches
-  );
-}
-
 function areaBoundsFromTap(
   map: L.Map,
   center: L.LatLng,
@@ -914,21 +905,69 @@ export default function StockingMap({
       }
     }
 
-    // Phones only: tap places/moves a box. PCs use Draw box / Shift-drag.
-    function onTapPlace(e: L.LeafletMouseEvent) {
+    // Phone tap-to-place: use pointer events (not Leaflet click — markers eat those).
+    // Mouse PCs are ignored so desktop stays Draw box / Shift-drag only.
+    const TAP_MAX_MOVE_PX = 14;
+    const TAP_MAX_MS = 700;
+    let tapOrigin: { id: number; x: number; y: number; t: number } | null = null;
+    const mapEl = leafletMap.getContainer();
+
+    function isUiChrome(target: EventTarget | null): boolean {
+      const el = target as HTMLElement | null;
+      if (!el?.closest) return false;
+      return Boolean(
+        el.closest(".map-page__area-handle-wrap") ||
+          el.closest(".leaflet-control") ||
+          el.closest(".map-page__ai-spots-panel") ||
+          el.closest(".map-page__layers-panel") ||
+          el.closest(".map-page__login-float"),
+      );
+    }
+
+    function onPhonePointerDown(ev: PointerEvent) {
       if (!areaSelectMode) return;
-      if (!prefersTapToPlaceBox()) return;
+      if (ev.pointerType === "mouse") return;
       if (areaDrawArmedRef.current || areaDrawingRef.current) return;
-      const t = e.originalEvent.target as HTMLElement | null;
-      if (t?.closest?.(".map-page__area-handle-wrap")) return;
-      emitBounds(areaBoundsFromTap(leafletMap, e.latlng, areaBoundsRef.current));
+      if (isUiChrome(ev.target)) {
+        tapOrigin = null;
+        return;
+      }
+      tapOrigin = {
+        id: ev.pointerId,
+        x: ev.clientX,
+        y: ev.clientY,
+        t: Date.now(),
+      };
+    }
+
+    function onPhonePointerUp(ev: PointerEvent) {
+      if (!tapOrigin || ev.pointerId !== tapOrigin.id) return;
+      const origin = tapOrigin;
+      tapOrigin = null;
+      if (!areaSelectMode) return;
+      if (ev.pointerType === "mouse") return;
+      if (areaDrawArmedRef.current || areaDrawingRef.current) return;
+      if (isUiChrome(ev.target)) return;
+      if (Date.now() - origin.t > TAP_MAX_MS) return;
+      const dx = ev.clientX - origin.x;
+      const dy = ev.clientY - origin.y;
+      if (dx * dx + dy * dy > TAP_MAX_MOVE_PX * TAP_MAX_MOVE_PX) return;
+
+      const latlng = leafletMap.mouseEventToLatLng(ev as unknown as MouseEvent);
+      emitBounds(areaBoundsFromTap(leafletMap, latlng, areaBoundsRef.current));
+    }
+
+    function onPhonePointerCancel(ev: PointerEvent) {
+      if (tapOrigin && ev.pointerId === tapOrigin.id) tapOrigin = null;
     }
 
     if (areaSelectMode) {
       leafletMap.on("mousedown", onMouseDown);
       leafletMap.on("mousemove", onMouseMove);
       leafletMap.on("mouseup", onMouseUp);
-      leafletMap.on("click", onTapPlace);
+      mapEl.addEventListener("pointerdown", onPhonePointerDown, { capture: true });
+      mapEl.addEventListener("pointerup", onPhonePointerUp, { capture: true });
+      mapEl.addEventListener("pointercancel", onPhonePointerCancel, { capture: true });
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
       syncDrawCursor();
@@ -938,7 +977,9 @@ export default function StockingMap({
       leafletMap.off("mousedown", onMouseDown);
       leafletMap.off("mousemove", onMouseMove);
       leafletMap.off("mouseup", onMouseUp);
-      leafletMap.off("click", onTapPlace);
+      mapEl.removeEventListener("pointerdown", onPhonePointerDown, true);
+      mapEl.removeEventListener("pointerup", onPhonePointerUp, true);
+      mapEl.removeEventListener("pointercancel", onPhonePointerCancel, true);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       leafletMap.dragging.enable();

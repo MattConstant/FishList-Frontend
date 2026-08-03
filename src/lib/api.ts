@@ -403,6 +403,21 @@ export function getConnectionIssueLocaleKey(err: unknown): string | null {
 
 export function getApiBaseUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "");
+
+  // Phone / LAN testing: the page is opened as http://192.168.x.x:3000, but env
+  // usually points at localhost:8080 (the phone itself). Use the same host on :8080.
+  if (typeof window !== "undefined") {
+    const host = window.location.hostname;
+    const isLocalHost = host === "localhost" || host === "127.0.0.1";
+    const envIsLocal =
+      !fromEnv ||
+      fromEnv.includes("://localhost") ||
+      fromEnv.includes("://127.0.0.1");
+    if (!isLocalHost && envIsLocal) {
+      return `${window.location.protocol}//${host}:8080`;
+    }
+  }
+
   if (fromEnv) return fromEnv;
   if (process.env.NODE_ENV === "production") return DEFAULT_PRODUCTION_API_BASE;
   return "http://localhost:8080";
