@@ -799,6 +799,39 @@ export default function StockingMap({
       return areaDrawArmedRef.current || oe.shiftKey;
     }
 
+    function finishDraw(endLatLng: L.LatLng | null) {
+      if (!areaDrawingRef.current || !startLatLng) {
+        leafletMap.dragging.enable();
+        return;
+      }
+      areaDrawingRef.current = false;
+      leafletMap.dragging.enable();
+      const end = endLatLng ?? startLatLng;
+      const b = boundsFromCorners(startLatLng, end);
+      startLatLng = null;
+      if (draftRect) {
+        layer.removeLayer(draftRect);
+        draftRect = null;
+      }
+      // Ignore tiny clicks / taps.
+      if (
+        Math.abs(b.getNorth() - b.getSouth()) < 0.0008 ||
+        Math.abs(b.getEast() - b.getWest()) < 0.0008
+      ) {
+        syncDrawCursor();
+        return;
+      }
+      emitBounds({
+        south: b.getSouth(),
+        west: b.getWest(),
+        north: b.getNorth(),
+        east: b.getEast(),
+      });
+      // Return to pan after a successful draw.
+      onAreaDrawArmedChangeRef.current?.(false);
+      syncDrawCursor();
+    }
+
     function onMouseDown(e: L.LeafletMouseEvent) {
       if (!areaSelectMode) return;
       const oe = e.originalEvent;
@@ -832,29 +865,17 @@ export default function StockingMap({
     }
 
     function onMouseUp(e: L.LeafletMouseEvent) {
-      if (!areaDrawingRef.current || !startLatLng) return;
-      areaDrawingRef.current = false;
-      leafletMap.dragging.enable();
-      const b = boundsFromCorners(startLatLng, e.latlng);
-      startLatLng = null;
-      if (draftRect) {
-        layer.removeLayer(draftRect);
-        draftRect = null;
-      }
-      // Ignore tiny clicks.
-      if (Math.abs(b.getNorth() - b.getSouth()) < 0.0008 || Math.abs(b.getEast() - b.getWest()) < 0.0008) {
-        syncDrawCursor();
-        return;
-      }
-      emitBounds({
-        south: b.getSouth(),
-        west: b.getWest(),
-        north: b.getNorth(),
-        east: b.getEast(),
-      });
-      // Return to pan after a successful draw.
-      onAreaDrawArmedChangeRef.current?.(false);
-      syncDrawCursor();
+      finishDraw(e.latlng);
+    }
+
+    // Phones often miss map mouseup; always re-enable pan on gesture end.
+    function onGlobalPointerUp() {
+      if (!areaDrawingRef.current) return;
+      const end =
+        draftRect != null
+          ? draftRect.getBounds().getNorthEast()
+          : startLatLng;
+      finishDraw(end);
     }
 
     function onKeyDown(ev: KeyboardEvent) {
@@ -874,6 +895,10 @@ export default function StockingMap({
       leafletMap.on("mousedown", onMouseDown);
       leafletMap.on("mousemove", onMouseMove);
       leafletMap.on("mouseup", onMouseUp);
+      window.addEventListener("pointerup", onGlobalPointerUp);
+      window.addEventListener("pointercancel", onGlobalPointerUp);
+      window.addEventListener("touchend", onGlobalPointerUp);
+      window.addEventListener("touchcancel", onGlobalPointerUp);
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
       syncDrawCursor();
@@ -883,6 +908,10 @@ export default function StockingMap({
       leafletMap.off("mousedown", onMouseDown);
       leafletMap.off("mousemove", onMouseMove);
       leafletMap.off("mouseup", onMouseUp);
+      window.removeEventListener("pointerup", onGlobalPointerUp);
+      window.removeEventListener("pointercancel", onGlobalPointerUp);
+      window.removeEventListener("touchend", onGlobalPointerUp);
+      window.removeEventListener("touchcancel", onGlobalPointerUp);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       leafletMap.dragging.enable();

@@ -7,6 +7,20 @@
   @apply flex min-h-0 flex-1 flex-col overflow-hidden;
 }
 
+/*
+ * Map route: keep <main> from stealing touch pans (layout.tsx sets this class).
+ * Leaflet needs the gesture; a scrollable ancestor breaks phone drag.
+ */
+html.fishlist-map-route main {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.map-page__map-area .leaflet-container {
+  touch-action: none;
+  -ms-touch-action: none;
+}
+
 .map-page__chrome {
   @apply border-b border-zinc-200/90 bg-white dark:border-zinc-700/90 dark:bg-zinc-900;
 }
@@ -366,6 +380,8 @@
 
 .map-page__map-area {
   @apply relative min-h-[12rem] flex-1 basis-0 overflow-hidden;
+  touch-action: none;
+  -ms-touch-action: none;
 }
 
 .map-page__map-area--placing {
