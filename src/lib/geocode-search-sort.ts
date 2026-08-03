@@ -6,31 +6,52 @@ const WATER_TERMS =
 
 /**
  * True when the typed query suggests the user wants a waterbody (not only a town).
- * If false, we rank populated places by population so cities/towns surface first.
  */
 export function geocodeQueryImpliesWater(query: string): boolean {
   return WATER_TERMS.test(query.trim());
 }
 
-/** Map / pin search: Canada-first, then water vs town ranking from the query intent. */
+export function isCanadaGeocodeHit(h: GeocodeSearchHit): boolean {
+  const c = (h.country ?? "").trim().toLowerCase();
+  return c === "canada" || c === "ca";
+}
+
+function isWaterHit(h: GeocodeSearchHit): boolean {
+  if (h.featureCode === "H.LK" || h.featureCode === "LK") return true;
+  return WATER_TERMS.test(h.name);
+}
+
+function isSettlementCode(code: string | null | undefined): boolean {
+  if (!code) return false;
+  return code.startsWith("PPL") || code === "PPLA" || code === "PPLC" || code === "PPLX";
+}
+
+/** Map / pin search: Canada-only, lakes boosted (fishing map), towns by population. */
 export function sortGeocodeHitsForPinDrop(
   hits: GeocodeSearchHit[],
   query: string,
 ): GeocodeSearchHit[] {
   const wantsWater = geocodeQueryImpliesWater(query);
-  const indexed = hits.map((h, i) => ({ h, i }));
+  const canada = hits.filter(isCanadaGeocodeHit);
+  const indexed = canada.map((h, i) => ({ h, i }));
 
   const score = (h: GeocodeSearchHit, originalIndex: number): number => {
     let s = 0;
-    if (h.country?.toLowerCase() === "canada") s += 10_000_000;
+    const water = isWaterHit(h);
 
-    if (wantsWater) {
-      if (h.featureCode === "H.LK") s += 2_000_000;
-      if (WATER_TERMS.test(h.name)) s += 1_000_000;
+    if (water) {
+      // Always surface lakes on this map; stronger when the query looks watery.
+      s += wantsWater ? 12_000_000 : 4_000_000;
+      if (h.featureCode === "H.LK" || h.featureCode === "LK") s += 1_000_000;
+      if (WATER_TERMS.test(h.name)) s += 500_000;
+    } else if (isSettlementCode(h.featureCode)) {
+      s += Math.min(h.population ?? 0, 8_000_000);
+      if (!wantsWater) s += 500_000;
     } else {
-      s += Math.min(h.population ?? 0, 99_999_999);
+      s += Math.min(h.population ?? 0, 2_000_000);
     }
 
+    // Prefer closer name matches lightly via original provider order.
     s += (1_000 - Math.min(originalIndex, 999)) / 1000;
     return s;
   };

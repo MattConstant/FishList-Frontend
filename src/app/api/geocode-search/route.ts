@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
-import { geocodeQueryImpliesWater } from "@/lib/geocode-search-sort";
+import {
+  geocodeQueryImpliesWater,
+  isCanadaGeocodeHit,
+} from "@/lib/geocode-search-sort";
 import type { GeocodeSearchHit } from "@/lib/geocode-search-types";
 import {
   fetchNominatimPlaceHits,
@@ -16,6 +19,8 @@ async function fetchOpenMeteoHits(
   url.searchParams.set("name", q);
   url.searchParams.set("count", "20");
   url.searchParams.set("language", lang);
+  // Canada only — Open-Meteo GeoNames country filter.
+  url.searchParams.set("countryCode", "CA");
 
   const res = await fetch(url.toString(), {
     headers: { Accept: "application/json" },
@@ -29,25 +34,28 @@ async function fetchOpenMeteoHits(
       latitude: number;
       longitude: number;
       country?: string;
+      country_code?: string;
       admin1?: string | null;
       feature_code?: string;
       population?: number;
     }[];
   };
 
-  return (raw.results ?? []).map((r) => ({
-    id: r.id,
-    name: r.name,
-    latitude: r.latitude,
-    longitude: r.longitude,
-    country: r.country ?? "",
-    admin1: r.admin1 ?? null,
-    featureCode: r.feature_code ?? null,
-    population: typeof r.population === "number" ? r.population : null,
-  }));
+  return (raw.results ?? [])
+    .map((r) => ({
+      id: r.id,
+      name: r.name,
+      latitude: r.latitude,
+      longitude: r.longitude,
+      country: r.country || (r.country_code?.toUpperCase() === "CA" ? "Canada" : ""),
+      admin1: r.admin1 ?? null,
+      featureCode: r.feature_code ?? null,
+      population: typeof r.population === "number" ? r.population : null,
+    }))
+    .filter(isCanadaGeocodeHit);
 }
 
-/** Towns via Open-Meteo; lakes and waterbodies via Nominatim when needed. */
+/** Canadian towns (Open-Meteo) + Canadian lakes/waterbodies (Nominatim). */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const q = searchParams.get("q")?.trim() ?? "";
@@ -64,15 +72,15 @@ export async function GET(request: Request) {
     const wantsWater = geocodeQueryImpliesWater(q);
     const [openMeteo, nominatim] = await Promise.all([
       fetchOpenMeteoHits(q, lang),
-      wantsWater || q.length >= 3
-        ? fetchNominatimPlaceHits(q, lang)
-        : Promise.resolve([] as GeocodeSearchHit[]),
+      // Always ask Nominatim so lakes appear even without typing "lake".
+      fetchNominatimPlaceHits(q, lang),
     ]);
 
-    let results = mergeGeocodeHits(openMeteo, nominatim);
+    let results = mergeGeocodeHits(openMeteo, nominatim).filter(isCanadaGeocodeHit);
 
-    if (results.length === 0 && !wantsWater) {
-      results = await fetchNominatimPlaceHits(q, lang);
+    // If providers returned nothing useful for a watery query, try an explicit lake/lac pass.
+    if (results.length === 0 && wantsWater) {
+      results = (await fetchNominatimPlaceHits(q, lang)).filter(isCanadaGeocodeHit);
     }
 
     return NextResponse.json({ results });
