@@ -697,8 +697,9 @@ export default function StockingMap({
     }
 
     function syncDrawCursor() {
-      const container = map.getContainer();
-      if (!areaSelectMode) return;
+      const liveMap = mapRef.current;
+      if (!liveMap || !areaSelectMode) return;
+      const container = liveMap.getContainer();
       if (areaDrawArmedRef.current || shiftHeld || areaDrawingRef.current) {
         container.classList.add("map-page__map--area-draw");
         container.style.cursor = "crosshair";
