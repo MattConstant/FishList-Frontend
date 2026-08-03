@@ -791,7 +791,6 @@ export type AdminUsageDetailCount = {
 
 export type AdminUsageSummaryResponse = {
   totals: AdminUsageTypeCount[];
-  /** Most popular detail values (filters, button placements) over the last 30 days. */
   topDetails: AdminUsageDetailCount[];
 };
 
@@ -799,7 +798,6 @@ export type AdminUsageEventRow = {
   id: number;
   type: string;
   detail: string | null;
-  /** Null for logged-out visitors. */
   username: string | null;
   createdAtEpochMs: number;
 };
@@ -1634,6 +1632,34 @@ export type LakeFishingInsightApiResponse = {
   text: string;
 };
 
+export type AreaFishingSpotPin = {
+  lat: number;
+  lng: number;
+  label: string;
+};
+
+export type AreaFishingWaterAnchor = {
+  lat: number;
+  lng: number;
+  name: string;
+};
+
+export type AreaFishingSpotsPayload = {
+  south: number;
+  west: number;
+  north: number;
+  east: number;
+  areaLabel?: string;
+  targetSpecies?: string;
+  /** Known on-water pins (stocking / presence) so AI spots stay on the lake. */
+  waterAnchors?: AreaFishingWaterAnchor[];
+};
+
+export type AreaFishingSpotsApiResponse = {
+  text: string;
+  spots: AreaFishingSpotPin[];
+};
+
 /**
  * Lake stocking insights - POST same-origin `/api/ai/lake-fishing-insights` (Next proxy → Spring).
  * Returns narrative text (species, tactics, general tips - no map pins).
@@ -1671,6 +1697,59 @@ export async function fetchLakeFishingInsights(
     throw new ApiHttpError("Invalid response from server.", res.status);
   }
   return { text: data.text };
+}
+
+/**
+ * Area fishing spots — POST same-origin `/api/ai/area-fishing-spots` (Next proxy → Spring).
+ * Returns narrative + map pins inside the selected bounding box.
+ */
+export async function fetchAreaFishingSpots(
+  payload: AreaFishingSpotsPayload,
+): Promise<AreaFishingSpotsApiResponse> {
+  const session = loadSession();
+  if (!session) {
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+    throw new Error("Not authenticated");
+  }
+
+  const res = await backendFetch("/api/ai/area-fishing-spots", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: session.authorizationHeader,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (res.status === 401) {
+    clearSession();
+    if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      window.location.assign("/login");
+    }
+  }
+
+  await throwIfNotOk(res);
+  const data = await parseResponseJson<AreaFishingSpotsApiResponse>(res);
+  if (typeof data.text !== "string" || !Array.isArray(data.spots)) {
+    throw new ApiHttpError("Invalid response from server.", res.status);
+  }
+  const spots = data.spots
+    .filter(
+      (s) =>
+        s &&
+        typeof s.lat === "number" &&
+        typeof s.lng === "number" &&
+        Number.isFinite(s.lat) &&
+        Number.isFinite(s.lng),
+    )
+    .map((s) => ({
+      lat: s.lat,
+      lng: s.lng,
+      label: typeof s.label === "string" && s.label.trim() ? s.label.trim() : "Suggested spot",
+    }));
+  return { text: data.text, spots };
 }
 
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {

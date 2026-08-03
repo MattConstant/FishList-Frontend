@@ -4,7 +4,6 @@ import { LIO_BATHYMETRY_MIN_ZOOM } from "@/lib/lio-bathymetry";
 import type { FavoriteSpot } from "@/lib/map-favorites";
 import { trackUsage } from "@/lib/usage-tracking";
 
-/** Toggle handler that also records the change for the admin usage panel. */
 function trackedToggle(
   layer: string,
   setter: (v: boolean | ((p: boolean) => boolean)) => void,
@@ -16,6 +15,24 @@ function trackedToggle(
 }
 
 type Translate = (key: string, vars?: Record<string, string | number>) => string;
+
+type LayerIcon =
+  | "satellite"
+  | "stocking"
+  | "presence"
+  | "catch"
+  | "camp"
+  | "depth"
+  | "legend";
+
+function LayerGlyph({ kind }: { kind: LayerIcon }) {
+  return (
+    <span
+      className={`map-page__layers-icon map-page__legend-icon map-page__legend-icon--${kind}`}
+      aria-hidden
+    />
+  );
+}
 
 type Props = {
   t: Translate;
@@ -103,6 +120,7 @@ export function MapPageLayersPanel({
               onChange={(e) => trackedToggle("satellite", setSatelliteImagery)(e.target.checked)}
               title={t("map.basemap.satelliteBlurb")}
             />
+            <LayerGlyph kind="satellite" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.satellite")}</span>
               <span className="map-page__layers-blurb">{t("map.basemap.satelliteBlurb")}</span>
@@ -116,6 +134,7 @@ export function MapPageLayersPanel({
               checked={showStocking}
               onChange={(e) => trackedToggle("stocking", setShowStocking)(e.target.checked)}
             />
+            <LayerGlyph kind="stocking" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.stocking")}</span>
               <span className="map-page__layers-blurb">{t("map.layers.stockingBlurb")}</span>
@@ -129,6 +148,7 @@ export function MapPageLayersPanel({
               checked={showAra}
               onChange={(e) => trackedToggle("presence", setShowAra)(e.target.checked)}
             />
+            <LayerGlyph kind="presence" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.presence")}</span>
               <span className="map-page__layers-blurb">{t("map.layers.presenceBlurb")}</span>
@@ -143,6 +163,7 @@ export function MapPageLayersPanel({
               onChange={(e) => trackedToggle("catches", setShowCatches)(e.target.checked)}
               disabled={hydrated ? !userPresent : undefined}
             />
+            <LayerGlyph kind="catch" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.catches")}</span>
               <span className="map-page__layers-blurb">
@@ -161,6 +182,7 @@ export function MapPageLayersPanel({
               onChange={(e) => trackedToggle("camps", setShowCamps)(e.target.checked)}
               disabled={hydrated ? !userPresent : undefined}
             />
+            <LayerGlyph kind="camp" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">Camps</span>
               <span className="map-page__layers-blurb">
@@ -179,6 +201,7 @@ export function MapPageLayersPanel({
                 checked={showBathymetry}
                 onChange={(e) => trackedToggle("bathymetry", setShowBathymetry)(e.target.checked)}
               />
+              <LayerGlyph kind="depth" />
               <span className="map-page__layers-text">
                 <span className="map-page__layers-name">{t("map.layers.bathymetry")}</span>
                 <span className="map-page__layers-blurb">{t("map.layers.bathymetryBlurb")}</span>
@@ -198,6 +221,7 @@ export function MapPageLayersPanel({
               checked={showMapLegend}
               onChange={(e) => trackedToggle("legend", setShowMapLegend)(e.target.checked)}
             />
+            <LayerGlyph kind="legend" />
             <span className="map-page__layers-text">
               <span className="map-page__layers-name">{t("map.layers.legend")}</span>
               <span className="map-page__layers-blurb">{t("map.layers.legendBlurb")}</span>

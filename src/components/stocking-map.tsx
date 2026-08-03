@@ -151,6 +151,28 @@ function araFishIcon(): L.Icon {
   });
 }
 
+/**
+ * Cluster icon for stocking (blue) / presence (green) so zoomed-out groups
+ * stay visually distinct instead of default numbered circles.
+ */
+function fishClusterDivIcon(
+  kind: "stocking" | "presence",
+  count: number,
+): L.DivIcon {
+  const src = kind === "stocking" ? FISH_SVG_STOCKING : FISH_SVG_ARA;
+  const size = 24;
+  const badge = count > 1 ? `<b>${count > 99 ? "99+" : count}</b>` : "";
+  return L.divIcon({
+    className: "map-page__fish-cluster-wrap",
+    html:
+      `<span class="map-page__fish-cluster map-page__fish-cluster--${kind}">` +
+      `<img src="${src}" alt=""/>${badge}</span>`,
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    popupAnchor: [0, -size / 2 - 2],
+  });
+}
+
 /** {@link /public/catch.png} - raw image, centered on the coordinates. */
 function catchPinIcon(): L.Icon {
   return L.icon({
@@ -222,6 +244,38 @@ function searchPinIcon(): L.Icon {
     popupAnchor: [0, -36],
   });
 }
+
+const AI_SPOT_PIN_SVG =
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="32" height="38">` +
+    `<path d="M12 0C5.4 0 0 5.2 0 11.6 0 20.4 12 36 12 36s12-15.6 12-24.4C24 5.2 18.6 0 12 0z" fill="#d97706" stroke="#fff" stroke-width="1.5"/>` +
+    `<circle cx="12" cy="11.5" r="4.5" fill="#fff"/>` +
+    `</svg>`,
+  )}`;
+
+function aiSpotPinIcon(): L.Icon {
+  return L.icon({
+    iconUrl: AI_SPOT_PIN_SVG,
+    iconSize: [30, 36],
+    iconAnchor: [15, 36],
+    popupAnchor: [0, -34],
+  });
+}
+
+function areaCornerHandleIcon(): L.DivIcon {
+  return L.divIcon({
+    className: "map-page__area-handle-wrap",
+    html: `<span class="map-page__area-handle"></span>`,
+    iconSize: [16, 16],
+    iconAnchor: [8, 8],
+  });
+}
+
+export type AiSpotMarker = {
+  lat: number;
+  lng: number;
+  label: string;
+};
 
 export type CatchMapMarker = {
   lat: number;
@@ -299,6 +353,18 @@ type StockingMapProps = {
   campVisible?: boolean;
   /** Camp marker clicked - open details in the parent UI (no Leaflet popup). */
   onCampMarkerClick?: (camp: CampSpotResponse, lat: number, lng: number) => void;
+  /** Draw / resize a selection box for AI area fishing spots. */
+  areaSelectMode?: boolean;
+  /**
+   * When true (or while holding Shift), the next drag draws a box.
+   * Otherwise the map pans normally in selection mode.
+   */
+  areaDrawArmed?: boolean;
+  onAreaDrawArmedChange?: (armed: boolean) => void;
+  areaBounds?: AraViewport | null;
+  onAreaBoundsChange?: (bounds: AraViewport | null) => void;
+  /** AI-suggested fishing spots highlighted on the map. */
+  aiSpots?: AiSpotMarker[];
 };
 
 export default function StockingMap({
@@ -325,6 +391,12 @@ export default function StockingMap({
   campSpots = [],
   campVisible = true,
   onCampMarkerClick,
+  areaSelectMode = false,
+  areaDrawArmed = false,
+  onAreaDrawArmedChange,
+  areaBounds = null,
+  onAreaBoundsChange,
+  aiSpots = [],
 }: StockingMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<L.Map | null>(null);
@@ -333,7 +405,7 @@ export default function StockingMap({
   const forecastMarkerRef = useRef<L.Marker | null>(null);
   const searchMarkerRef = useRef<L.Marker | null>(null);
   const clusterRef = useRef<L.MarkerClusterGroup | null>(null);
-  const araLayerRef = useRef<L.LayerGroup | null>(null);
+  const araLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const favoriteLayerRef = useRef<L.LayerGroup | null>(null);
   const campLayerRef = useRef<L.LayerGroup | null>(null);
   const anonLayerRef = useRef<L.MarkerClusterGroup | null>(null);
@@ -343,13 +415,22 @@ export default function StockingMap({
   onViewportChangeRef.current = onViewportChange;
   /** Stocking markers by lake key - updated in place when geocode refines coords (avoids rebuilding cluster). */
   const stockingMarkerByKeyRef = useRef<Map<string, L.Marker>>(new Map());
-  const userLayerRef = useRef<L.LayerGroup | null>(null);
+  const userLayerRef = useRef<L.MarkerClusterGroup | null>(null);
   const onStockingLakeClickRef = useRef(onStockingLakeClick);
   onStockingLakeClickRef.current = onStockingLakeClick;
   const onAraMarkerClickRef = useRef(onAraMarkerClick);
   onAraMarkerClickRef.current = onAraMarkerClick;
   const onFavoriteSpotClickRef = useRef(onFavoriteSpotClick);
   onFavoriteSpotClickRef.current = onFavoriteSpotClick;
+  const onAreaBoundsChangeRef = useRef(onAreaBoundsChange);
+  onAreaBoundsChangeRef.current = onAreaBoundsChange;
+  const onAreaDrawArmedChangeRef = useRef(onAreaDrawArmedChange);
+  onAreaDrawArmedChangeRef.current = onAreaDrawArmedChange;
+  const areaDrawArmedRef = useRef(areaDrawArmed);
+  areaDrawArmedRef.current = areaDrawArmed;
+  const areaLayerRef = useRef<L.LayerGroup | null>(null);
+  const aiSpotsLayerRef = useRef<L.LayerGroup | null>(null);
+  const areaDrawingRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -405,6 +486,7 @@ export default function StockingMap({
       map.remove();
       mapRef.current = null;
       clusterRef.current = null;
+      araLayerRef.current = null;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps -- only initial basemap; toggles use effect below
   }, []);
@@ -532,6 +614,8 @@ export default function StockingMap({
     if (!map) return;
 
     function handleClick(e: L.LeafletMouseEvent) {
+      // Area selection owns pointer events while active.
+      if (areaSelectMode) return;
       onMapClick?.(e.latlng.lat, e.latlng.lng);
     }
 
@@ -539,7 +623,7 @@ export default function StockingMap({
     return () => {
       map.off("click", handleClick);
     };
-  }, [onMapClick]);
+  }, [onMapClick, areaSelectMode]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -575,8 +659,277 @@ export default function StockingMap({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
-    container.style.cursor = placing ? "crosshair" : "";
-  }, [placing]);
+    if (placing) {
+      container.style.cursor = "crosshair";
+    } else if (areaSelectMode && areaDrawArmed) {
+      container.style.cursor = "crosshair";
+    } else {
+      container.style.cursor = "";
+    }
+  }, [placing, areaSelectMode, areaDrawArmed]);
+
+  // Draw / resize selection rectangle for AI area spots.
+  // Pan stays enabled unless Shift is held or "Draw box" is armed.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (areaLayerRef.current) {
+      map.removeLayer(areaLayerRef.current);
+      areaLayerRef.current = null;
+    }
+
+    if (!areaSelectMode && !areaBounds) return;
+
+    const layer = L.layerGroup().addTo(map);
+    areaLayerRef.current = layer;
+
+    let draftRect: L.Rectangle | null = null;
+    let startLatLng: L.LatLng | null = null;
+    let shiftHeld = false;
+
+    function boundsFromCorners(a: L.LatLng, b: L.LatLng): L.LatLngBounds {
+      return L.latLngBounds(a, b);
+    }
+
+    function emitBounds(b: AraViewport) {
+      onAreaBoundsChangeRef.current?.(b);
+    }
+
+    function syncDrawCursor() {
+      const container = map.getContainer();
+      if (!areaSelectMode) return;
+      if (areaDrawArmedRef.current || shiftHeld || areaDrawingRef.current) {
+        container.classList.add("map-page__map--area-draw");
+        container.style.cursor = "crosshair";
+      } else {
+        container.classList.remove("map-page__map--area-draw");
+        container.style.cursor = "";
+      }
+    }
+
+    function paintCommitted(bounds: AraViewport) {
+      layer.clearLayers();
+      const llb = L.latLngBounds(
+        [bounds.south, bounds.west],
+        [bounds.north, bounds.east],
+      );
+      const rect = L.rectangle(llb, {
+        color: "#d97706",
+        weight: 2,
+        fillColor: "#f59e0b",
+        fillOpacity: 0.12,
+        interactive: false,
+      });
+      layer.addLayer(rect);
+
+      if (!areaSelectMode) return;
+
+      type Corner = "nw" | "ne" | "sw" | "se";
+      const cornerDefs: { key: Corner; lat: number; lng: number }[] = [
+        { key: "nw", lat: bounds.north, lng: bounds.west },
+        { key: "ne", lat: bounds.north, lng: bounds.east },
+        { key: "sw", lat: bounds.south, lng: bounds.west },
+        { key: "se", lat: bounds.south, lng: bounds.east },
+      ];
+      const handleIcon = areaCornerHandleIcon();
+      const markers = new Map<Corner, L.Marker>();
+
+      function normalize(south: number, west: number, north: number, east: number): AraViewport {
+        return {
+          south: Math.min(south, north),
+          north: Math.max(south, north),
+          west: Math.min(west, east),
+          east: Math.max(west, east),
+        };
+      }
+
+      function boundsFromDrag(key: Corner, pos: L.LatLng): AraViewport {
+        if (key === "nw") {
+          const se = markers.get("se")!.getLatLng();
+          return normalize(se.lat, pos.lng, pos.lat, se.lng);
+        }
+        if (key === "ne") {
+          const sw = markers.get("sw")!.getLatLng();
+          return normalize(sw.lat, sw.lng, pos.lat, pos.lng);
+        }
+        if (key === "sw") {
+          const ne = markers.get("ne")!.getLatLng();
+          return normalize(pos.lat, pos.lng, ne.lat, ne.lng);
+        }
+        const nw = markers.get("nw")!.getLatLng();
+        return normalize(pos.lat, nw.lng, nw.lat, pos.lng);
+      }
+
+      function syncSiblingHandles(key: Corner, next: AraViewport) {
+        if (key !== "nw") markers.get("nw")?.setLatLng([next.north, next.west]);
+        if (key !== "ne") markers.get("ne")?.setLatLng([next.north, next.east]);
+        if (key !== "sw") markers.get("sw")?.setLatLng([next.south, next.west]);
+        if (key !== "se") markers.get("se")?.setLatLng([next.south, next.east]);
+      }
+
+      for (const c of cornerDefs) {
+        const marker = L.marker([c.lat, c.lng], {
+          icon: handleIcon,
+          draggable: true,
+          zIndexOffset: 2000,
+        });
+        markers.set(c.key, marker);
+        marker.on("drag", () => {
+          const next = boundsFromDrag(c.key, marker.getLatLng());
+          rect.setBounds(
+            L.latLngBounds([next.south, next.west], [next.north, next.east]),
+          );
+          syncSiblingHandles(c.key, next);
+        });
+        marker.on("dragend", () => {
+          emitBounds(boundsFromDrag(c.key, marker.getLatLng()));
+        });
+        layer.addLayer(marker);
+      }
+    }
+
+    if (areaBounds) {
+      paintCommitted(areaBounds);
+    }
+
+    function canStartDraw(oe: MouseEvent): boolean {
+      return areaDrawArmedRef.current || oe.shiftKey;
+    }
+
+    function onMouseDown(e: L.LeafletMouseEvent) {
+      if (!areaSelectMode) return;
+      const oe = e.originalEvent;
+      const t = oe.target as HTMLElement | null;
+      if (t?.closest?.(".map-page__area-handle-wrap")) return;
+      if (!canStartDraw(oe)) return;
+
+      areaDrawingRef.current = true;
+      startLatLng = e.latlng;
+      map.dragging.disable();
+      L.DomEvent.stop(oe);
+      syncDrawCursor();
+      if (draftRect) {
+        layer.removeLayer(draftRect);
+        draftRect = null;
+      }
+      draftRect = L.rectangle(boundsFromCorners(e.latlng, e.latlng), {
+        color: "#d97706",
+        weight: 2,
+        dashArray: "6 4",
+        fillColor: "#f59e0b",
+        fillOpacity: 0.1,
+        interactive: false,
+      });
+      layer.addLayer(draftRect);
+    }
+
+    function onMouseMove(e: L.LeafletMouseEvent) {
+      if (!areaDrawingRef.current || !startLatLng || !draftRect) return;
+      draftRect.setBounds(boundsFromCorners(startLatLng, e.latlng));
+    }
+
+    function onMouseUp(e: L.LeafletMouseEvent) {
+      if (!areaDrawingRef.current || !startLatLng) return;
+      areaDrawingRef.current = false;
+      map.dragging.enable();
+      const b = boundsFromCorners(startLatLng, e.latlng);
+      startLatLng = null;
+      if (draftRect) {
+        layer.removeLayer(draftRect);
+        draftRect = null;
+      }
+      // Ignore tiny clicks.
+      if (Math.abs(b.getNorth() - b.getSouth()) < 0.0008 || Math.abs(b.getEast() - b.getWest()) < 0.0008) {
+        syncDrawCursor();
+        return;
+      }
+      emitBounds({
+        south: b.getSouth(),
+        west: b.getWest(),
+        north: b.getNorth(),
+        east: b.getEast(),
+      });
+      // Return to pan after a successful draw.
+      onAreaDrawArmedChangeRef.current?.(false);
+      syncDrawCursor();
+    }
+
+    function onKeyDown(ev: KeyboardEvent) {
+      if (ev.key === "Shift") {
+        shiftHeld = true;
+        syncDrawCursor();
+      }
+    }
+    function onKeyUp(ev: KeyboardEvent) {
+      if (ev.key === "Shift") {
+        shiftHeld = false;
+        syncDrawCursor();
+      }
+    }
+
+    if (areaSelectMode) {
+      map.on("mousedown", onMouseDown);
+      map.on("mousemove", onMouseMove);
+      map.on("mouseup", onMouseUp);
+      window.addEventListener("keydown", onKeyDown);
+      window.addEventListener("keyup", onKeyUp);
+      syncDrawCursor();
+    }
+
+    return () => {
+      map.off("mousedown", onMouseDown);
+      map.off("mousemove", onMouseMove);
+      map.off("mouseup", onMouseUp);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      map.dragging.enable();
+      areaDrawingRef.current = false;
+      map.getContainer().classList.remove("map-page__map--area-draw");
+      if (areaLayerRef.current) {
+        map.removeLayer(areaLayerRef.current);
+        areaLayerRef.current = null;
+      }
+    };
+  }, [areaSelectMode, areaBounds, areaDrawArmed]);
+
+  // AI-suggested fishing spot pins.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    if (aiSpotsLayerRef.current) {
+      map.removeLayer(aiSpotsLayerRef.current);
+      aiSpotsLayerRef.current = null;
+    }
+    if (aiSpots.length === 0) return;
+
+    const layer = L.layerGroup();
+    const icon = aiSpotPinIcon();
+    for (const spot of aiSpots) {
+      if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) continue;
+      const m = L.marker([spot.lat, spot.lng], { icon, zIndexOffset: 1500 });
+      m.bindTooltip(spot.label || "Suggested spot", {
+        direction: "top",
+        offset: L.point(0, -28),
+        opacity: 1,
+        className: "map-page__stocking-tooltip",
+      });
+      const safeLabel = (spot.label || "Suggested spot")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+      m.bindPopup(
+        `<div class="map-page__ai-spot-popup"><strong>${safeLabel}</strong>` +
+          `<p>AI-suggested fishing spot</p></div>`,
+        { maxWidth: 220 },
+      );
+      layer.addLayer(m);
+    }
+    map.addLayer(layer);
+    aiSpotsLayerRef.current = layer;
+  }, [aiSpots]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -771,6 +1124,7 @@ export default function StockingMap({
       maxClusterRadius: 45,
       spiderfyOnMaxZoom: true,
       showCoverageOnHover: false,
+      iconCreateFunction: (c) => fishClusterDivIcon("stocking", c.getChildCount()),
     });
 
     const icon = fishIcon();
@@ -828,7 +1182,15 @@ export default function StockingMap({
 
     if (araMarkers.length === 0) return;
 
-    const layer = L.layerGroup();
+    // Cluster more aggressively than stocking — ARA density is much higher.
+    const layer = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 90,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      disableClusteringAtZoom: 14,
+      iconCreateFunction: (c) => fishClusterDivIcon("presence", c.getChildCount()),
+    });
     const icon = araFishIcon();
     for (const a of araMarkers) {
       const m = L.marker([a.lat, a.lng], { icon, zIndexOffset: -200 });
@@ -843,7 +1205,7 @@ export default function StockingMap({
       });
       layer.addLayer(m);
     }
-    layer.addTo(map);
+    map.addLayer(layer);
     araLayerRef.current = layer;
   }, [araMarkers]);
 
@@ -964,7 +1326,13 @@ export default function StockingMap({
 
     if (filteredCatchMarkers.length === 0) return;
 
-    const layer = L.layerGroup();
+    const layer = L.markerClusterGroup({
+      chunkedLoading: true,
+      maxClusterRadius: 64,
+      spiderfyOnMaxZoom: true,
+      showCoverageOnHover: false,
+      iconCreateFunction: (c) => anonCatchDivIcon(c.getChildCount(), true),
+    });
     const catchIcon = catchPinIcon();
 
     function formatCatchText(c: CatchMapMarker["catches"][number]): string {
@@ -1013,7 +1381,7 @@ export default function StockingMap({
       layer.addLayer(marker);
     }
 
-    layer.addTo(map);
+    map.addLayer(layer);
     userLayerRef.current = layer;
   }, [filteredCatchMarkers, currentUserId]);
 

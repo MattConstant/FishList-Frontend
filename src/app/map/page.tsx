@@ -11,7 +11,6 @@ import {
   useSyncExternalStore,
 } from "react";
 import { MapFiltersShell } from "@/components/map-page/map-filters-shell";
-import { MapFindPlaceSection } from "@/components/map-page/map-find-place-section";
 import { MapMnrfFiltersSection } from "@/components/map-page/map-mnrf-filters-section";
 import { MapAraFiltersSection } from "@/components/map-page/map-ara-filters-section";
 import {
@@ -35,6 +34,7 @@ import {
 import { MapPageLayersPanel } from "@/components/map-page/map-page-layers-panel";
 import { MapPageLegend } from "@/components/map-page/map-page-legend";
 import { MapPagePendingForms } from "@/components/map-page/map-page-pending-forms";
+import { MapAiSpotsPanel } from "@/components/map-page/map-ai-spots-panel";
 import { MapPageToolbar } from "@/components/map-page/map-page-toolbar";
 import { MapOnboardingDialog } from "@/components/map-page/map-onboarding-dialog";
 import { MapUrlLakePinLoader } from "@/components/map-page/map-url-lake-pin-loader";
@@ -42,10 +42,12 @@ import { StockingMapDynamic } from "@/components/map-page/map-stock-map";
 import { useMapPlaceSearch } from "@/components/map-page/use-map-place-search";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
-import type { AnonCatchLabels, CatchMapMarker } from "@/components/stocking-map";
+import type { AiSpotMarker, AnonCatchLabels, CatchMapMarker } from "@/components/stocking-map";
 import { fetchPublicCatchRegions, type PublicCatchRegion } from "@/lib/public-catch-regions";
 import { trackUsage } from "@/lib/usage-tracking";
 import {
+  ApiHttpError,
+  fetchAreaFishingSpots,
   fetchVisibleCampSpots,
   createMapFavorite,
   deleteMapFavorite,
@@ -80,6 +82,7 @@ import {
   CLIENT_PREFS_UPDATED_EVENT,
 } from "@/lib/client-prefs-events";
 import { formatAppInteger } from "@/lib/format-app-locale";
+import { selectPrimaryWaterAnchors } from "@/lib/area-water-anchors";
 import { haversineDistanceKm } from "@/lib/geo-distance";
 import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
 import { useSyncedBooleanPref } from "@/lib/use-synced-boolean-pref";
@@ -89,6 +92,7 @@ import {
   saveMapFavorites,
   type FavoriteSpot,
 } from "@/lib/map-favorites";
+import { MapFindPlaceSection } from "@/components/map-page/map-find-place-section";
 
 export default function MapPage() {
   const { user, isAdmin, isReady } = useAuth();
@@ -133,6 +137,13 @@ export default function MapPage() {
 
   const [placing, setPlacing] = useState(false);
   const [placingMode, setPlacingMode] = useState<"catch" | "camp">("catch");
+  const [areaSelectMode, setAreaSelectMode] = useState(false);
+  const [areaDrawArmed, setAreaDrawArmed] = useState(false);
+  const [areaBounds, setAreaBounds] = useState<AraViewport | null>(null);
+  const [aiSpots, setAiSpots] = useState<AiSpotMarker[]>([]);
+  const [aiSpotsNarrative, setAiSpotsNarrative] = useState("");
+  const [aiSpotsLoading, setAiSpotsLoading] = useState(false);
+  const [aiSpotsError, setAiSpotsError] = useState("");
   const [logMenuOpen, setLogMenuOpen] = useState(false);
   const [highlightLog, setHighlightLog] = useState(false);
   const [mapSheet, setMapSheet] = useState<MapSheetState>(null);
@@ -144,7 +155,7 @@ export default function MapPage() {
   const [catchMarkers, setCatchMarkers] = useState<CatchMapMarker[]>([]);
   const [anonCatchRegions, setAnonCatchRegions] = useState<PublicCatchRegion[]>([]);
   const [friendIds, setFriendIds] = useState<Set<number>>(new Set());
-  const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("mine");
+  const [catchScope, setCatchScope] = useState<"all" | "friends" | "mine">("all");
   const [filtersExpanded, setFiltersExpanded] = useSyncedBooleanPref(
     MAP_FILTERS_EXPANDED_KEY,
     "off-unless-true",
@@ -168,7 +179,7 @@ export default function MapPage() {
   );
   const [showAra, setShowAra] = useSyncedBooleanPref(
     MAP_LAYER_PRESENCE_KEY,
-    "off-unless-true",
+    "on-unless-false",
   );
   const [showCatches, setShowCatches] = useSyncedBooleanPref(
     MAP_LAYER_CATCHES_KEY,
@@ -396,7 +407,7 @@ export default function MapPage() {
     };
   }, [user]);
 
-  // Usage analytics: record one map visit per page load once auth state is known.
+  // one map_visit event per page load, once we know if they're logged in
   const visitTrackedRef = useRef(false);
   useEffect(() => {
     if (!isReady || visitTrackedRef.current) return;
@@ -427,8 +438,6 @@ export default function MapPage() {
     );
   }, [species, activeSpecies]);
 
-  // Tracked wrappers around the MNRF filter setters so the admin panel can see
-  // which filters people actually reach for.
   const handleDistrictChange = useCallback((v: string) => {
     trackUsage("map_filter_district", v);
     setSelectedDistrict(v);
@@ -553,31 +562,9 @@ export default function MapPage() {
     );
   }, []);
 
-  const filterSummaryLine = useMemo(() => {
-    if (species.length === 0) return "";
-    const spLabel =
-      activeSpecies.size === species.length
-        ? t("map.summary.allSpecies")
-        : t("map.summary.speciesCount", { count: activeSpecies.size });
-    const stock =
-      showStocking && activeSpecies.size > 0
-        ? t("map.summary.lakesMatch", { count: filteredGroups.length })
-        : !showStocking
-          ? t("map.summary.stockingOff")
-          : t("map.summary.noSpeciesSelected");
-    const ara = showAra ? ` · ${t("map.summary.araOn")}` : "";
-    return `${stock} · ${spLabel}${ara}`;
-  }, [
-    species.length,
-    filteredGroups.length,
-    activeSpecies.size,
-    showStocking,
-    showAra,
-    t,
-  ]);
-
   const handleMapClick = useCallback(
     (lat: number, lng: number) => {
+      if (areaSelectMode) return;
       if (placing) {
         setPlacing(false);
         if (placingMode === "camp") {
@@ -590,8 +577,115 @@ export default function MapPage() {
       setMapSheet({ mode: "forecast", lat, lng });
       setSheetExpanded(false);
     },
-    [placing, placingMode],
+    [placing, placingMode, areaSelectMode],
   );
+
+  const clearAiSpots = useCallback(() => {
+    setAiSpots([]);
+    setAiSpotsNarrative("");
+    setAiSpotsError("");
+  }, []);
+
+  const exitAreaSelect = useCallback(() => {
+    setAreaSelectMode(false);
+    setAreaDrawArmed(false);
+  }, []);
+
+  const toggleAreaSelect = useCallback(() => {
+    setAreaSelectMode((v) => {
+      const next = !v;
+      if (next) {
+        setPlacing(false);
+        setLogMenuOpen(false);
+        setMapSheet(null);
+        setAreaDrawArmed(false);
+        trackUsage("map_ai_spots", "enter");
+      } else {
+        setAreaDrawArmed(false);
+        trackUsage("map_ai_spots", "exit");
+      }
+      return next;
+    });
+  }, []);
+
+  const askAreaSpots = useCallback(async () => {
+    if (!areaBounds || aiSpotsLoading) return;
+    setAiSpotsLoading(true);
+    setAiSpotsError("");
+    trackUsage("map_ai_spots", "ask");
+    try {
+      const targetSpecies =
+        activeSpecies.size > 0 && activeSpecies.size < species.length
+          ? Array.from(activeSpecies).slice(0, 8).join(", ")
+          : undefined;
+
+      // Collect stocking / presence pins in the box, then keep only the main
+      // lake cluster (dense + near center) so small edge ponds are dropped.
+      const pad = 0.004;
+      const inBox = (lat: number, lng: number) =>
+        lat >= areaBounds.south - pad &&
+        lat <= areaBounds.north + pad &&
+        lng >= areaBounds.west - pad &&
+        lng <= areaBounds.east + pad;
+
+      const candidates: { lat: number; lng: number; name: string }[] = [];
+      const seen = new Set<string>();
+      const pushAnchor = (lat: number, lng: number, name: string) => {
+        if (!Number.isFinite(lat) || !Number.isFinite(lng) || !inBox(lat, lng)) return;
+        const key = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        candidates.push({
+          lat,
+          lng,
+          name: name.trim() || "Waterbody",
+        });
+      };
+
+      for (const g of groups) {
+        pushAnchor(g.lat, g.lng, g.waterbody);
+      }
+      for (const a of araPoints) {
+        pushAnchor(a.lat, a.lng, a.name);
+      }
+
+      const waterAnchors = selectPrimaryWaterAnchors(candidates, areaBounds);
+      if (waterAnchors.length === 0) {
+        setAiSpotsError(t("map.aiSpots.noWaterPins"));
+        return;
+      }
+
+      const res = await fetchAreaFishingSpots({
+        ...areaBounds,
+        areaLabel: lakeSearchPin?.label,
+        targetSpecies,
+        waterAnchors,
+      });
+      setAiSpots(res.spots);
+      setAiSpotsNarrative(res.text);
+    } catch (e) {
+      setAiSpots([]);
+      setAiSpotsNarrative("");
+      if (e instanceof ApiHttpError && e.status === 429) {
+        setAiSpotsError(t("map.aiSpots.rateLimited"));
+      } else {
+        setAiSpotsError(
+          e instanceof Error ? e.message : t("map.aiSpots.failed"),
+        );
+      }
+    } finally {
+      setAiSpotsLoading(false);
+    }
+  }, [
+    areaBounds,
+    aiSpotsLoading,
+    activeSpecies,
+    species.length,
+    lakeSearchPin?.label,
+    groups,
+    araPoints,
+    t,
+  ]);
 
   const handleStockingLakeClick = useCallback(
     (payload: { group: WaterbodyGroup; lat: number; lng: number }) => {
@@ -928,7 +1022,6 @@ export default function MapPage() {
         <MapUrlLakePinLoader setLakeSearchPin={setLakeSearchPin} />
       </Suspense>
       <MapPageToolbar
-
         placing={placing}
         mapSheetExists={!!mapSheet}
         userPresent={!!user}
@@ -942,17 +1035,14 @@ export default function MapPage() {
         onCancelPlacing={() => setPlacing(false)}
         onCloseSheet={closeMapSheet}
         clearPinLabel={t("forecast.clearPin")}
+        areaSelectMode={areaSelectMode}
+        onToggleAreaSelect={toggleAreaSelect}
+        areaSelectLabel={t("map.aiSpots.toolbar")}
       />
-
-      {/* Species filter (collapsible) */}
-      <MapFiltersShell
-        hasSpeciesLoaded={species.length > 0}
-        filtersExpanded={filtersExpanded}
-        setFiltersExpanded={setFiltersExpanded}
-        filterSummaryLine={filterSummaryLine}
-      >
+      <div className="map-page__chrome map-page__search-filters">
         <MapFindPlaceSection
           t={t}
+          hydrated={hydrated}
           lakePinQuery={lakePinQuery}
           setLakePinQuery={setLakePinQuery}
           lakePinError={lakePinError}
@@ -965,39 +1055,50 @@ export default function MapPage() {
           onSubmitSearch={handleLakePinSearch}
           onSearchKeyDown={handleLakeSearchKeyDown}
           onSelectSuggestion={selectLakeSuggestion}
+          filtersAvailable={species.length > 0}
+          filtersExpanded={filtersExpanded}
+          setFiltersExpanded={setFiltersExpanded}
         />
-        <MapMnrfFiltersSection
-          t={t}
-          locale={locale}
-          showStocking={showStocking}
-          species={species}
-          activeSpecies={activeSpecies}
-          toggleAllSpecies={toggleAll}
-          toggleSpecies={toggleSpecies}
-          recentYearsWindow={recentYearsWindow}
-          setRecentYearsWindow={handleRecentYearsChange}
-          minTotalFish={minTotalFish}
-          setMinTotalFish={handleMinTotalFishChange}
-          minSpeciesCount={minSpeciesCount}
-          setMinSpeciesCount={handleMinSpeciesCountChange}
-          selectedDistrict={selectedDistrict}
-          setSelectedDistrict={handleDistrictChange}
-          districts={districts}
-        />
-        <MapAraFiltersSection
-          t={t}
-          showAra={showAra}
-          presenceSpecies={presenceSpecies}
-          togglePresenceSpecies={togglePresenceSpecies}
-          toggleAllPresenceSpecies={toggleAllPresenceSpecies}
-          araLoading={araLoading}
-          araTooWide={araTooWide}
-        />
-      </MapFiltersShell>
+        <MapFiltersShell
+          hasSpeciesLoaded={species.length > 0}
+          filtersExpanded={filtersExpanded}
+        >
+          <MapMnrfFiltersSection
+            t={t}
+            locale={locale}
+            showStocking={showStocking}
+            species={species}
+            activeSpecies={activeSpecies}
+            toggleAllSpecies={toggleAll}
+            toggleSpecies={toggleSpecies}
+            recentYearsWindow={recentYearsWindow}
+            setRecentYearsWindow={handleRecentYearsChange}
+            minTotalFish={minTotalFish}
+            setMinTotalFish={handleMinTotalFishChange}
+            minSpeciesCount={minSpeciesCount}
+            setMinSpeciesCount={handleMinSpeciesCountChange}
+            selectedDistrict={selectedDistrict}
+            setSelectedDistrict={handleDistrictChange}
+            districts={districts}
+          />
+          <MapAraFiltersSection
+            t={t}
+            showAra={showAra}
+            presenceSpecies={presenceSpecies}
+            togglePresenceSpecies={togglePresenceSpecies}
+            toggleAllPresenceSpecies={toggleAllPresenceSpecies}
+            araLoading={araLoading}
+            araTooWide={araTooWide}
+          />
+        </MapFiltersShell>
+      </div>
 
       {/* Map - flex-1 + basis-0 so Leaflet gets a non-zero height inside the scrollable main */}
       <div
-        className={["map-page__map-area", placing ? "map-page__map-area--placing" : ""]
+        className={[
+          "map-page__map-area",
+          placing ? "map-page__map-area--placing" : "",
+        ]
           .filter(Boolean)
           .join(" ")}
       >
@@ -1005,6 +1106,24 @@ export default function MapPage() {
 
         {/* Placing-mode banner */}
         {placing ? <MapPagePlacingBanner placingMode={placingMode} /> : null}
+
+        <MapAiSpotsPanel
+          t={t}
+          active={areaSelectMode}
+          hasBounds={!!areaBounds}
+          drawArmed={areaDrawArmed}
+          onArmDraw={() => setAreaDrawArmed((v) => !v)}
+          loading={aiSpotsLoading}
+          error={aiSpotsError}
+          narrative={aiSpotsNarrative}
+          spotCount={aiSpots.length}
+          onAsk={() => void askAreaSpots()}
+          onClear={() => {
+            clearAiSpots();
+            setAreaBounds(null);
+          }}
+          onCancel={exitAreaSelect}
+        />
 
         {/* Logged out: small floating login pill instead of the old toolbar row */}
         {!user ? (
@@ -1044,6 +1163,12 @@ export default function MapPage() {
             setMapSheet({ mode: "camp", camp, lat, lng });
             setSheetExpanded(true);
           }}
+          areaSelectMode={areaSelectMode}
+          areaDrawArmed={areaDrawArmed}
+          onAreaDrawArmedChange={setAreaDrawArmed}
+          areaBounds={areaBounds}
+          onAreaBoundsChange={setAreaBounds}
+          aiSpots={aiSpots}
         />
 
         <MapPageLayersPanel

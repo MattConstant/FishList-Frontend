@@ -1,6 +1,6 @@
 import { getApiBaseUrl, loadSession } from "@/lib/api";
 
-/** Must stay in sync with the whitelist in UsageEventController on the backend. */
+// Keep in sync with ALLOWED_TYPES in UsageEventController.
 export type UsageEventType =
   | "landing_map_cta"
   | "landing_signup_cta"
@@ -13,12 +13,10 @@ export type UsageEventType =
   | "map_layer"
   | "map_search"
   | "map_anon_pin"
-  | "map_login_pill";
+  | "map_login_pill"
+  | "map_ai_spots";
 
-/**
- * Fire-and-forget product-usage tracking (viewed in the admin panel).
- * Never throws and never blocks the UI; failures are silently ignored.
- */
+/** Fire-and-forget usage tracking; shows up in the admin panel. Never throws. */
 export function trackUsage(type: UsageEventType, detail?: string): void {
   if (typeof window === "undefined") return;
   try {
@@ -29,10 +27,10 @@ export function trackUsage(type: UsageEventType, detail?: string): void {
       method: "POST",
       headers,
       body: JSON.stringify({ type, detail: detail ? detail.slice(0, 160) : null }),
-      // keepalive lets the request finish even when the click navigates away
+      // keepalive so the request survives the click navigating away
       keepalive: true,
     }).catch(() => {});
   } catch {
-    // tracking must never break the app
+    // never let tracking break the page
   }
 }

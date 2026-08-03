@@ -72,41 +72,120 @@
   @apply hover:border-sky-300 hover:bg-sky-50 hover:text-zinc-900 dark:border-zinc-600/90 dark:bg-zinc-900/95 dark:text-zinc-200 dark:hover:border-sky-600 dark:hover:bg-zinc-800 dark:hover:text-white;
 }
 
+.map-page__area-select-btn {
+  @apply inline-flex items-center gap-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-700 shadow-sm transition;
+  @apply hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-amber-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-100;
+}
+
+.map-page__area-select-btn--active {
+  @apply border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-500 dark:bg-amber-950/50 dark:text-amber-100;
+}
+
+.map-page__area-select-btn:disabled {
+  @apply cursor-not-allowed opacity-50;
+}
+
+.map-page__ai-spots-panel {
+  @apply absolute left-3 right-3 top-3 z-[1260] max-h-[min(42vh,22rem)] overflow-y-auto rounded-xl border border-amber-200/90 bg-white/95 p-3 shadow-md backdrop-blur-sm sm:left-auto sm:right-3 sm:w-80;
+  @apply dark:border-amber-800/60 dark:bg-zinc-900/95;
+}
+
+.map-page__ai-spots-panel-head {
+  @apply flex items-center justify-between gap-2;
+}
+
+.map-page__ai-spots-panel-title {
+  @apply text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300;
+}
+
+.map-page__ai-spots-panel-close {
+  @apply rounded-lg px-2 py-1 text-xs font-medium text-zinc-600 transition hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800;
+}
+
+.map-page__ai-spots-panel-hint {
+  @apply mt-1.5 text-[0.75rem] leading-snug text-zinc-600 dark:text-zinc-400;
+}
+
+.map-page__ai-spots-actions {
+  @apply mt-2 flex flex-col gap-2;
+}
+
+.map-page__ai-spots-draw {
+  @apply inline-flex w-full items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-900 shadow-sm transition;
+  @apply hover:border-amber-500 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100 dark:hover:bg-amber-900/50;
+}
+
+.map-page__ai-spots-draw--armed {
+  @apply border-amber-600 bg-amber-600 text-white hover:bg-amber-700 dark:border-amber-500 dark:bg-amber-600 dark:hover:bg-amber-500;
+}
+
+.map-page__ai-spots-ask {
+  @apply inline-flex w-full items-center justify-center rounded-xl bg-amber-600 px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60;
+}
+
+.map-page__ai-spots-error {
+  @apply mt-2 text-[0.75rem] leading-snug text-red-600 dark:text-red-400;
+}
+
+.map-page__ai-spots-count {
+  @apply mt-2 text-[0.7rem] font-medium text-amber-800 dark:text-amber-300;
+}
+
+.map-page__ai-spots-narrative {
+  @apply mt-2 whitespace-pre-wrap text-[0.75rem] leading-snug text-zinc-700 dark:text-zinc-300;
+}
+
+.map-page__area-handle-wrap {
+  background: transparent;
+  border: 0;
+}
+
+.map-page__area-handle {
+  display: block;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid #fff;
+  background: #d97706;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+  cursor: nwse-resize;
+}
+
+.map-page__ai-spot-popup {
+  @apply text-sm leading-snug text-zinc-800;
+}
+
+.map-page__ai-spot-popup p {
+  @apply mt-1 text-xs text-zinc-500;
+}
+
+.map-page__map--area-draw {
+  cursor: crosshair !important;
+}
+
 .map-page__cancel-btn {
   @apply rounded-xl border border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm font-medium text-zinc-600 shadow-sm transition hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800/70 dark:text-zinc-300 dark:hover:bg-zinc-700;
 }
 
-.map-page__filter-shell {
+.map-page__search-filters {
   @apply shrink-0;
 }
 
-.map-page__filter-bar {
-  @apply flex items-center gap-2 px-3 py-2 sm:px-4;
+.map-page__search-bar {
+  @apply px-3 py-2 sm:px-4;
 }
 
-.map-page__filter-bar--expanded {
-  @apply border-b border-zinc-100/90 dark:border-zinc-800/90;
-}
-
-.map-page__filter-toggle {
-  @apply flex min-w-0 flex-1 items-center gap-2.5 rounded-lg py-1 text-left transition hover:opacity-90;
-}
-
-.map-page__filter-heading {
-  @apply shrink-0 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400;
-}
-
-.map-page__filter-summary {
-  @apply truncate text-sm text-zinc-600 dark:text-zinc-400;
-}
-
-.map-page__filter-chevron-btn {
-  @apply flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-sm transition;
+.map-page__filters-icon-btn {
+  @apply inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 text-zinc-600 shadow-sm transition;
   @apply hover:border-sky-400 hover:bg-sky-50 hover:text-sky-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:border-sky-500 dark:hover:bg-zinc-700 dark:hover:text-sky-300;
 }
 
+.map-page__filters-icon-btn--active {
+  @apply border-sky-500 bg-sky-50 text-sky-700 dark:border-sky-500 dark:bg-sky-900/40 dark:text-sky-300;
+}
+
 .map-page__filter-panel {
-  @apply max-h-[min(48vh,28rem)] flex-col gap-2.5 overflow-y-auto px-3 pb-3 pt-1.5 sm:px-4;
+  @apply flex max-h-[min(48vh,28rem)] flex-col gap-2.5 overflow-y-auto border-t border-zinc-100/90 px-3 pb-3 pt-2 sm:px-4 dark:border-zinc-800/90;
 }
 
 /* Stacked, sectioned filter layout (map page) */
@@ -323,6 +402,10 @@
   accent-color: #0284c7;
 }
 
+.map-page__layers-icon {
+  @apply mt-0.5;
+}
+
 .map-page__layers-text {
   @apply flex min-w-0 flex-1 flex-col gap-0;
 }
@@ -340,7 +423,7 @@
 }
 
 .map-page__lake-pin-form {
-  @apply mt-2 flex items-stretch gap-2;
+  @apply flex items-stretch gap-2;
 }
 
 .map-page__lake-pin-search {
@@ -351,8 +434,9 @@
   @apply pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500;
 }
 
+/* 16px on phones or iOS Safari zooms/centers the page when the input gets focus */
 .map-page__lake-pin-input {
-  @apply pl-8 pr-9;
+  @apply pl-8 pr-9 text-base sm:text-sm;
 }
 
 .map-page__lake-pin-spinner {
@@ -364,8 +448,9 @@
   @apply hover:bg-sky-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-500/50 disabled:cursor-not-allowed disabled:opacity-50;
 }
 
+/* z-[1300] so the list sits above the Leaflet panes and the layers panel (z-[1250]) */
 .map-page__lake-pin-suggestions {
-  @apply absolute left-0 right-0 top-full z-30 mt-1 max-h-72 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-600 dark:bg-zinc-900;
+  @apply absolute left-0 right-0 top-full z-[1300] mt-1 max-h-72 overflow-y-auto rounded-lg border border-zinc-200 bg-white py-1 shadow-lg dark:border-zinc-600 dark:bg-zinc-900;
 }
 
 .map-page__lake-pin-suggestion {
@@ -436,6 +521,22 @@
 .map-page__legend-icon--depth {
   @apply h-1 w-5 shrink-0 rounded-sm bg-amber-500;
   background-image: none;
+}
+
+.map-page__layers-row .map-page__legend-icon--depth {
+  @apply mt-2;
+}
+
+.map-page__legend-icon--satellite {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Ccircle cx='12' cy='12' r='9' stroke='%230284c7' stroke-width='1.75'/%3E%3Cellipse cx='12' cy='12' rx='4' ry='9' stroke='%230284c7' stroke-width='1.5'/%3E%3Cpath d='M3 12h18' stroke='%230284c7' stroke-width='1.5'/%3E%3C/svg%3E");
+}
+
+.map-page__legend-icon--camp {
+  background-image: url("/camp.png");
+}
+
+.map-page__legend-icon--legend {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Crect x='3' y='4' width='18' height='16' rx='2' stroke='%23525b66' stroke-width='1.75'/%3E%3Ccircle cx='7.5' cy='9' r='1.4' fill='%230369a1'/%3E%3Cpath d='M11 9h7' stroke='%23525b66' stroke-width='1.5' stroke-linecap='round'/%3E%3Ccircle cx='7.5' cy='15' r='1.4' fill='%23059669'/%3E%3Cpath d='M11 15h7' stroke='%23525b66' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E");
 }
 
 
@@ -638,6 +739,57 @@
 
 .map-page__onboarding-dismiss {
   @apply flex min-h-11 w-full touch-manipulation items-center justify-center rounded-xl bg-sky-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-sky-700 active:bg-sky-800 dark:bg-sky-500 dark:hover:bg-sky-400;
+}
+
+/* ── Stocking / presence fish clusters ── */
+.map-page__fish-cluster-wrap {
+  background: transparent;
+  border: 0;
+}
+
+.map-page__fish-cluster {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 24px;
+  filter: drop-shadow(0 2px 4px rgb(2 60 90 / 0.35));
+}
+
+.map-page__fish-cluster--presence {
+  filter: drop-shadow(0 2px 4px rgb(4 80 50 / 0.35));
+}
+
+.map-page__fish-cluster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-page__fish-cluster b {
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1.5px solid #fff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  font-style: normal;
+}
+
+.map-page__fish-cluster--stocking b {
+  background: #0369a1;
+}
+
+.map-page__fish-cluster--presence b {
+  background: #059669;
 }
 
 /* ── Anonymous catch regions (logged-out visitors) ── */

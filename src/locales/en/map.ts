@@ -56,6 +56,27 @@ export default {
   "map.ara.species.rainbow_trout": "Rainbow trout",
   "map.ara.species.brown_trout": "Brown trout",
   "map.ara.species.black_crappie": "Black crappie",
+  "map.filters.expand": "Open filters",
+  "map.filters.collapse": "Close filters",
+  "map.aiSpots.toolbar": "Find spots",
+  "map.aiSpots.title": "AI fishing spots",
+  "map.aiSpots.hintDraw":
+    "Pan freely. Tap Draw box (or hold Shift) and drag to select a lake or shoreline.",
+  "map.aiSpots.hintAdjust":
+    "Pan freely, drag corner handles to resize, or Draw box / Shift-drag to redraw.",
+  "map.aiSpots.draw": "Draw box",
+  "map.aiSpots.drawArmed": "Drag on map…",
+  "map.aiSpots.ask": "Ask AI for spots here",
+  "map.aiSpots.loading": "Asking AI…",
+  "map.aiSpots.done": "Done",
+  "map.aiSpots.clear": "Clear spots",
+  "map.aiSpots.failed": "Could not get spot suggestions. Try again.",
+  "map.aiSpots.noWaterPins":
+    "No lake pins found in this box. Zoom in until blue or green fish pins show on the water, then draw again.",
+  "map.aiSpots.rateLimited":
+    "Daily AI fishing-spots limit reached (10 per day). Try again tomorrow.",
+  "map.aiSpots.spotCount": "{{count}} suggested spots on the map",
+
   "map.searchLake.section": "Find a place",
   "map.searchLake.info":
     "Search for a town, lake, river, or postal code. Pick a result to drop a pin (works even when there are no stocking records).",
@@ -106,10 +127,10 @@ export default {
     "Open Map layers on the map to toggle stocking, species presence, posted catches, camps, satellite imagery, depth contours, and the corner legend.",
   "map.onboarding.filtersTitle": "Filters",
   "map.onboarding.filtersBody":
-    "Tap Filters above the map for MNRF stocking filters (species, district, recent years) and species-presence species. Set favorite species and other map defaults on your Profile page.",
+    "Tap the filter icon next to Find a place for MNRF stocking filters (species, district, recent years) and species-presence species. Set favorite species and other map defaults on your Profile page.",
   "map.onboarding.searchTitle": "Find a place",
   "map.onboarding.searchBody":
-    "Use Find a place in Filters to search a town, lake, river, or postal code and drop a pin, even when there is no stocking record nearby.",
+    "Use Find a place above the map to search a town, lake, river, or postal code and drop a pin, even when there is no stocking record nearby.",
   "map.onboarding.logCatchTitle": "Log a catch",
   "map.onboarding.logCatchBody":
     "Tap Log at the top right of the map to post a catch or log a camp. Place a pin on the map, add details and a photo, and share it to your feed.",

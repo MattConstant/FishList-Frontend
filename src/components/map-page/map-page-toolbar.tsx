@@ -17,6 +17,9 @@ type Props = {
   onCancelPlacing: () => void;
   onCloseSheet: () => void;
   clearPinLabel: string;
+  areaSelectMode?: boolean;
+  onToggleAreaSelect?: () => void;
+  areaSelectLabel?: string;
 };
 
 export function MapPageToolbar({
@@ -33,10 +36,13 @@ export function MapPageToolbar({
   onCancelPlacing,
   onCloseSheet,
   clearPinLabel,
+  areaSelectMode = false,
+  onToggleAreaSelect,
+  areaSelectLabel = "Find spots",
 }: Props) {
   // Logged out with nothing to act on: no toolbar at all. The map page shows a
   // floating "Log in to add catches" pill on the map instead.
-  if (!userPresent && !placing && !mapSheetExists) {
+  if (!userPresent && !placing && !mapSheetExists && !areaSelectMode) {
     return null;
   }
   return (
@@ -67,12 +73,35 @@ export function MapPageToolbar({
             </button>
           </div>
         )}
+        {userPresent && onToggleAreaSelect ? (
+          <button
+            type="button"
+            onClick={onToggleAreaSelect}
+            disabled={placing}
+            className={[
+              "map-page__area-select-btn",
+              areaSelectMode ? "map-page__area-select-btn--active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-pressed={areaSelectMode}
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" className="h-4 w-4" aria-hidden>
+              <path
+                fillRule="evenodd"
+                d="M3.5 3.5a1 1 0 011-1H8a1 1 0 010 2H5.5V8a1 1 0 01-2 0V4.5a1 1 0 011-1zm13 0a1 1 0 011 1V8a1 1 0 11-2 0V5.5H12a1 1 0 110-2h3.5a1 1 0 011 1zM4.5 12a1 1 0 011 1v2.5H8a1 1 0 110 2H4.5a1 1 0 01-1-1V13a1 1 0 011-1zm11 0a1 1 0 011 1v3.5a1 1 0 01-1 1H12a1 1 0 110-2h2.5V13a1 1 0 011-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+            {areaSelectLabel}
+          </button>
+        ) : null}
         {userPresent && (
           <div className="relative">
             <button
               type="button"
               onClick={() => setLogMenuOpen((v) => !v)}
-              disabled={placing}
+              disabled={placing || areaSelectMode}
               className={[
                 "map-page__log-catch",
                 placing ? "map-page__log-catch--placing" : "",
@@ -102,7 +131,7 @@ export function MapPageToolbar({
               )}
             </button>
 
-            {logMenuOpen && !placing ? (
+            {logMenuOpen && !placing && !areaSelectMode ? (
               <div className="absolute right-0 z-[2000] mt-2 w-44 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
                 <button
                   type="button"
@@ -133,7 +162,7 @@ export function MapPageToolbar({
             Cancel
           </button>
         )}
-        {mapSheetExists && !placing && (
+        {mapSheetExists && !placing && !areaSelectMode && (
           <button type="button" onClick={onCloseSheet} className="map-page__cancel-btn">
             {clearPinLabel}
           </button>

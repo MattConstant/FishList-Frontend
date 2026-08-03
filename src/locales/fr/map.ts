@@ -59,6 +59,27 @@ export default {
   "map.ara.species.rainbow_trout": "Truite arc-en-ciel",
   "map.ara.species.brown_trout": "Truite brune",
   "map.ara.species.black_crappie": "Crapet noir",
+  "map.filters.expand": "Ouvrir les filtres",
+  "map.filters.collapse": "Fermer les filtres",
+  "map.aiSpots.toolbar": "Trouver des spots",
+  "map.aiSpots.title": "Spots IA",
+  "map.aiSpots.hintDraw":
+    "Deplacez la carte librement. Touchez Dessiner (ou maintenez Maj) puis glissez pour selectionner.",
+  "map.aiSpots.hintAdjust":
+    "Deplacez la carte, ajustez les coins, ou redessinez avec Dessiner / Maj + glisser.",
+  "map.aiSpots.draw": "Dessiner",
+  "map.aiSpots.drawArmed": "Glissez sur la carte…",
+  "map.aiSpots.ask": "Demander des spots a l’IA",
+  "map.aiSpots.loading": "Demande a l’IA…",
+  "map.aiSpots.done": "Termine",
+  "map.aiSpots.clear": "Effacer les spots",
+  "map.aiSpots.failed": "Impossible d’obtenir des suggestions. Reessayez.",
+  "map.aiSpots.noWaterPins":
+    "Aucun pin de lac dans ce cadre. Zoomez jusqu’a voir des poissons bleus ou verts sur l’eau, puis redessinez.",
+  "map.aiSpots.rateLimited":
+    "Limite quotidienne de spots IA atteinte (10 par jour). Reessayez demain.",
+  "map.aiSpots.spotCount": "{{count}} spots suggeres sur la carte",
+
   "map.searchLake.section": "Trouver un lieu",
   "map.searchLake.info":
     "Recherche par ville, lac, riviere ou code postal. Choisissez un resultat pour deposer une epingle (meme sans ensemencement).",
@@ -109,10 +130,10 @@ export default {
     "Ouvrez Couches sur la carte pour activer ensemencement, presence d'especes, prises publiees, camps, satellite, courbes de profondeur et la legende.",
   "map.onboarding.filtersTitle": "Filtres",
   "map.onboarding.filtersBody":
-    "Touchez Filtres au-dessus de la carte pour l'ensemencement MNRF (especes, district, annees) et les especes de presence. Definissez vos especes preferees et autres preferences de carte sur votre page Profil.",
+    "Touchez l'icone filtre a cote de Trouver un lieu pour l'ensemencement MNRF (especes, district, annees) et les especes de presence. Definissez vos especes preferees et autres preferences de carte sur votre page Profil.",
   "map.onboarding.searchTitle": "Trouver un lieu",
   "map.onboarding.searchBody":
-    "Utilisez Trouver un lieu dans Filtres pour chercher une ville, un lac, une riviere ou un code postal et deposer une epingle, meme sans ensemencement a proximite.",
+    "Utilisez Trouver un lieu au-dessus de la carte pour chercher une ville, un lac, une riviere ou un code postal et deposer une epingle, meme sans ensemencement a proximite.",
   "map.onboarding.logCatchTitle": "Publier une prise",
   "map.onboarding.logCatchBody":
     "Touchez Journal en haut a droite de la carte pour publier une prise ou un camp. Placez une epingle, ajoutez les details et une photo, puis partagez sur votre fil.",

@@ -4,10 +4,7 @@ export type PublicCatchRegion = {
   catchCount: number;
 };
 
-/**
- * Anonymized "people caught fish around here" pins for logged-out map visitors.
- * Coordinates are pre-rounded by the backend; no account info is included.
- */
+/** Anonymized catch pins for logged-out visitors; coords are pre-rounded by the backend. */
 export async function fetchPublicCatchRegions(): Promise<PublicCatchRegion[]> {
   const res = await fetch("/api/public/catch-regions", { cache: "no-store" });
   if (!res.ok) throw new Error(`Catch regions ${res.status}`);

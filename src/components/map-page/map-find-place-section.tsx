@@ -7,6 +7,8 @@ type Translate = (key: string, vars?: Record<string, string | number>) => string
 
 type Props = {
   t: Translate;
+  /** False during SSR / first client paint so `disabled` matches on hydrate. */
+  hydrated: boolean;
   lakePinQuery: string;
   setLakePinQuery: (v: string) => void;
   lakePinError: string;
@@ -19,10 +21,15 @@ type Props = {
   onSubmitSearch: (e: FormEvent) => void;
   onSearchKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onSelectSuggestion: (s: GeocodeSearchHit) => void;
+  /** Species data ready — show the compact filters control. */
+  filtersAvailable?: boolean;
+  filtersExpanded?: boolean;
+  setFiltersExpanded?: (v: boolean | ((p: boolean) => boolean)) => void;
 };
 
 export function MapFindPlaceSection({
   t,
+  hydrated,
   lakePinQuery,
   setLakePinQuery,
   lakePinError,
@@ -35,30 +42,12 @@ export function MapFindPlaceSection({
   onSubmitSearch,
   onSearchKeyDown,
   onSelectSuggestion,
+  filtersAvailable = false,
+  filtersExpanded = false,
+  setFiltersExpanded,
 }: Props) {
   return (
-    <section className="map-page__filter-section" aria-label={t("map.searchLake.section")}>
-      <div className="map-page__filter-section-head">
-        <h3 className="map-page__filter-section-title">{t("map.searchLake.section")}</h3>
-        <span className="map-page__filter-info">
-          <button
-            type="button"
-            className="map-page__filter-info-icon"
-            aria-label={t("map.searchLake.info")}
-          >
-            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-3.5 w-3.5">
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 11-1.5 0 .75.75 0 011.5 0zM9.25 9a.75.75 0 01.75-.75h.01a.75.75 0 01.74.84l-.46 4.13a.75.75 0 11-1.49-.16l.45-4.06z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </button>
-          <span className="map-page__filter-info-tooltip" role="tooltip">
-            {t("map.searchLake.info")}
-          </span>
-        </span>
-      </div>
+    <section className="map-page__search-bar" aria-label={t("map.searchLake.section")}>
       <form className="map-page__lake-pin-form" onSubmit={onSubmitSearch} role="search">
         <div className="map-page__lake-pin-search">
           <span className="map-page__lake-pin-search-icon" aria-hidden>
@@ -146,7 +135,11 @@ export function MapFindPlaceSection({
         <button
           type="submit"
           className="map-page__lake-pin-btn"
-          disabled={lakePinSearching || lakePinQuery.trim().length < 2}
+          disabled={
+            hydrated
+              ? lakePinSearching || lakePinQuery.trim().length < 2
+              : undefined
+          }
           aria-label={t("map.searchLake.action")}
           title={t("map.searchLake.action")}
         >
@@ -158,6 +151,33 @@ export function MapFindPlaceSection({
             />
           </svg>
         </button>
+        {filtersAvailable && setFiltersExpanded ? (
+          <button
+            type="button"
+            className={[
+              "map-page__filters-icon-btn",
+              filtersExpanded ? "map-page__filters-icon-btn--active" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
+            aria-expanded={filtersExpanded}
+            aria-controls="map-filters-panel"
+            id="map-filters-toggle"
+            onClick={() => setFiltersExpanded((v) => !v)}
+            aria-label={
+              filtersExpanded ? t("map.filters.collapse") : t("map.filters.expand")
+            }
+            title={filtersExpanded ? t("map.filters.collapse") : t("map.filters.expand")}
+          >
+            <svg viewBox="0 0 20 20" fill="currentColor" aria-hidden className="h-4 w-4">
+              <path
+                fillRule="evenodd"
+                d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm2 5a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm3 5a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </button>
+        ) : null}
       </form>
       {lakePinError ? <p className="map-page__filter-ara-status">{lakePinError}</p> : null}
     </section>

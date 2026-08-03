@@ -23,7 +23,6 @@ const MIN_ACCOUNT_SEARCH_LEN = 2;
 const ACCOUNTS_PAGE_SIZE = 25;
 const USAGE_LOG_LIMIT = 100;
 
-/** Human labels for the whitelisted usage event types; unknown types fall back to the raw key. */
 const USAGE_TYPE_LABEL_KEYS: Record<string, string> = {
   landing_map_cta: "admin.usage.type.landingMapCta",
   landing_signup_cta: "admin.usage.type.landingSignupCta",

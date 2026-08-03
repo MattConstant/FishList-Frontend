@@ -149,6 +149,30 @@ const VISIBILITY_OPTIONS: {
 export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormProps) {
   const { t } = useLocale();
   const [locationName, setLocationName] = useState("");
+  const nameEditedRef = useRef(false);
+
+  // Prefill the location name from where they clicked; never overwrite what they typed.
+  // mode=water returns the actual waterbody name when the pin lands on a lake/river.
+  useEffect(() => {
+    let cancelled = false;
+    const u = new URL("/api/reverse-geocode", window.location.origin);
+    u.searchParams.set("lat", String(lat));
+    u.searchParams.set("lon", String(lng));
+    u.searchParams.set("mode", "water");
+    fetch(u.toString())
+      .then((res) => res.json() as Promise<{ label?: string; water?: string | null }>)
+      .then((json) => {
+        if (cancelled || nameEditedRef.current) return;
+        const suggestion = (json.water ?? json.label?.split("·")[0])?.trim();
+        if (suggestion && suggestion !== "Selected area") {
+          setLocationName((prev) => (prev.trim() ? prev : suggestion));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [lat, lng]);
   const [fishRows, setFishRows] = useState<FishRow[]>(() => [createEmptyFishRow()]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
@@ -397,7 +421,10 @@ export default function CatchForm({ lat, lng, onClose, onSuccess }: CatchFormPro
             <input
               type="text"
               value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
+              onChange={(e) => {
+                nameEditedRef.current = true;
+                setLocationName(e.target.value);
+              }}
               className={inputClass}
               placeholder="e.g. Lake Simcoe, south shore"
               required
