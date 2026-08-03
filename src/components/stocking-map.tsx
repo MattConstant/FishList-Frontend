@@ -266,9 +266,50 @@ function areaCornerHandleIcon(): L.DivIcon {
   return L.divIcon({
     className: "map-page__area-handle-wrap",
     html: `<span class="map-page__area-handle"></span>`,
-    iconSize: [16, 16],
-    iconAnchor: [8, 8],
+    iconSize: [22, 22],
+    iconAnchor: [11, 11],
   });
+}
+
+/** Tap-to-place only on phones / touch devices — not mouse PCs. */
+function prefersTapToPlaceBox(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(pointer: coarse)").matches ||
+    window.matchMedia("(hover: none)").matches
+  );
+}
+
+function areaBoundsFromTap(
+  map: L.Map,
+  center: L.LatLng,
+  previous: AraViewport | null,
+): AraViewport {
+  if (previous) {
+    const latHalf = Math.max(0.004, (previous.north - previous.south) / 2);
+    const lngHalf = Math.max(0.004, (previous.east - previous.west) / 2);
+    return {
+      south: center.lat - latHalf,
+      north: center.lat + latHalf,
+      west: center.lng - lngHalf,
+      east: center.lng + lngHalf,
+    };
+  }
+  const view = map.getBounds();
+  const latHalf = Math.max(
+    0.006,
+    Math.min((view.getNorth() - view.getSouth()) * 0.14, 0.12),
+  );
+  const lngHalf = Math.max(
+    0.008,
+    Math.min((view.getEast() - view.getWest()) * 0.14, 0.16),
+  );
+  return {
+    south: center.lat - latHalf,
+    north: center.lat + latHalf,
+    west: center.lng - lngHalf,
+    east: center.lng + lngHalf,
+  };
 }
 
 export type AiSpotMarker = {
@@ -357,7 +398,7 @@ type StockingMapProps = {
   areaSelectMode?: boolean;
   /**
    * When true (or while holding Shift), the next drag draws a box.
-   * Otherwise the map pans normally in selection mode.
+   * Otherwise the map pans normally. On phones, tap also places a box.
    */
   areaDrawArmed?: boolean;
   onAreaDrawArmedChange?: (armed: boolean) => void;
@@ -428,6 +469,8 @@ export default function StockingMap({
   onAreaDrawArmedChangeRef.current = onAreaDrawArmedChange;
   const areaDrawArmedRef = useRef(areaDrawArmed);
   areaDrawArmedRef.current = areaDrawArmed;
+  const areaBoundsRef = useRef(areaBounds);
+  areaBoundsRef.current = areaBounds;
   const areaLayerRef = useRef<L.LayerGroup | null>(null);
   const aiSpotsLayerRef = useRef<L.LayerGroup | null>(null);
   const areaDrawingRef = useRef(false);
@@ -670,10 +713,10 @@ export default function StockingMap({
 
   // Draw / resize selection rectangle for AI area spots.
   // Pan stays enabled unless Shift is held or "Draw box" is armed.
+  // On phones, a tap also places an adjustable box.
   useEffect(() => {
     const mapInstance = mapRef.current;
     if (!mapInstance) return;
-    // Re-bind with a definite type so nested handlers type-check (TS drops null narrowing in closures).
     const leafletMap: L.Map = mapInstance;
 
     if (areaLayerRef.current) {
@@ -799,39 +842,6 @@ export default function StockingMap({
       return areaDrawArmedRef.current || oe.shiftKey;
     }
 
-    function finishDraw(endLatLng: L.LatLng | null) {
-      if (!areaDrawingRef.current || !startLatLng) {
-        leafletMap.dragging.enable();
-        return;
-      }
-      areaDrawingRef.current = false;
-      leafletMap.dragging.enable();
-      const end = endLatLng ?? startLatLng;
-      const b = boundsFromCorners(startLatLng, end);
-      startLatLng = null;
-      if (draftRect) {
-        layer.removeLayer(draftRect);
-        draftRect = null;
-      }
-      // Ignore tiny clicks / taps.
-      if (
-        Math.abs(b.getNorth() - b.getSouth()) < 0.0008 ||
-        Math.abs(b.getEast() - b.getWest()) < 0.0008
-      ) {
-        syncDrawCursor();
-        return;
-      }
-      emitBounds({
-        south: b.getSouth(),
-        west: b.getWest(),
-        north: b.getNorth(),
-        east: b.getEast(),
-      });
-      // Return to pan after a successful draw.
-      onAreaDrawArmedChangeRef.current?.(false);
-      syncDrawCursor();
-    }
-
     function onMouseDown(e: L.LeafletMouseEvent) {
       if (!areaSelectMode) return;
       const oe = e.originalEvent;
@@ -865,17 +875,30 @@ export default function StockingMap({
     }
 
     function onMouseUp(e: L.LeafletMouseEvent) {
-      finishDraw(e.latlng);
-    }
-
-    // Phones often miss map mouseup; always re-enable pan on gesture end.
-    function onGlobalPointerUp() {
-      if (!areaDrawingRef.current) return;
-      const end =
-        draftRect != null
-          ? draftRect.getBounds().getNorthEast()
-          : startLatLng;
-      finishDraw(end);
+      if (!areaDrawingRef.current || !startLatLng) return;
+      areaDrawingRef.current = false;
+      leafletMap.dragging.enable();
+      const b = boundsFromCorners(startLatLng, e.latlng);
+      startLatLng = null;
+      if (draftRect) {
+        layer.removeLayer(draftRect);
+        draftRect = null;
+      }
+      if (
+        Math.abs(b.getNorth() - b.getSouth()) < 0.0008 ||
+        Math.abs(b.getEast() - b.getWest()) < 0.0008
+      ) {
+        syncDrawCursor();
+        return;
+      }
+      emitBounds({
+        south: b.getSouth(),
+        west: b.getWest(),
+        north: b.getNorth(),
+        east: b.getEast(),
+      });
+      onAreaDrawArmedChangeRef.current?.(false);
+      syncDrawCursor();
     }
 
     function onKeyDown(ev: KeyboardEvent) {
@@ -891,14 +914,21 @@ export default function StockingMap({
       }
     }
 
+    // Phones only: tap places/moves a box. PCs use Draw box / Shift-drag.
+    function onTapPlace(e: L.LeafletMouseEvent) {
+      if (!areaSelectMode) return;
+      if (!prefersTapToPlaceBox()) return;
+      if (areaDrawArmedRef.current || areaDrawingRef.current) return;
+      const t = e.originalEvent.target as HTMLElement | null;
+      if (t?.closest?.(".map-page__area-handle-wrap")) return;
+      emitBounds(areaBoundsFromTap(leafletMap, e.latlng, areaBoundsRef.current));
+    }
+
     if (areaSelectMode) {
       leafletMap.on("mousedown", onMouseDown);
       leafletMap.on("mousemove", onMouseMove);
       leafletMap.on("mouseup", onMouseUp);
-      window.addEventListener("pointerup", onGlobalPointerUp);
-      window.addEventListener("pointercancel", onGlobalPointerUp);
-      window.addEventListener("touchend", onGlobalPointerUp);
-      window.addEventListener("touchcancel", onGlobalPointerUp);
+      leafletMap.on("click", onTapPlace);
       window.addEventListener("keydown", onKeyDown);
       window.addEventListener("keyup", onKeyUp);
       syncDrawCursor();
@@ -908,10 +938,7 @@ export default function StockingMap({
       leafletMap.off("mousedown", onMouseDown);
       leafletMap.off("mousemove", onMouseMove);
       leafletMap.off("mouseup", onMouseUp);
-      window.removeEventListener("pointerup", onGlobalPointerUp);
-      window.removeEventListener("pointercancel", onGlobalPointerUp);
-      window.removeEventListener("touchend", onGlobalPointerUp);
-      window.removeEventListener("touchcancel", onGlobalPointerUp);
+      leafletMap.off("click", onTapPlace);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
       leafletMap.dragging.enable();

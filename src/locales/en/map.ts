@@ -61,9 +61,9 @@ export default {
   "map.aiSpots.toolbar": "Find spots",
   "map.aiSpots.title": "AI fishing spots",
   "map.aiSpots.hintDraw":
-    "Pan freely. Tap Draw box (or hold Shift) and drag to select a lake or shoreline.",
+    "Use Draw box or Shift-drag to draw. On a phone, you can also tap to drop a box.",
   "map.aiSpots.hintAdjust":
-    "Pan freely, drag corner handles to resize, or Draw box / Shift-drag to redraw.",
+    "Drag the orange corners to resize. Draw box / Shift-drag to redraw, or on a phone tap to move the box.",
   "map.aiSpots.draw": "Draw box",
   "map.aiSpots.drawArmed": "Drag on map…",
   "map.aiSpots.ask": "Ask AI for spots here",
@@ -72,7 +72,7 @@ export default {
   "map.aiSpots.clear": "Clear spots",
   "map.aiSpots.failed": "Could not get spot suggestions. Try again.",
   "map.aiSpots.noWaterPins":
-    "No lake pins found in this box. Zoom in until blue or green fish pins show on the water, then draw again.",
+    "No lake pins found in this box. Zoom in until blue or green fish pins show on the water, then tap again.",
   "map.aiSpots.rateLimited":
     "Daily AI fishing-spots limit reached (10 per day). Try again tomorrow.",
   "map.aiSpots.spotCount": "{{count}} suggested spots on the map",

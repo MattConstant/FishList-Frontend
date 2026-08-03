@@ -64,9 +64,9 @@ export default {
   "map.aiSpots.toolbar": "Trouver des spots",
   "map.aiSpots.title": "Spots IA",
   "map.aiSpots.hintDraw":
-    "Deplacez la carte librement. Touchez Dessiner (ou maintenez Maj) puis glissez pour selectionner.",
+    "Utilisez Dessiner ou Maj + glisser. Sur telephone, vous pouvez aussi toucher pour placer un cadre.",
   "map.aiSpots.hintAdjust":
-    "Deplacez la carte, ajustez les coins, ou redessinez avec Dessiner / Maj + glisser.",
+    "Glissez les coins orange pour ajuster. Dessiner / Maj + glisser pour redessiner, ou sur telephone touchez pour deplacer.",
   "map.aiSpots.draw": "Dessiner",
   "map.aiSpots.drawArmed": "Glissez sur la carte…",
   "map.aiSpots.ask": "Demander des spots a l’IA",
@@ -75,7 +75,7 @@ export default {
   "map.aiSpots.clear": "Effacer les spots",
   "map.aiSpots.failed": "Impossible d’obtenir des suggestions. Reessayez.",
   "map.aiSpots.noWaterPins":
-    "Aucun pin de lac dans ce cadre. Zoomez jusqu’a voir des poissons bleus ou verts sur l’eau, puis redessinez.",
+    "Aucun pin de lac dans ce cadre. Zoomez jusqu’a voir des poissons bleus ou verts sur l’eau, puis retouchez.",
   "map.aiSpots.rateLimited":
     "Limite quotidienne de spots IA atteinte (10 par jour). Reessayez demain.",
   "map.aiSpots.spotCount": "{{count}} spots suggeres sur la carte",
