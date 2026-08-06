@@ -59,23 +59,24 @@ export default {
   "map.filters.expand": "Open filters",
   "map.filters.collapse": "Close filters",
   "map.aiSpots.toolbar": "Find spots",
+  "map.aiSpots.beta": "Beta",
   "map.aiSpots.title": "AI fishing spots",
   "map.aiSpots.hintDraw":
-    "Use Draw box or Shift-drag to draw. On a phone, you can also tap to drop a box.",
+    "Draw a box over one lake. On a phone, you can also tap to drop a box.",
   "map.aiSpots.hintAdjust":
-    "Drag the orange corners to resize. Draw box / Shift-drag to redraw, or on a phone tap to move the box.",
+    "Adjust the box over the lake you want, then ask AI to outline structure around it.",
   "map.aiSpots.draw": "Draw box",
   "map.aiSpots.drawArmed": "Drag on map…",
-  "map.aiSpots.ask": "Ask AI for spots here",
+  "map.aiSpots.ask": "Ask AI for structure here",
   "map.aiSpots.loading": "Asking AI…",
   "map.aiSpots.done": "Done",
   "map.aiSpots.clear": "Clear spots",
   "map.aiSpots.failed": "Could not get spot suggestions. Try again.",
   "map.aiSpots.noWaterPins":
-    "No lake pins found in this box. Zoom in until blue or green fish pins show on the water, then tap again.",
+    "No lake pins found in this box. Zoom in until blue or green fish pins show on the water, then try again.",
   "map.aiSpots.rateLimited":
     "Daily AI fishing-spots limit reached (10 per day). Try again tomorrow.",
-  "map.aiSpots.spotCount": "{{count}} suggested spots on the map",
+  "map.aiSpots.spotCount": "{{count}} spots on the map",
 
   "map.searchLake.section": "Find a place",
   "map.searchLake.info":

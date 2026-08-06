@@ -82,7 +82,10 @@ import {
   CLIENT_PREFS_UPDATED_EVENT,
 } from "@/lib/client-prefs-events";
 import { formatAppInteger } from "@/lib/format-app-locale";
-import { selectPrimaryWaterAnchors } from "@/lib/area-water-anchors";
+import {
+  collectKnownSpeciesForAnchors,
+  selectPrimaryWaterAnchors,
+} from "@/lib/area-water-anchors";
 import { haversineDistanceKm } from "@/lib/geo-distance";
 import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
 import { useSyncedBooleanPref } from "@/lib/use-synced-boolean-pref";
@@ -655,13 +658,33 @@ export default function MapPage() {
         return;
       }
 
+      // Confirmed species for THIS lake cluster only (stocking + presence).
+      // Prevents the model inventing trout/etc. for lakes that don't have them.
+      const knownSpecies = collectKnownSpeciesForAnchors(
+        waterAnchors,
+        groups,
+        araPoints,
+      );
+
       const res = await fetchAreaFishingSpots({
         ...areaBounds,
         areaLabel: lakeSearchPin?.label,
         targetSpecies,
+        knownSpecies,
         waterAnchors,
       });
-      setAiSpots(res.spots);
+      const structures = res.structures ?? [];
+      setAiSpots(
+        structures.map((s) => {
+          const mid = s.path[Math.floor(s.path.length / 2)] ?? s.path[0];
+          return {
+            label: s.label,
+            path: s.path,
+            lat: mid.lat,
+            lng: mid.lng,
+          };
+        }),
+      );
       setAiSpotsNarrative(res.text);
     } catch (e) {
       setAiSpots([]);
@@ -1038,6 +1061,7 @@ export default function MapPage() {
         areaSelectMode={areaSelectMode}
         onToggleAreaSelect={toggleAreaSelect}
         areaSelectLabel={t("map.aiSpots.toolbar")}
+        areaSelectBetaLabel={t("map.aiSpots.beta")}
       />
       <div className="map-page__chrome map-page__search-filters">
         <MapFindPlaceSection

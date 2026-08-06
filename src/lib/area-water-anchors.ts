@@ -1,6 +1,11 @@
 import { haversineDistanceKm } from "@/lib/geo-distance";
 import type { AreaFishingWaterAnchor } from "@/lib/api";
-import type { AraViewport } from "@/lib/ara-fish";
+import {
+  ARA_FILTER_SUMMARY_NAMES,
+  type AraMapPoint,
+  type AraViewport,
+} from "@/lib/ara-fish";
+import type { WaterbodyGroup } from "@/lib/geohub";
 
 function normalizeWaterName(name: string): string {
   return name
@@ -9,6 +14,65 @@ function normalizeWaterName(name: string): string {
     .replace(/\s+/g, " ")
     .replace(/^(lake|lac)\s+/i, "")
     .replace(/\s+(lake|lac)$/i, "");
+}
+
+const MATCH_ANCHOR_KM = 3;
+
+function nearPrimaryAnchors(
+  lat: number,
+  lng: number,
+  name: string,
+  anchors: AreaFishingWaterAnchor[],
+): boolean {
+  const n = normalizeWaterName(name);
+  for (const a of anchors) {
+    if (n && normalizeWaterName(a.name) === n && n.length >= 3) return true;
+    if (haversineDistanceKm(lat, lng, a.lat, a.lng) <= MATCH_ANCHOR_KM) return true;
+  }
+  return false;
+}
+
+function displayNameForAraToken(token: string): string {
+  const t = token.trim();
+  if (!t) return "";
+  const lower = t.toLowerCase();
+  for (const names of Object.values(ARA_FILTER_SUMMARY_NAMES)) {
+    for (const variant of names) {
+      if (variant.toLowerCase() === lower) return variant;
+    }
+  }
+  return t.replace(/\s+/g, " ");
+}
+
+/**
+ * Confirmed species for the primary-lake cluster from stocking groups + ARA presence.
+ */
+export function collectKnownSpeciesForAnchors(
+  anchors: AreaFishingWaterAnchor[],
+  groups: WaterbodyGroup[],
+  araPoints: AraMapPoint[],
+): string[] {
+  if (anchors.length === 0) return [];
+
+  const found = new Map<string, string>();
+  const add = (raw: string) => {
+    const name = displayNameForAraToken(raw);
+    if (!name || name.length > 60) return;
+    const key = name.toLowerCase();
+    if (!found.has(key)) found.set(key, name);
+  };
+
+  for (const g of groups) {
+    if (!nearPrimaryAnchors(g.lat, g.lng, g.waterbody, anchors)) continue;
+    for (const s of g.speciesSet) add(s);
+  }
+
+  for (const a of araPoints) {
+    if (!nearPrimaryAnchors(a.lat, a.lng, a.name, anchors)) continue;
+    for (const part of a.species.split(/[,;|/]+/)) add(part);
+  }
+
+  return Array.from(found.values()).sort((x, y) => x.localeCompare(y));
 }
 
 /**

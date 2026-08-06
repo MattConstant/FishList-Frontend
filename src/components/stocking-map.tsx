@@ -304,10 +304,14 @@ function areaBoundsFromTap(
   };
 }
 
+/** AI fishing structure: outline path + optional midpoint for labeling. */
 export type AiSpotMarker = {
+  label: string;
+  /** Structure outline (preferred). */
+  path: { lat: number; lng: number }[];
+  /** Midpoint / label anchor. */
   lat: number;
   lng: number;
-  label: string;
 };
 
 export type CatchMapMarker = {
@@ -993,7 +997,7 @@ export default function StockingMap({
     };
   }, [areaSelectMode, areaBounds, areaDrawArmed]);
 
-  // AI-suggested fishing spot pins.
+  // AI-suggested fishing spots (markers only).
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -1007,23 +1011,36 @@ export default function StockingMap({
     const layer = L.layerGroup();
     const icon = aiSpotPinIcon();
     for (const spot of aiSpots) {
-      if (!Number.isFinite(spot.lat) || !Number.isFinite(spot.lng)) continue;
-      const m = L.marker([spot.lat, spot.lng], { icon, zIndexOffset: 1500 });
-      m.bindTooltip(spot.label || "Suggested spot", {
+      const path = (spot.path ?? []).filter(
+        (p) => Number.isFinite(p.lat) && Number.isFinite(p.lng),
+      );
+      const lat = Number.isFinite(spot.lat)
+        ? spot.lat
+        : path[Math.floor(path.length / 2)]?.lat;
+      const lng = Number.isFinite(spot.lng)
+        ? spot.lng
+        : path[Math.floor(path.length / 2)]?.lng;
+      if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+        continue;
+      }
+
+      const safeLabel = (spot.label || "Suggested structure")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+
+      const m = L.marker([lat, lng], { icon, zIndexOffset: 1500 });
+      m.bindTooltip(spot.label || "Suggested structure", {
         direction: "top",
         offset: L.point(0, -28),
         opacity: 1,
         className: "map-page__stocking-tooltip",
       });
-      const safeLabel = (spot.label || "Suggested spot")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
       m.bindPopup(
         `<div class="map-page__ai-spot-popup"><strong>${safeLabel}</strong>` +
-          `<p>AI-suggested fishing spot</p></div>`,
-        { maxWidth: 220 },
+          `<p>AI-suggested structure on this waterbody</p></div>`,
+        { maxWidth: 240 },
       );
       layer.addLayer(m);
     }

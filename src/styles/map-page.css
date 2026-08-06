@@ -91,6 +91,15 @@ html.fishlist-map-route main {
   @apply hover:border-amber-400 hover:bg-amber-50 hover:text-amber-900 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-amber-500 dark:hover:bg-amber-950/40 dark:hover:text-amber-100;
 }
 
+.map-page__beta-tag {
+  @apply inline-flex shrink-0 items-center rounded-md border border-amber-400/70 bg-amber-100 px-1.5 py-0.5 text-[0.62rem] font-bold uppercase leading-none tracking-wide text-amber-900;
+  @apply dark:border-amber-500/60 dark:bg-amber-950/70 dark:text-amber-200;
+}
+
+.map-page__ai-spots-panel-title .map-page__beta-tag {
+  @apply ml-1.5 align-middle normal-case tracking-wide;
+}
+
 .map-page__area-select-btn--active {
   @apply border-amber-500 bg-amber-50 text-amber-900 dark:border-amber-500 dark:bg-amber-950/50 dark:text-amber-100;
 }
@@ -99,8 +108,9 @@ html.fishlist-map-route main {
   @apply cursor-not-allowed opacity-50;
 }
 
+/* Left side so it never covers the layers panel (top-right). top-14 clears Leaflet zoom. */
 .map-page__ai-spots-panel {
-  @apply absolute left-3 right-3 top-3 z-[1260] max-h-[min(42vh,22rem)] overflow-y-auto rounded-xl border border-amber-200/90 bg-white/95 p-3 shadow-md backdrop-blur-sm sm:left-auto sm:right-3 sm:w-80;
+  @apply absolute left-3 top-14 z-[1260] w-[min(19rem,calc(100vw-5.5rem))] max-h-[min(42vh,22rem)] overflow-y-auto rounded-xl border border-amber-200/90 bg-white/95 p-3 shadow-md backdrop-blur-sm;
   @apply dark:border-amber-800/60 dark:bg-zinc-900/95;
 }
 
@@ -109,7 +119,7 @@ html.fishlist-map-route main {
 }
 
 .map-page__ai-spots-panel-title {
-  @apply text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300;
+  @apply inline-flex items-center text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-300;
 }
 
 .map-page__ai-spots-panel-close {

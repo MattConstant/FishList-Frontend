@@ -20,6 +20,7 @@ type Props = {
   areaSelectMode?: boolean;
   onToggleAreaSelect?: () => void;
   areaSelectLabel?: string;
+  areaSelectBetaLabel?: string;
 };
 
 export function MapPageToolbar({
@@ -39,6 +40,7 @@ export function MapPageToolbar({
   areaSelectMode = false,
   onToggleAreaSelect,
   areaSelectLabel = "Find spots",
+  areaSelectBetaLabel = "Beta",
 }: Props) {
   // Logged out with nothing to act on: no toolbar at all. The map page shows a
   // floating "Log in to add catches" pill on the map instead.
@@ -94,6 +96,7 @@ export function MapPageToolbar({
               />
             </svg>
             {areaSelectLabel}
+            <span className="map-page__beta-tag">{areaSelectBetaLabel}</span>
           </button>
         ) : null}
         {userPresent && (

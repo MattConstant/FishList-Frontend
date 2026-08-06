@@ -216,8 +216,8 @@ export default function AdminPage() {
   const currentPageUi = modalTotalElements === 0 ? 1 : modalPage + 1;
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 px-6 py-8">
-      <h1 className="text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+    <div className="mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 sm:text-3xl dark:text-zinc-50">
         {t("admin.title")}
       </h1>
 
@@ -240,121 +240,7 @@ export default function AdminPage() {
         </div>
       )}
 
-      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-            {t("admin.usage.title")}
-          </h2>
-          <button
-            type="button"
-            onClick={() => void loadUsage()}
-            disabled={usageLoading}
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
-          >
-            {usageLoading ? t("admin.usage.loading") : t("admin.usage.refresh")}
-          </button>
-        </div>
-
-        {usageError ? (
-          <p className="mb-3 text-sm text-red-600 dark:text-red-400">{usageError}</p>
-        ) : null}
-
-        {usageSummary && usageSummary.totals.length === 0 && !usageLoading ? (
-          <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
-        ) : null}
-
-        {usageSummary && usageSummary.totals.length > 0 ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {t("admin.usage.totalsHeading")}
-              </h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="text-zinc-500">
-                    <tr>
-                      <th className="px-2 py-1.5">{t("admin.usage.table.event")}</th>
-                      <th className="px-2 py-1.5">{t("admin.usage.table.total")}</th>
-                      <th className="px-2 py-1.5">{t("admin.usage.table.last7d")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {usageSummary.totals.map((row) => (
-                      <tr key={row.type} className="border-t border-zinc-200 dark:border-zinc-800">
-                        <td className="px-2 py-1.5 text-zinc-900 dark:text-zinc-100">
-                          {usageTypeLabel(row.type, t)}
-                        </td>
-                        <td className="px-2 py-1.5">{formatAppInteger(row.total, locale)}</td>
-                        <td className="px-2 py-1.5">{formatAppInteger(row.last7d, locale)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {usageSummary.topDetails.length > 0 ? (
-                <>
-                  <h3 className="mb-2 mt-4 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                    {t("admin.usage.topDetailsHeading")}
-                  </h3>
-                  <ul className="space-y-1 text-sm">
-                    {usageSummary.topDetails.map((row) => (
-                      <li
-                        key={`${row.type}:${row.detail}`}
-                        className="flex items-center justify-between gap-3 rounded-md bg-zinc-50 px-2 py-1 dark:bg-zinc-900"
-                      >
-                        <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">
-                          <span className="text-zinc-500">{usageTypeLabel(row.type, t)}</span>
-                          {" · "}
-                          {row.detail}
-                        </span>
-                        <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-100">
-                          {formatAppInteger(row.count, locale)}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
-              ) : null}
-            </div>
-
-            <div>
-              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
-                {t("admin.usage.recentHeading")}
-              </h3>
-              {usageEvents.length > 0 ? (
-                <ul className="max-h-96 space-y-1 overflow-y-auto pr-1 text-xs">
-                  {usageEvents.map((event) => (
-                    <li
-                      key={event.id}
-                      className="flex flex-wrap items-baseline gap-x-2 rounded-md border border-zinc-100 px-2 py-1 dark:border-zinc-800"
-                    >
-                      <span className="whitespace-nowrap text-zinc-400">
-                        {formatUsageTimestamp(event.createdAtEpochMs, locale)}
-                      </span>
-                      <span className="font-medium text-zinc-800 dark:text-zinc-200">
-                        {usageTypeLabel(event.type, t)}
-                      </span>
-                      {event.detail ? (
-                        <span className="min-w-0 truncate text-zinc-600 dark:text-zinc-400">
-                          {event.detail}
-                        </span>
-                      ) : null}
-                      <span className="ml-auto whitespace-nowrap text-zinc-500">
-                        {event.username ? `@${event.username}` : t("admin.usage.guest")}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
-              )}
-            </div>
-          </div>
-        ) : null}
-      </section>
-
-      <div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+<div className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <p className="mb-3 text-sm text-zinc-600 dark:text-zinc-400">
           {t("admin.searchToStart")}
         </p>
@@ -394,6 +280,128 @@ export default function AdminPage() {
           <p className="mt-3 text-sm text-amber-700 dark:text-amber-400">{searchNotice}</p>
         )}
       </div>
+
+      <section className="rounded-xl border border-zinc-200 p-3 sm:p-4 dark:border-zinc-800">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <h2 className="min-w-0 text-base font-semibold text-zinc-900 sm:text-lg dark:text-zinc-50">
+            {t("admin.usage.title")}
+          </h2>
+          <button
+            type="button"
+            onClick={() => void loadUsage()}
+            disabled={usageLoading}
+            className="shrink-0 rounded-lg border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-800 transition hover:bg-zinc-50 disabled:opacity-60 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-800"
+          >
+            {usageLoading ? t("admin.usage.loading") : t("admin.usage.refresh")}
+          </button>
+        </div>
+
+        {usageError ? (
+          <p className="mb-3 text-sm text-red-600 dark:text-red-400">{usageError}</p>
+        ) : null}
+
+        {usageSummary && usageSummary.totals.length === 0 && !usageLoading ? (
+          <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
+        ) : null}
+
+        {usageSummary && usageSummary.totals.length > 0 ? (
+          <div className="grid gap-5 lg:grid-cols-2">
+            <div className="min-w-0 space-y-4">
+              <div>
+                <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  {t("admin.usage.totalsHeading")}
+                </h3>
+                <ul className="space-y-2">
+                  {usageSummary.totals.map((row) => (
+                    <li
+                      key={row.type}
+                      className="rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-2.5 dark:border-zinc-800 dark:bg-zinc-900/60"
+                    >
+                      <p className="text-sm font-medium leading-snug text-zinc-900 dark:text-zinc-100">
+                        {usageTypeLabel(row.type, t)}
+                      </p>
+                      <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-600 dark:text-zinc-400">
+                        <span>
+                          <span className="text-zinc-500">{t("admin.usage.table.total")}: </span>
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {formatAppInteger(row.total, locale)}
+                          </span>
+                        </span>
+                        <span>
+                          <span className="text-zinc-500">{t("admin.usage.table.last7d")}: </span>
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                            {formatAppInteger(row.last7d, locale)}
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {usageSummary.topDetails.length > 0 ? (
+                <div>
+                  <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                    {t("admin.usage.topDetailsHeading")}
+                  </h3>
+                  <ul className="space-y-1.5 text-sm">
+                    {usageSummary.topDetails.map((row) => (
+                      <li
+                        key={`${row.type}:${row.detail}`}
+                        className="flex items-start justify-between gap-3 rounded-md bg-zinc-50 px-2.5 py-1.5 dark:bg-zinc-900"
+                      >
+                        <span className="min-w-0 break-words text-zinc-700 dark:text-zinc-300">
+                          <span className="text-zinc-500">{usageTypeLabel(row.type, t)}</span>
+                          {" · "}
+                          {row.detail}
+                        </span>
+                        <span className="shrink-0 font-medium text-zinc-900 dark:text-zinc-100">
+                          {formatAppInteger(row.count, locale)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+
+            <div className="min-w-0">
+              <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-zinc-500">
+                {t("admin.usage.recentHeading")}
+              </h3>
+              {usageEvents.length > 0 ? (
+                <ul className="max-h-[28rem] space-y-2 overflow-y-auto overscroll-contain pr-0.5 sm:max-h-96">
+                  {usageEvents.map((event) => (
+                    <li
+                      key={event.id}
+                      className="rounded-lg border border-zinc-100 px-2.5 py-2 dark:border-zinc-800"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="text-xs font-medium leading-snug text-zinc-800 dark:text-zinc-200">
+                          {usageTypeLabel(event.type, t)}
+                        </span>
+                        <span className="shrink-0 text-[0.7rem] text-zinc-400">
+                          {formatUsageTimestamp(event.createdAtEpochMs, locale)}
+                        </span>
+                      </div>
+                      {event.detail ? (
+                        <p className="mt-0.5 break-words text-xs text-zinc-600 dark:text-zinc-400">
+                          {event.detail}
+                        </p>
+                      ) : null}
+                      <p className="mt-1 text-[0.7rem] text-zinc-500">
+                        {event.username ? `@${event.username}` : t("admin.usage.guest")}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-zinc-500">{t("admin.usage.empty")}</p>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </section>
 
       {accountsModalOpen ? (
         <div

@@ -1666,13 +1666,22 @@ export type AreaFishingSpotsPayload = {
   east: number;
   areaLabel?: string;
   targetSpecies?: string;
+  /** Confirmed species for this lake from stocking / presence data. */
+  knownSpecies?: string[];
   /** Known on-water pins (stocking / presence) so AI spots stay on the lake. */
   waterAnchors?: AreaFishingWaterAnchor[];
 };
 
+export type AreaFishingStructureLine = {
+  label: string;
+  path: { lat: number; lng: number }[];
+};
+
 export type AreaFishingSpotsApiResponse = {
   text: string;
+  waterbody?: string;
   spots: AreaFishingSpotPin[];
+  structures?: AreaFishingStructureLine[];
 };
 
 /**
@@ -1747,10 +1756,37 @@ export async function fetchAreaFishingSpots(
 
   await throwIfNotOk(res);
   const data = await parseResponseJson<AreaFishingSpotsApiResponse>(res);
-  if (typeof data.text !== "string" || !Array.isArray(data.spots)) {
+  if (typeof data.text !== "string") {
     throw new ApiHttpError("Invalid response from server.", res.status);
   }
-  const spots = data.spots
+
+  const structures: AreaFishingStructureLine[] = Array.isArray(data.structures)
+    ? data.structures
+        .map((s) => {
+          if (!s || typeof s !== "object") return null;
+          const label =
+            typeof s.label === "string" && s.label.trim()
+              ? s.label.trim()
+              : "Shoreline structure";
+          const path = Array.isArray(s.path)
+            ? s.path
+                .filter(
+                  (p) =>
+                    p &&
+                    typeof p.lat === "number" &&
+                    typeof p.lng === "number" &&
+                    Number.isFinite(p.lat) &&
+                    Number.isFinite(p.lng),
+                )
+                .map((p) => ({ lat: p.lat, lng: p.lng }))
+            : [];
+          if (path.length < 2) return null;
+          return { label, path };
+        })
+        .filter((s): s is AreaFishingStructureLine => s !== null)
+    : [];
+
+  const spots = (Array.isArray(data.spots) ? data.spots : [])
     .filter(
       (s) =>
         s &&
@@ -1764,7 +1800,26 @@ export async function fetchAreaFishingSpots(
       lng: s.lng,
       label: typeof s.label === "string" && s.label.trim() ? s.label.trim() : "Suggested spot",
     }));
-  return { text: data.text, spots };
+
+  // Prefer structure outlines; fall back to point spots as tiny lines if needed.
+  const features =
+    structures.length > 0
+      ? structures
+      : spots.map((s) => ({
+          label: s.label,
+          path: [
+            { lat: s.lat - 0.0006, lng: s.lng - 0.0008 },
+            { lat: s.lat, lng: s.lng },
+            { lat: s.lat + 0.0006, lng: s.lng + 0.0008 },
+          ],
+        }));
+
+  return {
+    text: data.text,
+    waterbody: typeof data.waterbody === "string" ? data.waterbody : undefined,
+    spots,
+    structures: features,
+  };
 }
 
 export async function uploadImage(file: File): Promise<ImageUploadResponse> {

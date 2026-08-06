@@ -62,23 +62,24 @@ export default {
   "map.filters.expand": "Ouvrir les filtres",
   "map.filters.collapse": "Fermer les filtres",
   "map.aiSpots.toolbar": "Trouver des spots",
+  "map.aiSpots.beta": "Bêta",
   "map.aiSpots.title": "Spots IA",
   "map.aiSpots.hintDraw":
-    "Utilisez Dessiner ou Maj + glisser. Sur telephone, vous pouvez aussi toucher pour placer un cadre.",
+    "Dessinez un cadre sur un lac. Sur telephone, vous pouvez aussi toucher pour placer un cadre.",
   "map.aiSpots.hintAdjust":
-    "Glissez les coins orange pour ajuster. Dessiner / Maj + glisser pour redessiner, ou sur telephone touchez pour deplacer.",
+    "Ajustez le cadre sur le lac voulu, puis demandez a l’IA de tracer les structures autour.",
   "map.aiSpots.draw": "Dessiner",
   "map.aiSpots.drawArmed": "Glissez sur la carte…",
-  "map.aiSpots.ask": "Demander des spots a l’IA",
+  "map.aiSpots.ask": "Demander les structures a l’IA",
   "map.aiSpots.loading": "Demande a l’IA…",
   "map.aiSpots.done": "Termine",
   "map.aiSpots.clear": "Effacer les spots",
   "map.aiSpots.failed": "Impossible d’obtenir des suggestions. Reessayez.",
   "map.aiSpots.noWaterPins":
-    "Aucun pin de lac dans ce cadre. Zoomez jusqu’a voir des poissons bleus ou verts sur l’eau, puis retouchez.",
+    "Aucun pin de lac dans ce cadre. Zoomez jusqu’a voir des poissons bleus ou verts sur l’eau, puis reessayez.",
   "map.aiSpots.rateLimited":
     "Limite quotidienne de spots IA atteinte (10 par jour). Reessayez demain.",
-  "map.aiSpots.spotCount": "{{count}} spots suggeres sur la carte",
+  "map.aiSpots.spotCount": "{{count}} spots sur la carte",
 
   "map.searchLake.section": "Trouver un lieu",
   "map.searchLake.info":

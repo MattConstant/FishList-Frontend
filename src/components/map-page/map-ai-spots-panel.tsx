@@ -36,7 +36,10 @@ export function MapAiSpotsPanel({
   return (
     <div className="map-page__ai-spots-panel" role="region" aria-label={t("map.aiSpots.title")}>
       <div className="map-page__ai-spots-panel-head">
-        <span className="map-page__ai-spots-panel-title">{t("map.aiSpots.title")}</span>
+        <span className="map-page__ai-spots-panel-title">
+          {t("map.aiSpots.title")}
+          <span className="map-page__beta-tag">{t("map.aiSpots.beta")}</span>
+        </span>
         {active ? (
           <button type="button" className="map-page__ai-spots-panel-close" onClick={onCancel}>
             {t("map.aiSpots.done")}
