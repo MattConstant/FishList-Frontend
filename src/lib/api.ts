@@ -2,7 +2,7 @@
  * FishList Spring API - Bearer JWT after Google Sign-In (see POST /api/auth/google).
  */
 
-import type { LakeFishingInsightPayload } from "@/lib/lake-insights";
+import type { LakeFishingInsightPayload } from "@/lib/forecast/lake-insights";
 
 const SESSION_KEY = "fishlist-session";
 
@@ -659,8 +659,8 @@ export type MapFavoriteSpotResponseDto = {
 /** Normalizes backend map bookmark payload for UI + Leaflet markers. */
 export function mapFavoriteSpotDtoToFavorite(
   row: MapFavoriteSpotResponseDto,
-): import("@/lib/map-favorites").FavoriteSpot {
-  type F = import("@/lib/map-favorites").FavoriteSpot;
+): import("@/lib/map/map-favorites").FavoriteSpot {
+  type F = import("@/lib/map/map-favorites").FavoriteSpot;
   return {
     id: String(row.id),
     lat: row.latitude,
@@ -671,7 +671,7 @@ export function mapFavoriteSpotDtoToFavorite(
 }
 
 export async function fetchMyMapFavorites(): Promise<
-  import("@/lib/map-favorites").FavoriteSpot[]
+  import("@/lib/map/map-favorites").FavoriteSpot[]
 > {
   const rows = await authJson<MapFavoriteSpotResponseDto[]>(
     "/api/accounts/me/map-favorites",
@@ -911,7 +911,7 @@ export async function fetchVisibleCampSpots(limit = 500): Promise<CampSpotRespon
       const session = loadSession();
       if (!session) throw e;
       const me = await fetchCurrentAccount(session.authorizationHeader);
-      const { listLocalCampsForUser, toCampSpotResponse } = await import("@/lib/camp-storage");
+      const { listLocalCampsForUser, toCampSpotResponse } = await import("@/lib/map/camp-storage");
       return listLocalCampsForUser(me.id).map(toCampSpotResponse).slice(0, limit);
     }
     throw e;
@@ -930,7 +930,7 @@ export async function createCampSpot(body: CreateCampSpotPayload): Promise<CampS
       const session = loadSession();
       if (!session) throw e;
       const me = await fetchCurrentAccount(session.authorizationHeader);
-      const { upsertLocalCamp, toCampSpotResponse } = await import("@/lib/camp-storage");
+      const { upsertLocalCamp, toCampSpotResponse } = await import("@/lib/map/camp-storage");
       const id = Date.now();
       const local = {
         id,
@@ -959,7 +959,7 @@ export async function deleteCampSpot(id: number): Promise<void> {
       const session = loadSession();
       if (!session) throw e;
       const me = await fetchCurrentAccount(session.authorizationHeader);
-      const { deleteLocalCamp } = await import("@/lib/camp-storage");
+      const { deleteLocalCamp } = await import("@/lib/map/camp-storage");
       deleteLocalCamp(id, me.id);
       return;
     }

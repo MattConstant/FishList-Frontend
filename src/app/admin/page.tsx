@@ -17,7 +17,7 @@ import {
   type AdminUsageEventRow,
   type AdminUsageSummaryResponse,
 } from "@/lib/api";
-import { formatAppInteger, formatAppShortDate } from "@/lib/format-app-locale";
+import { formatAppInteger, formatAppShortDate } from "@/lib/shared/format-app-locale";
 
 const MIN_ACCOUNT_SEARCH_LEN = 2;
 const ACCOUNTS_PAGE_SIZE = 25;

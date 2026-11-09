@@ -2,12 +2,12 @@ import { NextResponse } from "next/server";
 import {
   geocodeQueryImpliesWater,
   isCanadaGeocodeHit,
-} from "@/lib/geocode-search-sort";
-import type { GeocodeSearchHit } from "@/lib/geocode-search-types";
+} from "@/lib/map/geocode-search-sort";
+import type { GeocodeSearchHit } from "@/lib/map/geocode-search-types";
 import {
   fetchNominatimPlaceHits,
   mergeGeocodeHits,
-} from "@/lib/nominatim-place-search";
+} from "@/lib/map/nominatim-place-search";
 
 const GEO = "https://geocoding-api.open-meteo.com/v1/search";
 

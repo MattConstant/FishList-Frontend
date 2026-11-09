@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { MAX_FORECAST_DAYS_AHEAD } from "@/lib/fishing-forecast-constants";
+import { MAX_FORECAST_DAYS_AHEAD } from "@/lib/forecast/fishing-forecast-constants";
 import type {
   FishingDayWeatherSummary,
   FishingForecastPayload,
-} from "@/lib/fishing-forecast-types";
-import { computeSolunarForDay, sunMoonSummary } from "@/lib/solunar";
+} from "@/lib/forecast/fishing-forecast-types";
+import { computeSolunarForDay, sunMoonSummary } from "@/lib/forecast/solunar";
 
 /** Server-side proxy to Open-Meteo + local solunar math. Validates inputs; no API keys. */
 

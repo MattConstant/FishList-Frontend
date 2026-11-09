@@ -91,6 +91,7 @@ export default {
   "forecast.mapSheetClose": "Close panel",
   "forecast.mapSheetTabsAria": "Lake details",
   "forecast.mapLakeSummary": "{{species}} species · {{total}} fish stocked (recent records)",
+  "forecast.mapLakeSummaryNa": "{{species}} species · stock count N/A",
   "forecast.mapForecastPeek": "Fishing forecast: expand for details",
   "forecast.mapPresenceHeading": "Species on record",
   "forecast.mapPresenceNote":
@@ -109,6 +110,7 @@ export default {
   "forecast.mapColSpecies": "Species",
   "forecast.mapColYear": "Year",
   "forecast.mapColCount": "Count",
+  "forecast.mapCountNa": "N/A",
   "forecast.mapAiStockedLabel": "Fish stocked here",
   "forecast.mapAiSignIn": "Sign in",
   "forecast.mapAiSignInSuffix": "to get AI tips.",

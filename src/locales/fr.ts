@@ -2,7 +2,6 @@ import about from "./fr/about";
 import achievements from "./fr/achievements";
 import admin from "./fr/admin";
 import catchDict from "./fr/catch";
-import contest from "./fr/contest";
 import errors from "./fr/errors";
 import forecast from "./fr/forecast";
 import friends from "./fr/friends";
@@ -21,7 +20,6 @@ const fr = {
   ...login,
   ...register,
   ...about,
-  ...contest,
   ...legal,
   ...friends,
   ...profile,

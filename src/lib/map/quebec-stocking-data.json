@@ -1,0 +1,3314 @@
+[
+  {
+    "waterbody": "Aéroplane, Lac de l'",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.29828,
+    "lng": -75.10636,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ahern, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.29769,
+    "lng": -75.2846,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Al, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.90303,
+    "lng": -75.35683,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Alcide, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.02992,
+    "lng": -75.23787,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Alfred, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.14871,
+    "lng": -74.98168,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Allan, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.12775,
+    "lng": -75.02445,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "André, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92577,
+    "lng": -75.24101,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Archie, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.31709,
+    "lng": -75.37674,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Armstrong, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18693,
+    "lng": -75.24149,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Arnold, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.05531,
+    "lng": -75.38878,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Averse, Lac de l'",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.22433,
+    "lng": -75.27177,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Barbiche, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.04991,
+    "lng": -75.23132,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Batachon, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.3743,
+    "lng": -75.19534,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Batawa, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.04763,
+    "lng": -75.37715,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Baumas, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.19428,
+    "lng": -75.33347,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Beautour, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.26789,
+    "lng": -75.27618,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bécasse, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.93211,
+    "lng": -75.2573,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bertrand, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28558,
+    "lng": -75.28882,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bihoreau, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92906,
+    "lng": -75.27254,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Binet, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.19822,
+    "lng": -75.32242,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Binet, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.342,
+    "lng": -75.34741,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bing, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.30592,
+    "lng": -75.23542,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bois Dur, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17286,
+    "lng": -75.34587,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bois, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92245,
+    "lng": -75.41224,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Boisvert, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.22786,
+    "lng": -75.076,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Boquerre, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.32045,
+    "lng": -75.32567,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bouclier, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.25469,
+    "lng": -75.12467,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Boudor, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.1875,
+    "lng": -75.17293,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bouleaux Blancs, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09021,
+    "lng": -75.34415,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bourne, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.2055,
+    "lng": -75.1781,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Brûlé, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.90404,
+    "lng": -75.37052,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "C.M.B.A., Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.87689,
+    "lng": -75.38967,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Campeau, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.86437,
+    "lng": -75.39322,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Caryer, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.23165,
+    "lng": -75.23755,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Castilly, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17565,
+    "lng": -75.2644,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cécile, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.3376,
+    "lng": -75.20233,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ENSEMENCEMENT 2015-2025 Cèdres, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.90895,
+    "lng": -75.38603,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chavelot, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.25442,
+    "lng": -75.31634,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chicopee, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.0189,
+    "lng": -75.44101,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chimo, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.01764,
+    "lng": -75.44718,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Clais, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.1248,
+    "lng": -75.1787,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Clouthier, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.33622,
+    "lng": -75.27521,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Club, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.01108,
+    "lng": -75.3226,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Colour, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28886,
+    "lng": -75.1759,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Corbeau, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.11734,
+    "lng": -75.20411,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cortès, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.38155,
+    "lng": -75.14995,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cottenin, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09175,
+    "lng": -75.37605,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Croche, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.98308,
+    "lng": -75.39998,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cruche, Lac à la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.14222,
+    "lng": -75.20746,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Desmolier, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.16745,
+    "lng": -74.99785,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Devlin, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.12579,
+    "lng": -75.22597,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Diable, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.10828,
+    "lng": -75.18322,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Diablotin, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92251,
+    "lng": -75.26383,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Doris, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.00669,
+    "lng": -75.28197,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Dorothée, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.97438,
+    "lng": -75.49571,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Dummy, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.05388,
+    "lng": -75.39929,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Écorces, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.89957,
+    "lng": -75.31426,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Elport, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28387,
+    "lng": -75.26337,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Emmanuel, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.06539,
+    "lng": -75.35383,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Éric, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.95675,
+    "lng": -75.2507,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ernest, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17937,
+    "lng": -75.20478,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fabre, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.37052,
+    "lng": -75.14751,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fascinant, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.23451,
+    "lng": -75.20688,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fer à Cheval, Lac en",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.91071,
+    "lng": -75.35972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fourche, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.86349,
+    "lng": -75.34171,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Frank, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.89614,
+    "lng": -75.29067,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Frontenac, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28225,
+    "lng": -75.37757,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Garneau, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.31799,
+    "lng": -75.3036,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gélinotte, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.91683,
+    "lng": -75.26133,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gestel, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09464,
+    "lng": -75.31588,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Girard, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.27313,
+    "lng": -75.27052,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Goglu, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.91246,
+    "lng": -75.34437,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gratton, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.30372,
+    "lng": -75.31014,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Grosse Truite, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92685,
+    "lng": -75.54756,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Guibort, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.34969,
+    "lng": -75.23881,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Harfang, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.91116,
+    "lng": -75.28647,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Herbert, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.2065,
+    "lng": -75.24028,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Île, Lac de l'",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.98459,
+    "lng": -75.39477,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jallet, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.19816,
+    "lng": -75.30188,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jumeaux, Lacs",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.90655,
+    "lng": -75.42537,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Kar-Ha-Kon, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.34307,
+    "lng": -75.35284,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Kealy, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.29137,
+    "lng": -75.36825,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Kennedy, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.99942,
+    "lng": -75.31079,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Kidney, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.21201,
+    "lng": -75.23315,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Kieffer, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09437,
+    "lng": -74.98499,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lacombe, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18845,
+    "lng": -75.42874,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lacombe, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.85596,
+    "lng": -75.25739,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Laflamme, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18342,
+    "lng": -74.96399,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lafleur, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.85023,
+    "lng": -75.45803,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lamarre, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.26206,
+    "lng": -75.26415,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Langevin, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.29088,
+    "lng": -75.26663,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lanthier, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.97957,
+    "lng": -75.33747,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lanthier, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.97357,
+    "lng": -75.33109,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Légende, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.32689,
+    "lng": -75.30185,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lemieux, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.87022,
+    "lng": -75.39511,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lloyd, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.86862,
+    "lng": -75.37391,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Louise, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.32447,
+    "lng": -75.36707,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Loups, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.12228,
+    "lng": -75.46904,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Loutre, Lac à la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.07025,
+    "lng": -75.41141,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "MacMallan, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.06225,
+    "lng": -75.40306,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Marcaut, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09109,
+    "lng": -75.07849,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Marie-Le Franc",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.13627,
+    "lng": -74.99476,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mauves, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18892,
+    "lng": -74.9425,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mayo, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.82724,
+    "lng": -75.44308,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "McGoun, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.32681,
+    "lng": -75.30858,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Meikle, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.81171,
+    "lng": -75.42556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Michaud, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28342,
+    "lng": -75.24653,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Misérable, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.21999,
+    "lng": -75.32406,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Moufflet, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.24425,
+    "lng": -75.18045,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Moustache, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.04932,
+    "lng": -75.38267,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Murphy, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.24583,
+    "lng": -75.3847,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Nadia, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.04414,
+    "lng": -75.44929,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Naudion, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09711,
+    "lng": -75.25119,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Neveau, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.20883,
+    "lng": -75.36382,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Noironte, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18264,
+    "lng": -75.34606,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ola, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.10415,
+    "lng": -74.99882,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ouananiche, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.24495,
+    "lng": -75.11556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Parent, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.29991,
+    "lng": -75.24045,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Perley, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.89975,
+    "lng": -75.42699,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pérots, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.09171,
+    "lng": -75.3672,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Philippe, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17748,
+    "lng": -75.22523,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pierre, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.22448,
+    "lng": -75.35543,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pinachois, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.95161,
+    "lng": -75.298,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pins, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92412,
+    "lng": -75.36866,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pipits, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.88699,
+    "lng": -75.25504,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pivain, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.12733,
+    "lng": -75.44405,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Plat, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92101,
+    "lng": -75.39266,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Portelance, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.03661,
+    "lng": -75.36959,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Prince, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.18749,
+    "lng": -75.18341,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Puffin, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.88016,
+    "lng": -75.35075,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Quai, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.24071,
+    "lng": -75.23438,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Queen, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.15874,
+    "lng": -75.18184,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rapière, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.33881,
+    "lng": -75.19006,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rat Musqué, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.8966,
+    "lng": -75.21157,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Resther, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.15811,
+    "lng": -74.96637,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ricins, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.19821,
+    "lng": -75.28802,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Riopel, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.9206,
+    "lng": -75.24589,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rivard, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.35744,
+    "lng": -75.27368,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rivas, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.10819,
+    "lng": -75.26675,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rivières, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.37554,
+    "lng": -75.17035,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Robillard, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.16538,
+    "lng": -75.134,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Roc, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17075,
+    "lng": -75.4007,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rocher, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.8839,
+    "lng": -75.33908,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rocheux, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.91753,
+    "lng": -75.37974,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rognon, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.26588,
+    "lng": -75.05972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rognon, Petit Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.11387,
+    "lng": -75.08696,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ross, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.14073,
+    "lng": -75.3289,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sabourin, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.21025,
+    "lng": -75.2522,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Amour, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.8096,
+    "lng": -75.47715,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Denis, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.25239,
+    "lng": -75.06968,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ENSEMENCEMENT 2015-2025 Saint-Denis, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.0731,
+    "lng": -75.24718,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saintry, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.94058,
+    "lng": -75.34407,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Sixte, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.8447,
+    "lng": -75.26512,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sakimay, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.94833,
+    "lng": -75.42074,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Samedi, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.07493,
+    "lng": -75.40618,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Samlou, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.07425,
+    "lng": -75.40991,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saponite, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.95168,
+    "lng": -75.4591,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sardine, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.35065,
+    "lng": -75.30594,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sassin, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.23933,
+    "lng": -75.29462,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sassin, Petit lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.23763,
+    "lng": -75.28332,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sem, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.10057,
+    "lng": -75.24859,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sénateur, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.89162,
+    "lng": -75.41747,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Serpent, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.21936,
+    "lng": -75.09171,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sifflet, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.85869,
+    "lng": -75.3738,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Simard, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.23708,
+    "lng": -75.32641,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sourd, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.13931,
+    "lng": -75.26441,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Stoney, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.88936,
+    "lng": -75.34495,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Taku, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.94195,
+    "lng": -75.45732,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Talbot, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.85483,
+    "lng": -75.35889,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tétras, Lac des",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.87681,
+    "lng": -75.33705,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Thomas, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92683,
+    "lng": -75.34511,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tigy, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.33543,
+    "lng": -75.34575,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Travers, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.97696,
+    "lng": -75.48154,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Trépas, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.94923,
+    "lng": -75.42747,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Triplet, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.28095,
+    "lng": -75.35139,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Trottier, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.22251,
+    "lng": -75.38422,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Truite Arc-en-Ciel, Lac de la",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.92542,
+    "lng": -75.37456,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Turck, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.17694,
+    "lng": -75.18707,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vert, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.98797,
+    "lng": -75.39418,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Viarde, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.16229,
+    "lng": -75.22734,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vinaigrier, Lac du",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 45.80341,
+    "lng": -75.40644,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Watistun, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.25172,
+    "lng": -75.21024,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Yvrac, Lac",
+    "district": "Réserve faunique Papineau-Labelle",
+    "lat": 46.08286,
+    "lng": -75.34386,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Alain, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54833,
+    "lng": -73.48,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Alizé, Lac de l'",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62611,
+    "lng": -73.15528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Austral, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.48965,
+    "lng": -73.39669,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bidou, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.53028,
+    "lng": -73.42194,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Biro, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70944,
+    "lng": -73.63056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Blaireau, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66778,
+    "lng": -73.25054,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Blanc, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58806,
+    "lng": -73.55417,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Blattes, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63583,
+    "lng": -73.50083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Boisvert, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.83611,
+    "lng": -73.47694,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bolée, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.79227,
+    "lng": -73.60752,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bonom, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58417,
+    "lng": -73.38556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bouche, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63722,
+    "lng": -73.17778,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bourgeois, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.64667,
+    "lng": -73.53778,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Brisé, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66139,
+    "lng": -73.59222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Brochard, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61167,
+    "lng": -73.34361,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Brulé, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.52722,
+    "lng": -73.38167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Camp, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57083,
+    "lng": -73.43528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Canistre, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54417,
+    "lng": -73.34833,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Caribou, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61889,
+    "lng": -73.62861,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Carufel, Petit lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58222,
+    "lng": -73.23389,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cassé, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.53278,
+    "lng": -73.42333,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cerf, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66278,
+    "lng": -73.25889,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chamberlain, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.52,
+    "lng": -73.33,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Champignons, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.79361,
+    "lng": -73.59806,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chantiers, Lac aux",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65694,
+    "lng": -73.2675,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chapleau, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.59722,
+    "lng": -73.34889,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chériore, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.52667,
+    "lng": -73.51083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chevelu, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.7125,
+    "lng": -73.60944,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chevreaux, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.575,
+    "lng": -73.45861,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cigale, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.60278,
+    "lng": -73.62056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ciguë, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.67667,
+    "lng": -73.52528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cléophas, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57222,
+    "lng": -73.44556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ur, Lac en",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62389,
+    "lng": -73.38694,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cordon, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62778,
+    "lng": -73.39444,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cornélia, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63083,
+    "lng": -73.44917,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Cornu, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.73028,
+    "lng": -73.61583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Couleuvre, Lac à la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62378,
+    "lng": -73.2091,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Court, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55917,
+    "lng": -73.41639,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ENSEMENCEMENT 2014-2024 Coyote, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66222,
+    "lng": -73.295,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Criquet, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.68639,
+    "lng": -73.54,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Croix, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.67806,
+    "lng": -73.60972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Culbute, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55639,
+    "lng": -73.28778,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Daniet, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69972,
+    "lng": -73.60583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Deleur, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57889,
+    "lng": -73.4625,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Deux-étages, Lac à",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.71667,
+    "lng": -73.59139,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Deux-étapes, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54139,
+    "lng": -73.39583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Dispos, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58444,
+    "lng": -73.38056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Duchesse, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.60917,
+    "lng": -73.63778,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Écureuils, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.81556,
+    "lng": -73.63722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Elliot, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61278,
+    "lng": -73.47111,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fantôme, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66639,
+    "lng": -73.57833,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Faraud, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70639,
+    "lng": -73.58417,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Forestier, lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70472,
+    "lng": -73.57389,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fouine, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61139,
+    "lng": -73.29694,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Fourchu, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.76333,
+    "lng": -73.38083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Franciscains, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57861,
+    "lng": -73.3475,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Frédéric, Petit lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.5325,
+    "lng": -73.52222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "French, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58361,
+    "lng": -73.39722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Galets, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.85694,
+    "lng": -73.24583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gallinules, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.84028,
+    "lng": -73.36417,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gélinotte, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.84472,
+    "lng": -73.36278,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Germano, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61139,
+    "lng": -73.64083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Griffe, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65667,
+    "lng": -73.57472,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Grignon, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.59389,
+    "lng": -73.58583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Grosse, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.71083,
+    "lng": -73.61667,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Guêpes, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62684,
+    "lng": -73.16956,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Hannetons, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63167,
+    "lng": -73.50556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Hélène, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.515,
+    "lng": -73.36167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Herron, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.80667,
+    "lng": -73.52222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Hirondelles, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57861,
+    "lng": -73.48917,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Hollis, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.53778,
+    "lng": -73.40722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Houde, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61444,
+    "lng": -73.56306,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Iroquois, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63528,
+    "lng": -73.20583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jaseur, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57278,
+    "lng": -73.38222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jimmy, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.60528,
+    "lng": -73.51667,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Joie, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61472,
+    "lng": -73.60056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jones, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65639,
+    "lng": -73.30472,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Joséphine, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.605,
+    "lng": -73.62,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jouet, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65056,
+    "lng": -73.24194,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Jumeau, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.51349,
+    "lng": -73.50409,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lactance, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.76025,
+    "lng": -73.60735,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Leech, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.82,
+    "lng": -73.5275,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lézards, Lac aux",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65528,
+    "lng": -73.61167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lézards, Petit lac aux",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.64222,
+    "lng": -73.60278,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ENSEMENCEMENT 2014-2024 Livernoche, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57056,
+    "lng": -73.25861,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lotus, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55139,
+    "lng": -73.49194,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Loups, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.75194,
+    "lng": -73.57167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Marais, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.73444,
+    "lng": -73.62722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Margot, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.68639,
+    "lng": -73.235,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mastigou, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57444,
+    "lng": -73.57278,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Maubèches, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58639,
+    "lng": -73.39167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mercure, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69833,
+    "lng": -73.56861,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Michaud, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.5125,
+    "lng": -73.41528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Minette, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57611,
+    "lng": -73.33972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mineur, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.72667,
+    "lng": -73.62806,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ministres, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69889,
+    "lng": -73.63167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Miscou, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58167,
+    "lng": -73.50639,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mitaine, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69083,
+    "lng": -73.21222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Montour, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62583,
+    "lng": -73.63222,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Morin, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55833,
+    "lng": -73.59583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mûres, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69417,
+    "lng": -73.61722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Nidou, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55389,
+    "lng": -73.41306,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Noir, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58667,
+    "lng": -73.33,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ordinaire, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62306,
+    "lng": -73.41889,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Orignac, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.61444,
+    "lng": -73.42667,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ours, Lac à l'",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.64972,
+    "lng": -73.59111,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ours, Petit lac à l'",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62472,
+    "lng": -73.61694,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ovide, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70028,
+    "lng": -73.2175,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Panse, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.51944,
+    "lng": -73.50417,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Patrie, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63083,
+    "lng": -73.42556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pavot, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.59032,
+    "lng": -73.37997,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Penang, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55833,
+    "lng": -73.5075,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Perdu, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.62306,
+    "lng": -73.55083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pimbina, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.68861,
+    "lng": -73.22444,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pimbina, Petit lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.68333,
+    "lng": -73.225,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pioui, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.51444,
+    "lng": -73.4125,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pipette, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63222,
+    "lng": -73.48167,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pissenlits, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57611,
+    "lng": -73.37694,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pitou, Lac à",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54694,
+    "lng": -73.40389,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Plouf, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.6075,
+    "lng": -73.60583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Plume, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69801,
+    "lng": -73.57885,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pluton, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.49944,
+    "lng": -73.39083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pou, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63965,
+    "lng": -73.54415,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Prochain, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.82944,
+    "lng": -73.56056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Provision, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69444,
+    "lng": -73.25389,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pruche, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.88001,
+    "lng": -73.39675,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Puant, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58806,
+    "lng": -73.37639,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pucerons, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.64977,
+    "lng": -73.528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Punaise, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63639,
+    "lng": -73.54556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rat musqué, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65056,
+    "lng": -73.52056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "ENSEMENCEMENT 2014-2024 René, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.51361,
+    "lng": -73.48722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rondins, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57222,
+    "lng": -73.31972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Rose, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.5925,
+    "lng": -73.22333,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sac, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57444,
+    "lng": -73.32583,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sans bout, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.57583,
+    "lng": -73.42,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sans nom, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58778,
+    "lng": -73.58778,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sarcelle, Lac à la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55861,
+    "lng": -73.37722,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Sauterelles, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.59806,
+    "lng": -73.59944,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Serpent, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.68056,
+    "lng": -73.57528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Seul, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.71605,
+    "lng": -73.65868,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Anselme, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.55306,
+    "lng": -73.62083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Bernard, Petit lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.56361,
+    "lng": -73.315,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Saint-Pierre, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.58056,
+    "lng": -73.65,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Supérieur, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.77056,
+    "lng": -73.61667,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tête, Lac de la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70917,
+    "lng": -73.60083,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tilleul, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54871,
+    "lng": -73.36547,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tonnerre, Lac au",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.54556,
+    "lng": -73.33056,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tremblay, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.71972,
+    "lng": -73.65417,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Triton, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.49938,
+    "lng": -73.43061,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Ursidés, Lac des",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.515,
+    "lng": -73.50556,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vanneau, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.60528,
+    "lng": -73.22028,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vase, Lac à la",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.63083,
+    "lng": -73.18389,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vaseux, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.66306,
+    "lng": -73.2375,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vénus, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.70222,
+    "lng": -73.58889,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vert, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.65583,
+    "lng": -73.31639,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Violon, Lac au",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.56639,
+    "lng": -73.36972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Voleur, Lac du",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.69,
+    "lng": -73.59861,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Wawa, Lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.85917,
+    "lng": -73.46833,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "William, Petit lac",
+    "district": "Réserve faunique Mastigouche",
+    "lat": 46.50583,
+    "lng": -73.45139,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Behrend, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.815,
+    "lng": -66.6728,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bonafeul, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7631,
+    "lng": -67.1639,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Bonjour, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7444,
+    "lng": -66.7972,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chandler 1, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5947,
+    "lng": -67.0761,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Chandler 2, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5908,
+    "lng": -67.0892,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Dunière, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7111,
+    "lng": -66.7282,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Duvivier, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7103,
+    "lng": -67.1586,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gros Ruisseau, Lac du",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7336,
+    "lng": -66.9508,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gunn 1, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5686,
+    "lng": -67.1219,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gunn 2, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5667,
+    "lng": -67.1325,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Gunn 3, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5656,
+    "lng": -67.1433,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Joffre, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7814,
+    "lng": -66.6406,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "John, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7367,
+    "lng": -67.1944,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Lebreux, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7519,
+    "lng": -67.0253,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Monet, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7636,
+    "lng": -67.1708,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Martel, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5797,
+    "lng": -67.0322,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Mius, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.6753,
+    "lng": -67.1342,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Montagne, Étang de la",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7494,
+    "lng": -66.9906,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Pérot, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7589,
+    "lng": -66.9967,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Simoneau, Petit lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7239,
+    "lng": -66.6558,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Solitaire, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.8617,
+    "lng": -66.5264,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tallard, Étang",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7825,
+    "lng": -66.845,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tête, Lac de la",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7692,
+    "lng": -67.0342,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Tourbe, Lac en",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.5794,
+    "lng": -67.1528,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Versant, Lac du",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.8258,
+    "lng": -66.6869,
+    "species": [
+      "Brook Trout"
+    ]
+  },
+  {
+    "waterbody": "Vidrien, Lac",
+    "district": "Réserve faunique de Matane",
+    "lat": 48.7194,
+    "lng": -67.03,
+    "species": [
+      "Brook Trout"
+    ]
+  }
+]

@@ -18,7 +18,7 @@ const CACHE_VERSION = 4;
 
 /** Names that imply we want a waterbody polygon, not a stream/river along it. */
 function isLakeLikeQuery(q: string): boolean {
-  return /\b(lake|pond|reservoir|waterbody|bay|basin|lagoon)\b/i.test(q);
+  return /\b(lake|lacs?|pond|reservoir|waterbody|bay|basin|lagoon)\b/i.test(q);
 }
 
 /** Linear water features - often closest to GeoHub’s hint but wrong for “… Lake” pins. */

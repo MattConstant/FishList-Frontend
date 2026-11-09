@@ -4,8 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
-import { FishLoadingSpinner } from "@/components/fish-loading-spinner";
-import { UserAvatar } from "@/components/user-avatar";
+import { FishLoadingSpinner } from "@/components/shared/fish-loading-spinner";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import {
   addFriend,
   fetchMyFriends,

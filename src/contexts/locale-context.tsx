@@ -15,7 +15,7 @@ import {
   LOCALE_STORAGE_KEY,
   writeLocaleCookie,
   type AppLocale,
-} from "@/lib/locale-shared";
+} from "@/lib/shared/locale-shared";
 
 /**
  * Locale + translation context for the UI.

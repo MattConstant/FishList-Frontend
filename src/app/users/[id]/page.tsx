@@ -3,9 +3,9 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AchievementsPanel } from "@/components/achievements-panel";
-import { LocationCard } from "@/components/fishing-cards";
-import { UserAvatar } from "@/components/user-avatar";
+import { AchievementsPanel } from "@/components/achievements/achievements-panel";
+import { LocationCard } from "@/components/profile/fishing-cards";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import {

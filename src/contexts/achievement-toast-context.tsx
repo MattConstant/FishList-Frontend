@@ -16,11 +16,11 @@ import {
 } from "@/lib/api";
 import {
   AchievementIcon,
-} from "@/components/achievement-icon";
+} from "@/components/achievements/achievement-icon";
 import {
   rarityBadgeClasses,
   rarityRingClasses,
-} from "@/components/achievement-badge";
+} from "@/components/achievements/achievement-badge";
 
 type ToastEntry = UnlockedAchievementSummary & { id: string; expiresAt: number };
 

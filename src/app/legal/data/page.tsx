@@ -1,6 +1,6 @@
 "use client";
 
-import { LegalDocument } from "@/components/legal-document";
+import { LegalDocument } from "@/components/shared/legal-document";
 
 const SECTIONS = [
   { titleKey: "legal.data.s1t", bodyKey: "legal.data.s1b" },

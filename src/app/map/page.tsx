@@ -10,9 +10,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import { MapFiltersShell } from "@/components/map-page/map-filters-shell";
-import { MapMnrfFiltersSection } from "@/components/map-page/map-mnrf-filters-section";
-import { MapAraFiltersSection } from "@/components/map-page/map-ara-filters-section";
+import { MapFiltersShell } from "@/components/map/map-filters-shell";
+import { MapMnrfFiltersSection } from "@/components/map/map-mnrf-filters-section";
+import { MapAraFiltersSection } from "@/components/map/map-ara-filters-section";
 import {
   FAVORITE_MATCH_MAX_KM,
   MAP_FILTERS_EXPANDED_KEY,
@@ -24,26 +24,26 @@ import {
   MAP_LAYER_STOCKING_KEY,
   MAP_LEGEND_VISIBLE_KEY,
   MAP_LAYERS_EXPANDED_KEY,
-} from "@/components/map-page/map-page-constants";
-import type { MapSheetState, PendingCamp, PendingCatch } from "@/components/map-page/map-page-types";
-import { MapPageDetailSheet } from "@/components/map-page/map-page-detail-sheet";
+} from "@/components/map/map-page-constants";
+import type { MapSheetState, PendingCamp, PendingCatch } from "@/components/map/map-page-types";
+import { MapPageDetailSheet } from "@/components/map/map-page-detail-sheet";
 import {
   MapPageLoadingOverlay,
   MapPagePlacingBanner,
-} from "@/components/map-page/map-page-map-overlays";
-import { MapPageLayersPanel } from "@/components/map-page/map-page-layers-panel";
-import { MapPageLegend } from "@/components/map-page/map-page-legend";
-import { MapPagePendingForms } from "@/components/map-page/map-page-pending-forms";
-import { MapAiSpotsPanel } from "@/components/map-page/map-ai-spots-panel";
-import { MapPageToolbar } from "@/components/map-page/map-page-toolbar";
-import { MapOnboardingDialog } from "@/components/map-page/map-onboarding-dialog";
-import { MapUrlLakePinLoader } from "@/components/map-page/map-url-lake-pin-loader";
-import { StockingMapDynamic } from "@/components/map-page/map-stock-map";
-import { useMapPlaceSearch } from "@/components/map-page/use-map-place-search";
+} from "@/components/map/map-page-map-overlays";
+import { MapPageLayersPanel } from "@/components/map/map-page-layers-panel";
+import { MapPageLegend } from "@/components/map/map-page-legend";
+import { MapPagePendingForms } from "@/components/map/map-page-pending-forms";
+import { MapAiSpotsPanel } from "@/components/map/map-ai-spots-panel";
+import { MapPageToolbar } from "@/components/map/map-page-toolbar";
+import { MapOnboardingDialog } from "@/components/map/map-onboarding-dialog";
+import { MapUrlLakePinLoader } from "@/components/map/map-url-lake-pin-loader";
+import { StockingMapDynamic } from "@/components/map/map-stock-map";
+import { useMapPlaceSearch } from "@/components/map/use-map-place-search";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
-import type { AiSpotMarker, AnonCatchLabels, CatchMapMarker } from "@/components/stocking-map";
-import { fetchPublicCatchRegions, type PublicCatchRegion } from "@/lib/public-catch-regions";
+import type { AiSpotMarker, AnonCatchLabels, CatchMapMarker } from "@/components/map/stocking-map";
+import { fetchPublicCatchRegions, type PublicCatchRegion } from "@/lib/map/public-catch-regions";
 import { trackUsage } from "@/lib/usage-tracking";
 import {
   ApiHttpError,
@@ -62,40 +62,63 @@ import {
 import {
   allDistricts,
   allSpecies,
-  fetchAllStockingRecords,
-  groupByWaterbody,
   type StockingRecord,
   type WaterbodyGroup,
-} from "@/lib/geohub";
+} from "@/lib/map/geohub";
+import { fetchStockingForProvinces } from "@/lib/map/stocking-data";
+import {
+  MAP_PROVINCES_KEY,
+  parseStoredProvinces,
+  serializeProvinces,
+  provincesMapFrame,
+  type ProvinceMapFrame,
+  type StockingProvince,
+} from "@/lib/map/stocking-provinces";
 import {
   ARA_SPECIES_FILTERS,
   fetchAraInBounds,
   type AraSpeciesFilter,
   type AraMapPoint,
   type AraViewport,
-} from "@/lib/ara-fish";
+} from "@/lib/map/ara-fish";
 import {
   loadAraMapFilterSet,
   saveAraMapFilterSet,
-} from "@/lib/ara-preferences";
+} from "@/lib/map/ara-preferences";
 import {
   CLIENT_PREFS_UPDATED_EVENT,
-} from "@/lib/client-prefs-events";
-import { formatAppInteger } from "@/lib/format-app-locale";
+} from "@/lib/profile/client-prefs-events";
+import { formatAppInteger } from "@/lib/shared/format-app-locale";
 import {
   collectKnownSpeciesForAnchors,
   selectPrimaryWaterAnchors,
-} from "@/lib/area-water-anchors";
-import { haversineDistanceKm } from "@/lib/geo-distance";
-import { initialActiveSpeciesFromPreferences } from "@/lib/fish-species-preferences";
-import { useSyncedBooleanPref } from "@/lib/use-synced-boolean-pref";
+} from "@/lib/map/area-water-anchors";
+import { haversineDistanceKm } from "@/lib/map/geo-distance";
+import { initialActiveSpeciesFromPreferences } from "@/lib/profile/fish-species-preferences";
+import { useSyncedBooleanPref } from "@/lib/profile/use-synced-boolean-pref";
 import {
   loadMapFavorites,
   makeFavoriteSpotId,
   saveMapFavorites,
   type FavoriteSpot,
-} from "@/lib/map-favorites";
-import { MapFindPlaceSection } from "@/components/map-page/map-find-place-section";
+} from "@/lib/map/map-favorites";
+import { MapFindPlaceSection } from "@/components/map/map-find-place-section";
+
+function tryGetItem(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function trySetItem(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* ignore */
+  }
+}
 
 export default function MapPage() {
   const { user, isAdmin, isReady } = useAuth();
@@ -196,6 +219,15 @@ export default function MapPage() {
     MAP_LAYER_BATHY_KEY,
     "off-unless-true",
   );
+  const [enabledProvinces, setEnabledProvinces] = useState<Set<StockingProvince>>(
+    () => new Set(["ON"]),
+  );
+  const skipNextProvincesSave = useRef(true);
+  const skipNextProvinceFit = useRef(true);
+  const [mapViewFrame, setMapViewFrame] = useState<{
+    frame: ProvinceMapFrame;
+    revision: number;
+  } | null>(null);
   const [favoriteSpots, setFavoriteSpots] = useState<FavoriteSpot[]>([]);
   const [campSpots, setCampSpots] = useState<import("@/lib/api").CampSpotResponse[]>([]);
   const [presenceSpecies, setPresenceSpecies] = useState<Set<AraSpeciesFilter>>(
@@ -255,6 +287,52 @@ export default function MapPage() {
   }, []);
 
   useEffect(() => {
+    skipNextProvincesSave.current = true;
+    setEnabledProvinces(parseStoredProvinces(tryGetItem(MAP_PROVINCES_KEY)));
+  }, []);
+
+  useEffect(() => {
+    if (skipNextProvincesSave.current) {
+      skipNextProvincesSave.current = false;
+      return;
+    }
+    trySetItem(MAP_PROVINCES_KEY, serializeProvinces(enabledProvinces));
+  }, [enabledProvinces]);
+
+  useEffect(() => {
+    if (skipNextProvinceFit.current) {
+      skipNextProvinceFit.current = false;
+      return;
+    }
+    const frame = provincesMapFrame(enabledProvinces);
+    if (!frame) return;
+    setMapViewFrame((prev) => ({
+      frame,
+      revision: (prev?.revision ?? 0) + 1,
+    }));
+  }, [enabledProvinces]);
+
+  const ontarioEnabled = enabledProvinces.has("ON");
+  const yukonEnabled = enabledProvinces.has("YT");
+  const quebecEnabled = enabledProvinces.has("QC");
+  const effectiveShowAra = showAra && ontarioEnabled;
+  const effectiveShowBathymetry = showBathymetry && ontarioEnabled;
+
+  const toggleProvince = useCallback((province: StockingProvince) => {
+    setEnabledProvinces((prev) => {
+      const next = new Set(prev);
+      if (next.has(province)) {
+        if (next.size <= 1) return prev;
+        next.delete(province);
+      } else {
+        next.add(province);
+      }
+      trackUsage("map_layer", `province:${province}:${next.has(province) ? "on" : "off"}`);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
     if (skipNextAraSave.current) {
       skipNextAraSave.current = false;
       return;
@@ -275,17 +353,30 @@ export default function MapPage() {
     let cancelled = false;
 
     async function load() {
+      setLoading(true);
+      setError("");
       try {
-        const data = await fetchAllStockingRecords(5, (n) => {
-          if (!cancelled) setLoaded(n);
-        });
+        const { records: data, groups: nextGroups } = await fetchStockingForProvinces(
+          enabledProvinces,
+          5,
+          (n) => {
+            if (!cancelled) setLoaded(n);
+          },
+        );
         if (cancelled) return;
         setRecords(data);
-        setGroups(groupByWaterbody(data));
+        setGroups(nextGroups);
         const sp = allSpecies(data);
         setSpecies(sp);
         setDistricts(allDistricts(data));
-        setActiveSpecies(initialActiveSpeciesFromPreferences(sp));
+        const nextSpecies = initialActiveSpeciesFromPreferences(sp);
+        // Favorite-species auto-filter is Ontario-oriented; always keep QC/YT
+        // species on so those pins do not vanish when Ontario is also enabled.
+        for (const r of data) {
+          if (r.province !== "ON") nextSpecies.add(r.species);
+        }
+        setActiveSpecies(nextSpecies);
+        setSelectedDistrict("all");
       } catch (e) {
         if (!cancelled)
           setError(e instanceof Error ? e.message : "Failed to load data");
@@ -298,7 +389,16 @@ export default function MapPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [enabledProvinces]);
+
+  useEffect(() => {
+    if (!ontarioEnabled) {
+      araFetchGen.current += 1;
+      setAraPoints([]);
+      setAraTooWide(false);
+      setAraLoading(false);
+    }
+  }, [ontarioEnabled]);
 
   useEffect(() => {
     if (!user) {
@@ -465,14 +565,17 @@ export default function MapPage() {
     const allSpeciesSelected = activeSpecies.size === species.length;
 
     return groups.filter((g) => {
-      if (g.totalFish < minTotalFish) return false;
-      if (g.speciesSet.size < minSpeciesCount) return false;
+      const curated = g.province !== "ON";
+      if (!curated && g.totalFish != null && g.totalFish < minTotalFish) return false;
+      if (!curated && g.speciesSet.size < minSpeciesCount) return false;
       if (selectedDistrict !== "all" && !g.districtSet.has(selectedDistrict)) {
         return false;
       }
 
-      const hasRecentRecord = g.records.some((r) => r.year >= minYearForWindow);
-      if (!hasRecentRecord) return false;
+      if (!curated) {
+        const hasRecentRecord = g.records.some((r) => r.year >= minYearForWindow);
+        if (!hasRecentRecord) return false;
+      }
 
       if (allSpeciesSelected) return true;
       for (const s of g.speciesSet) {
@@ -499,7 +602,7 @@ export default function MapPage() {
   const loadAra = useCallback(
     (v: AraViewport) => {
       lastAraViewRef.current = v;
-      if (!showAra) {
+      if (!effectiveShowAra) {
         setAraPoints([]);
         setAraTooWide(false);
         setAraLoading(false);
@@ -529,11 +632,11 @@ export default function MapPage() {
           if (gen === araFetchGen.current) setAraLoading(false);
         });
     },
-    [showAra, presenceSpecies],
+    [effectiveShowAra, presenceSpecies],
   );
 
   useEffect(() => {
-    if (!showAra) {
+    if (!effectiveShowAra) {
       araFetchGen.current += 1;
       setAraPoints([]);
       setAraTooWide(false);
@@ -543,7 +646,7 @@ export default function MapPage() {
     if (lastAraViewRef.current) {
       loadAra(lastAraViewRef.current);
     }
-  }, [showAra, presenceSpecies, loadAra]);
+  }, [effectiveShowAra, presenceSpecies, loadAra]);
 
   const togglePresenceSpecies = useCallback((speciesKey: AraSpeciesFilter) => {
     setPresenceSpecies((prev) => {
@@ -592,23 +695,6 @@ export default function MapPage() {
   const exitAreaSelect = useCallback(() => {
     setAreaSelectMode(false);
     setAreaDrawArmed(false);
-  }, []);
-
-  const toggleAreaSelect = useCallback(() => {
-    setAreaSelectMode((v) => {
-      const next = !v;
-      if (next) {
-        setPlacing(false);
-        setLogMenuOpen(false);
-        setMapSheet(null);
-        setAreaDrawArmed(false);
-        trackUsage("map_ai_spots", "enter");
-      } else {
-        setAreaDrawArmed(false);
-        trackUsage("map_ai_spots", "exit");
-      }
-      return next;
-    });
   }, []);
 
   const askAreaSpots = useCallback(async () => {
@@ -1045,11 +1131,14 @@ export default function MapPage() {
         <MapUrlLakePinLoader setLakeSearchPin={setLakeSearchPin} />
       </Suspense>
       <MapPageToolbar
+        t={t}
         placing={placing}
         mapSheetExists={!!mapSheet}
         userPresent={!!user}
         catchScope={catchScope}
         setCatchScope={setCatchScope}
+        enabledProvinces={enabledProvinces}
+        onToggleProvince={toggleProvince}
         logMenuOpen={logMenuOpen}
         setLogMenuOpen={setLogMenuOpen}
         highlightLog={highlightLog}
@@ -1058,10 +1147,6 @@ export default function MapPage() {
         onCancelPlacing={() => setPlacing(false)}
         onCloseSheet={closeMapSheet}
         clearPinLabel={t("forecast.clearPin")}
-        areaSelectMode={areaSelectMode}
-        onToggleAreaSelect={toggleAreaSelect}
-        areaSelectLabel={t("map.aiSpots.toolbar")}
-        areaSelectBetaLabel={t("map.aiSpots.beta")}
       />
       <div className="map-page__chrome map-page__search-filters">
         <MapFindPlaceSection
@@ -1079,14 +1164,20 @@ export default function MapPage() {
           onSubmitSearch={handleLakePinSearch}
           onSearchKeyDown={handleLakeSearchKeyDown}
           onSelectSuggestion={selectLakeSuggestion}
-          filtersAvailable={species.length > 0}
+          filtersAvailable={species.length > 0 || !loading}
           filtersExpanded={filtersExpanded}
           setFiltersExpanded={setFiltersExpanded}
         />
         <MapFiltersShell
-          hasSpeciesLoaded={species.length > 0}
+          hasSpeciesLoaded={species.length > 0 || !loading}
           filtersExpanded={filtersExpanded}
         >
+          {yukonEnabled ? (
+            <p className="map-page__filter-layer-hint">{t("map.provinces.yukonNote")}</p>
+          ) : null}
+          {quebecEnabled ? (
+            <p className="map-page__filter-layer-hint">{t("map.provinces.quebecNote")}</p>
+          ) : null}
           <MapMnrfFiltersSection
             t={t}
             locale={locale}
@@ -1105,15 +1196,19 @@ export default function MapPage() {
             setSelectedDistrict={handleDistrictChange}
             districts={districts}
           />
-          <MapAraFiltersSection
-            t={t}
-            showAra={showAra}
-            presenceSpecies={presenceSpecies}
-            togglePresenceSpecies={togglePresenceSpecies}
-            toggleAllPresenceSpecies={toggleAllPresenceSpecies}
-            araLoading={araLoading}
-            araTooWide={araTooWide}
-          />
+          {ontarioEnabled ? (
+            <MapAraFiltersSection
+              t={t}
+              showAra={effectiveShowAra}
+              presenceSpecies={presenceSpecies}
+              togglePresenceSpecies={togglePresenceSpecies}
+              toggleAllPresenceSpecies={toggleAllPresenceSpecies}
+              araLoading={araLoading}
+              araTooWide={araTooWide}
+            />
+          ) : (
+            <p className="map-page__filter-layer-hint">{t("map.layers.presenceOntarioOnly")}</p>
+          )}
         </MapFiltersShell>
       </div>
 
@@ -1173,12 +1268,12 @@ export default function MapPage() {
           currentUserId={user?.id}
           anonCatchRegions={user ? [] : anonCatchRegions}
           anonCatchLabels={anonCatchLabels}
-          araMarkers={araPoints}
+          araMarkers={effectiveShowAra ? araPoints : []}
           onAraMarkerClick={handleAraMarkerClick}
           onViewportChange={loadAra}
           satelliteImagery={satelliteImagery}
           searchPin={lakeSearchPin}
-          bathymetryEnabled={showBathymetry}
+          bathymetryEnabled={effectiveShowBathymetry}
           favoriteSpots={favoriteSpots}
           onFavoriteSpotClick={handleFavoriteSpotClick}
           campSpots={campSpots}
@@ -1193,6 +1288,7 @@ export default function MapPage() {
           areaBounds={areaBounds}
           onAreaBoundsChange={setAreaBounds}
           aiSpots={aiSpots}
+          viewFrame={mapViewFrame}
         />
 
         <MapPageLayersPanel
@@ -1205,6 +1301,7 @@ export default function MapPage() {
           setShowStocking={setShowStocking}
           showAra={showAra}
           setShowAra={setShowAra}
+          ontarioEnabled={ontarioEnabled}
           showCatches={showCatches}
           setShowCatches={setShowCatches}
           showCamps={showCamps}

@@ -6,10 +6,10 @@ export default {
   "map.layers.collapse": "Collapse layer list",
   "map.layers.expand": "Expand layer list",
   "map.layers.satellite": "Satellite basemap",
-  "map.layers.stocking": "MNRF stocking",
-  "map.layers.stockingBlurb": "Blue pins: fish stocking events.",
+  "map.layers.stocking": "Stocking",
+  "map.layers.stockingBlurb": "Blue pins: fish stocking events for enabled provinces.",
   "map.layers.presence": "Species presence",
-  "map.layers.presenceBlurb": "Green pins: provincial presence records (ARA).",
+  "map.layers.presenceBlurb": "Green pins: Ontario ARA presence records.",
   "map.layers.catches": "Posted catches",
   "map.layers.catchesBlurb": "Catch photos and pins from the feed.",
   "map.layers.catchesLogin": "Log in to load pins from the feed.",
@@ -22,9 +22,11 @@ export default {
   "map.layers.legendBlurb":
     "Show the corner key for pins, search, favorites, and depth lines.",
   "map.layers.hintEnableStocking":
-    "Turn on “MNRF stocking” in Map layers (above the map) to show markers and use these filters.",
+    "Turn on “Stocking” in Map layers (above the map) to show markers and use these filters.",
   "map.layers.hintEnablePresence":
     "Turn on “Species presence” in Map layers (above the map) to show markers and pick species below.",
+  "map.layers.presenceOntarioOnly":
+    "Species presence (ARA) is available when Ontario is enabled.",
   "map.layer.showOnMap": "Show on the map",
   "map.species.all": "All",
   "map.summary.lakesMatch": "{{count}} lakes match",
@@ -34,9 +36,25 @@ export default {
   "map.summary.speciesCount": "{{count}} species",
   "map.summary.araOn": "species presence on",
   "map.sections.speciesPills": "Species",
-  "map.mnrf.section": "MNRF stocking",
-  "map.mnrf.info": "Filters MNRF stocking markers (blue fish icons) by species, district, stage, and stocking volume.",
+  "map.provinces.section": "Provinces",
+  "map.provinces.info":
+    "Turn on one or more provinces’ stocking data. Ontario: MNRF GeoHub; Yukon: stocked-lakes program; Quebec: MFFP wildlife-reserve stocking-permitted lists.",
+  "map.provinces.hint": "Stocking provinces",
+  "map.provinces.ontario": "Ontario",
+  "map.provinces.yukon": "Yukon",
+  "map.provinces.quebec": "Quebec",
+  "map.provinces.keepOne": "Keep at least one province on",
+  "map.provinces.yukonNote":
+    "Yukon pins are stocked lakes from Yukon’s Stocked Lakes Program (not a live GeoHub feed).",
+  "map.provinces.quebecNote":
+    "Quebec pins are lakes where brook trout stocking is permitted under published MFFP wildlife-reserve plans (Papineau-Labelle, Mastigouche, Matane). Counts are N/A — not a live stocking-event feed.",
+  "map.mnrf.section": "Stocking filters",
+  "map.mnrf.info":
+    "Filters stocking markers (blue fish icons) by species, district/region, and recent years.",
   "map.mnrf.toggleBlurb": "Where fish are stocked (blue pins).",
+  "map.mnrf.districtOntario": "MNRF district",
+  "map.mnrf.districtYukon": "Region",
+  "map.mnrf.districtAny": "District / region",
   "map.ara.section": "Species presence",
   "map.ara.info": "Shows waterbodies with species presence records (green fish icons), separate from stocking events.",
   "map.ara.toggleBlurb": "Species-presence points from provincial records (green pins).",
@@ -89,7 +107,7 @@ export default {
   "map.searchLake.failed": "Search failed. Please try again.",
   "map.searchLake.minChars": "Enter at least 2 characters.",
   "map.legend.title": "Map legend",
-  "map.legend.stocking": "MNRF stocking",
+  "map.legend.stocking": "Stocking",
   "map.legend.presence": "Species presence",
   "map.legend.catch": "Posted catches",
   "map.legend.search": "Place search pin",
@@ -106,7 +124,7 @@ export default {
   "map.form.recent": "Recent years",
   "map.form.minFish": "Min fish stocked",
   "map.form.minSpecies": "Min species in record",
-  "map.form.district": "MNRF district",
+  "map.form.district": "District / region",
   "map.form.stage": "Developmental stage",
   "map.camp.enlargePhoto": "View larger photo",
   "map.camp.photoLightbox": "Enlarged campground photo",
@@ -116,19 +134,19 @@ export default {
 
   "map.onboarding.title": "Getting started on the map",
   "map.onboarding.lead":
-    "Ontario stocking, species records, and your trips. Here is a quick guide the first time you open the map.",
-  "map.onboarding.stockingTitle": "Blue fish = MNRF stocking",
+    "Provincial stocking, species records, and your trips. Here is a quick guide the first time you open the map.",
+  "map.onboarding.stockingTitle": "Blue fish = stocking",
   "map.onboarding.stockingBody":
-    "Blue fish pins show MNRF fish-stocking events: where fish were planted, species, and recent years. Turn on “MNRF stocking” in Map layers if you do not see them.",
+    "Blue fish pins show stocking: where fish were planted, species, and recent years. Enable Ontario and/or Yukon under Filters, and turn on “Stocking” in Map layers if you do not see them.",
   "map.onboarding.presenceTitle": "Green fish = surveyed presence",
   "map.onboarding.presenceBody":
-    "Green fish pins are provincial species-presence records (ARA): fish observed or reported in that waterbody. You need to zoom in to see them; they load for the area on screen. Presence is not the same as stocking. A lake can have one without the other.",
+    "Green fish pins are Ontario species-presence records (ARA): fish observed or reported in that waterbody. You need to zoom in to see them; they load for the area on screen. Presence is not the same as stocking. Enable Ontario to use this layer.",
   "map.onboarding.layersTitle": "Map layers",
   "map.onboarding.layersBody":
     "Open Map layers on the map to toggle stocking, species presence, posted catches, camps, satellite imagery, depth contours, and the corner legend.",
   "map.onboarding.filtersTitle": "Filters",
   "map.onboarding.filtersBody":
-    "Tap the filter icon next to Find a place for MNRF stocking filters (species, district, recent years) and species-presence species. Set favorite species and other map defaults on your Profile page.",
+    "Use Ontario / Yukon / Quebec next to Everyone / Friends / My posts to choose stocking provinces. Tap the filter icon next to Find a place for stocking filters (species, district/region, recent years) and species-presence species. Set favorite species and other map defaults on your Profile page.",
   "map.onboarding.searchTitle": "Find a place",
   "map.onboarding.searchBody":
     "Use Find a place above the map to search a town, lake, river, or postal code and drop a pin, even when there is no stocking record nearby.",

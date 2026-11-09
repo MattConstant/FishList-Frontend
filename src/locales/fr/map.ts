@@ -6,10 +6,10 @@ export default {
   "map.layers.collapse": "Réduire la liste des couches",
   "map.layers.expand": "Développer la liste des couches",
   "map.layers.satellite": "Fond satellite",
-  "map.layers.stocking": "Ensemencement MNRF",
-  "map.layers.stockingBlurb": "Épingles bleues : ensemencements.",
+  "map.layers.stocking": "Ensemencement",
+  "map.layers.stockingBlurb": "Épingles bleues : ensemencements des provinces activées.",
   "map.layers.presence": "Présence des espèces",
-  "map.layers.presenceBlurb": "Épingles vertes : données provinciales (ARA).",
+  "map.layers.presenceBlurb": "Épingles vertes : données ARA de l’Ontario.",
   "map.layers.catches": "Prises publiées",
   "map.layers.catchesBlurb": "Photos et marqueurs du fil.",
   "map.layers.catchesLogin": "Connectez-vous pour charger les prises du fil.",
@@ -22,9 +22,11 @@ export default {
   "map.layers.legendBlurb":
     "Afficher la légende (coins de la carte) pour les marqueurs et symboles.",
   "map.layers.hintEnableStocking":
-    "Activez « Ensemencement MNRF » dans Couches (au-dessus de la carte) pour voir les marqueurs.",
+    "Activez « Ensemencement » dans Couches (au-dessus de la carte) pour voir les marqueurs.",
   "map.layers.hintEnablePresence":
     "Activez « Présence des espèces » dans Couches (au-dessus de la carte) pour voir les marqueurs.",
+  "map.layers.presenceOntarioOnly":
+    "La présence des espèces (ARA) est disponible lorsque l’Ontario est activé.",
   "map.layer.showOnMap": "Afficher sur la carte",
   "map.species.all": "Toutes",
   "map.summary.lakesMatch": "{{count}} lacs correspondent",
@@ -34,10 +36,25 @@ export default {
   "map.summary.speciesCount": "{{count}} espèces",
   "map.summary.araOn": "presence d’especes activee",
   "map.sections.speciesPills": "Espèces",
-  "map.mnrf.section": "Ensemencement MNRF",
+  "map.provinces.section": "Provinces",
+  "map.provinces.info":
+    "Activez une ou plusieurs provinces pour les données d’ensemencement. Ontario : GeoHub MNRF; Yukon : programme des lacs ensemencés; Québec : listes MFFP d’ensemencement permis (réserves fauniques).",
+  "map.provinces.hint": "Provinces d’ensemencement",
+  "map.provinces.ontario": "Ontario",
+  "map.provinces.yukon": "Yukon",
+  "map.provinces.quebec": "Québec",
+  "map.provinces.keepOne": "Gardez au moins une province activée",
+  "map.provinces.yukonNote":
+    "Les épingles du Yukon proviennent du programme des lacs ensemencés (pas un flux GeoHub en direct).",
+  "map.provinces.quebecNote":
+    "Les épingles du Québec indiquent les lacs où l’ensemencement d’omble de fontaine est permis selon les plans MFFP des réserves fauniques (Papineau-Labelle, Mastigouche, Matane). Quantités N/D — pas un flux d’événements en direct.",
+  "map.mnrf.section": "Filtres d’ensemencement",
   "map.mnrf.info":
-    "Filtre les marqueurs d’ensemencement du MNRF (icones poisson bleues) selon espece, district, stade et volume.",
+    "Filtre les marqueurs d’ensemencement (icônes poisson bleues) selon espèce, district/région et années récentes.",
   "map.mnrf.toggleBlurb": "Où des poissons sont ensemencés (ép. bleues).",
+  "map.mnrf.districtOntario": "District MNRF",
+  "map.mnrf.districtYukon": "Région",
+  "map.mnrf.districtAny": "District / région",
   "map.ara.section": "Presence des especes",
   "map.ara.info":
     "Affiche les plans d’eau avec presence d’especes (icones poisson vertes), separe de l’ensemencement.",
@@ -92,7 +109,7 @@ export default {
   "map.searchLake.failed": "Echec de la recherche. Reessayez.",
   "map.searchLake.minChars": "Entrez au moins 2 caracteres.",
   "map.legend.title": "Legende",
-  "map.legend.stocking": "Ensemencement MNRF",
+  "map.legend.stocking": "Ensemencement",
   "map.legend.presence": "Presence des especes",
   "map.legend.catch": "Prises publiees",
   "map.legend.search": "Épingle de recherche",
@@ -109,7 +126,7 @@ export default {
   "map.form.recent": "Années récentes",
   "map.form.minFish": "Poissons ensemencés (min.)",
   "map.form.minSpecies": "Nb d’espèces (min.)",
-  "map.form.district": "District MNRF",
+  "map.form.district": "District / région",
   "map.form.stage": "Stade de développement",
   "map.camp.enlargePhoto": "Voir la photo en grand",
   "map.camp.photoLightbox": "Photo du campement agrandie",
@@ -119,19 +136,19 @@ export default {
 
   "map.onboarding.title": "Premiers pas sur la carte",
   "map.onboarding.lead":
-    "Ensemencement ontarien, presence d'especes et vos sorties. Voici un guide rapide la premiere fois que vous ouvrez la carte.",
-  "map.onboarding.stockingTitle": "Poisson bleu = ensemencement MNRF",
+    "Ensemencement provincial, presence des especes et vos sorties. Voici un guide rapide la premiere fois que vous ouvrez la carte.",
+  "map.onboarding.stockingTitle": "Poisson bleu = ensemencement",
   "map.onboarding.stockingBody":
-    "Les epingles poisson bleues montrent les ensemencements du MNRF : ou des poissons ont ete mis a l'eau, l'espece et les annees recentes. Activez « Ensemencement MNRF » dans Couches si vous ne les voyez pas.",
+    "Les epingles bleues montrent l'ensemencement : ou des poissons ont ete mis a l'eau, l'espece et les annees recentes. Activez Ontario et/ou Yukon dans Filtres, et « Ensemencement » dans Couches si vous ne les voyez pas.",
   "map.onboarding.presenceTitle": "Poisson vert = presence relevee",
   "map.onboarding.presenceBody":
-    "Les epingles poisson vertes sont des releves provinciaux de presence (ARA) : especes observees ou signalees dans ce plan d'eau. Zoomez pour les voir; elles se chargent pour la zone affichee. La presence n'est pas un ensemencement. Un lac peut avoir l'un sans l'autre.",
+    "Les epingles vertes sont des releves de presence de l'Ontario (ARA). Zoomez pour les voir; elles se chargent pour la zone affichee. La presence n'est pas un ensemencement. Activez l'Ontario pour utiliser cette couche.",
   "map.onboarding.layersTitle": "Couches de la carte",
   "map.onboarding.layersBody":
     "Ouvrez Couches sur la carte pour activer ensemencement, presence d'especes, prises publiees, camps, satellite, courbes de profondeur et la legende.",
   "map.onboarding.filtersTitle": "Filtres",
   "map.onboarding.filtersBody":
-    "Touchez l'icone filtre a cote de Trouver un lieu pour l'ensemencement MNRF (especes, district, annees) et les especes de presence. Definissez vos especes preferees et autres preferences de carte sur votre page Profil.",
+    "Utilisez Ontario / Yukon / Quebec a cote de Tout le monde / Amis / Mes publications pour choisir les provinces d'ensemencement. Touchez l'icone filtre a cote de Trouver un lieu pour les filtres d'ensemencement (especes, district/region, annees) et les especes de presence. Definissez vos especes preferees et autres preferences de carte sur votre page Profil.",
   "map.onboarding.searchTitle": "Trouver un lieu",
   "map.onboarding.searchBody":
     "Utilisez Trouver un lieu au-dessus de la carte pour chercher une ville, un lac, une riviere ou un code postal et deposer une epingle, meme sans ensemencement a proximite.",

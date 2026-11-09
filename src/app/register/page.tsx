@@ -5,7 +5,7 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import { getDisplayErrorMessage, resendVerificationEmail } from "@/lib/api";
-import { tryMapUsernameHttpError, validateUsernameClient } from "@/lib/username-policy";
+import { tryMapUsernameHttpError, validateUsernameClient } from "@/lib/profile/username-policy";
 
 const inputClassName =
   "mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-800 outline-none ring-sky-500 focus:ring-2 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100";

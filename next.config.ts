@@ -44,6 +44,11 @@ const nextConfig: NextConfig = {
       { protocol: "http", hostname: "localhost", port: "9000" },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/about/contest", destination: "/about", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

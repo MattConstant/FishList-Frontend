@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ARA_FILTER_SUMMARY_NAMES, type AraSpeciesFilter } from "@/lib/ara-fish";
+import { ARA_FILTER_SUMMARY_NAMES, type AraSpeciesFilter } from "@/lib/map/ara-fish";
 
 export const runtime = "nodejs";
 

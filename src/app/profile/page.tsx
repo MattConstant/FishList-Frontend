@@ -3,10 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AchievementsPanel } from "@/components/achievements-panel";
-import { DefaultAvatarIcon } from "@/components/default-avatar-icon";
-import { ProfilePreferencesTrigger } from "@/components/profile-preferences-dialog";
-import { LocationCard } from "@/components/fishing-cards";
+import { AchievementsPanel } from "@/components/achievements/achievements-panel";
+import { DefaultAvatarIcon } from "@/components/shared/default-avatar-icon";
+import { ProfilePreferencesTrigger } from "@/components/profile/profile-preferences-dialog";
+import { LocationCard } from "@/components/profile/fishing-cards";
 import { useAuth } from "@/contexts/auth-context";
 import { useLocale } from "@/contexts/locale-context";
 import {
@@ -21,7 +21,7 @@ import {
   type AccountUpdateResponse,
   type LocationWithCatches,
 } from "@/lib/api";
-import { tryMapUsernameHttpError, validateUsernameClient } from "@/lib/username-policy";
+import { tryMapUsernameHttpError, validateUsernameClient } from "@/lib/profile/username-policy";
 
 export default function ProfilePage() {
   const { user, logout, isReady, refreshUser } = useAuth();

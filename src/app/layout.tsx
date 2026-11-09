@@ -2,12 +2,12 @@ import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
-import { LOCALE_COOKIE_NAME, parseAppLocale } from "@/lib/locale-shared";
+import { LOCALE_COOKIE_NAME, parseAppLocale } from "@/lib/shared/locale-shared";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ConnectionBanner } from "@/components/connection-banner";
-import { NavBar } from "@/components/nav-bar";
-import { Providers } from "@/components/providers";
+import { ConnectionBanner } from "@/components/layout/connection-banner";
+import { NavBar } from "@/components/layout/nav-bar";
+import { Providers } from "@/components/shared/providers";
 import { resolveSiteUrl } from "@/lib/site-url";
 import "./globals.css";
 

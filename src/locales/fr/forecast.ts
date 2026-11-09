@@ -96,6 +96,8 @@ export default {
   "forecast.mapSheetTabsAria": "Détails du plan d’eau",
   "forecast.mapLakeSummary":
     "{{species}} espèces · {{total}} poissons stockés (enregistrements récents)",
+  "forecast.mapLakeSummaryNa":
+    "{{species}} espèces · nombre stocké s. o.",
   "forecast.mapForecastPeek": "Prévision de pêche : déployer pour les détails",
   "forecast.mapPresenceHeading": "Espèces signalées",
   "forecast.mapPresenceNote":
@@ -114,6 +116,7 @@ export default {
   "forecast.mapColSpecies": "Espèce",
   "forecast.mapColYear": "Année",
   "forecast.mapColCount": "Nombre",
+  "forecast.mapCountNa": "s. o.",
   "forecast.mapAiStockedLabel": "Poissons stockés ici",
   "forecast.mapAiSignIn": "Connectez-vous",
   "forecast.mapAiSignInSuffix": "pour obtenir des conseils IA.",
